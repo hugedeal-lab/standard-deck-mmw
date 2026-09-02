@@ -12,10 +12,23 @@
 var SD = window.StandardDeck;
 if (!SD) { console.error('[deck-shell] standard-deck.js must load first'); return; }
 
-var FONT = 'Mazda Type, Arial, sans-serif';
+// PowerPoint's fontFace takes ONE typeface name -- a CSS stack like
+// 'Mazda Type, Arial, sans-serif' is written into the PPTX verbatim and will
+// not resolve. The template uses Mazda Type Bold for display (theme majorFont
+// / +mj-lt) and Arial for body (theme minorFont / +mn-lt); el.font 'H'/'B'
+// selects between them. v1.0 passed one CSS stack for everything, so body copy
+// and hero titles shared a face and neither resolved.
+var FONT_FACES = { H: 'Mazda Type Bold', HR: 'Mazda Type', B: 'Arial' };
+var FONT = FONT_FACES.B;   // default for chrome: footers, tables, labels
+function fontFor(el) { return (el && FONT_FACES[el.font]) || FONT; }
 var _D = []; var _config = {}; var _currentSlide = 0; var _totalSlides = 0;
 var _customLogo = null; var _noLogo = false; var _imageMode = false;
 var _imageCache = {};
+// Photo masks pending injection into the exported XML, keyed by the objectName
+// stamped on the picture. Reset at the start of every export.
+var _maskJobs = {}, _maskSeq = 0;
+// Gradient fills pending injection, keyed by the objectName stamped on the shape.
+var _gradJobs = {}, _gradSeq = 0;
 
 // ============================================================
 // IMAGE PREFETCH CACHE
@@ -30,7 +43,12 @@ img.onload = function () {
   canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
   var ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
   try { _imageCache[url] = canvas.toDataURL('image/png'); }
-  catch (e) { console.warn('[deck-shell] CORS blocked prefetch: ' + url); }
+  catch (e) {
+    // Canvas is tainted. Under file:// every local image trips this, so the PPTX
+    // links images instead of embedding them. Serve the folder over http
+    // (python -m http.server) to get embedded assets.
+    console.warn('[deck-shell] Could not cache (canvas tainted; serve over http:// to embed): ' + url);
+  }
 };
 img.onerror = function () { console.warn('[deck-shell] Failed to prefetch: ' + url); };
 img.src = url;
@@ -372,8 +390,18 @@ function rerenderAll() {
 
 function exportPPTX() {
 var downloadBtn = document.querySelector('.sd-download-btn');
-if (typeof PptxGenJS === 'undefined' && typeof pptxgen === 'undefined') { showToast('Export library loading...', 'warn'); return; }
+if (typeof PptxGenJS === 'undefined' && typeof pptxgen === 'undefined') {
+  showToast('Export library did not load \u2014 see console.', 'bad');
+  console.error('[SD] PptxGenJS is not available, so PPTX export cannot run.\n' +
+    'test-deck.html expects vendor/pptxgen.bundle.js beside it; the standalone build has it inlined.\n' +
+    'If this page came from a network that blocks CDNs, use test-deck-standalone.html.');
+  return;
+}
 if (!_D || !_D.length) { showToast('No slide data.', 'bad'); return; }
+// Mask tags are per-export: exportPPTX can run more than once in a session and
+// stale entries would renumber against the wrong pictures.
+_maskJobs = {}; _maskSeq = 0;
+_gradJobs = {}; _gradSeq = 0;
 if (downloadBtn && downloadBtn.disabled) return;
 if (downloadBtn) { downloadBtn.disabled = true; downloadBtn.textContent = '\u23F3 Exporting...'; }
 
@@ -409,12 +437,16 @@ try {
     if (slideData.layout && window.DeckLayouts) els = window.DeckLayouts.dispatch(slideData);
     else els = slideData.els || [];
     els = SD.enforceWidthRule(els);
+    if (SD.assertNonNegative) els.forEach(function (e) {
+      SD.assertNonNegative(e, slideData.layout || '(raw els)');
+    });
 
     isDark = !!slideData.dark;
 
     // STEP 2: Master selection (after dispatch)
     var master;
-    if (slideData.customFooter) {
+    if (slideData.customFooter ||
+        (SD.suppressesFooter && SD.suppressesFooter(slideData.layout))) {
       master = isDark ? 'SD_DARK_NOFOOTER' : 'SD_LIGHT_NOFOOTER';
     } else if (SD.isStructuralSlide(slideData.layout)) {
       master = isDark ? 'SD_DARK' : 'SD_LIGHT';
@@ -427,8 +459,10 @@ try {
     var slide = pptx.addSlide({ masterName: master });
 
     // STEP 3: Background overrides (after dispatch)
-    if (slideData.bgImage && _imageCache[slideData.bgImage]) {
-      slide.background = { data: _imageCache[slideData.bgImage] };
+    if (slideData.bgImage) {
+      var _bgData = (slideData.bgImage.indexOf('data:') === 0)
+        ? slideData.bgImage : _imageCache[slideData.bgImage];
+      slide.background = _bgData ? { data: _bgData } : { path: slideData.bgImage };
     }
     if (slideData.bgColor) {
       slide.background = { color: slideData.bgColor.replace('#', '') };
@@ -475,9 +509,55 @@ try {
   });
 
   var title = (_config.title || 'Presentation').replace(/[^a-zA-Z0-9\s_-]/g, '').replace(/\s+/g, '_').substring(0, 40);
-  pptx.writeFile({ fileName: title + '_' + _D.length + 'slides.pptx' }).then(function () {
+  var fileName = title + '_' + _D.length + 'slides.pptx';
+
+  // PptxGenJS hardcodes kern="0" on every run, which switches PowerPoint's
+  // kerning OFF. The MMW spec calls for kerning at 1pt and above (kern="100").
+  // There is no API for it, so repack the .pptx and rewrite the attribute.
+  // JSZip ships inside pptxgen.bundle.js, so this needs no extra dependency.
+  // If it is unavailable for any reason, fall back to the unpatched download
+  // rather than failing the export outright.
+  var finish = function (msg) {
     if (downloadBtn) { downloadBtn.disabled = false; downloadBtn.textContent = '\u2B07 Download'; }
-    showToast('PPTX downloaded!', 'ok');
+    showToast(msg, 'ok');
+  };
+  if (typeof JSZip === 'undefined') {
+    console.warn('[SD] JSZip unavailable - exporting without the kerning fix.');
+    pptx.writeFile({ fileName: fileName }).then(function () { finish('PPTX downloaded!'); })
+      .catch(function (err) {
+        if (downloadBtn) { downloadBtn.disabled = false; downloadBtn.textContent = '\u2B07 Download'; }
+        showToast('Export failed: ' + err.message, 'bad'); console.error('[SD] Export error:', err);
+      });
+    return;
+  }
+  // Use arraybuffer, not blob, for BOTH hand-offs. JSZip only accepts a Blob
+  // when its own feature detection reports a browser, so a blob round-trip
+  // fails outright anywhere else and buys nothing here. ArrayBuffer is
+  // understood universally, which also makes the exporter testable headlessly.
+  pptx.write({ outputType: 'arraybuffer' }).then(function (ab) {
+    return JSZip.loadAsync(ab);
+  }).then(function (zip) {
+    var jobs = [];
+    zip.forEach(function (path, entry) {
+      if (!/^ppt\/slides\/slide\d+\.xml$/.test(path)) return;
+      jobs.push(entry.async('string').then(function (xml) {
+        xml = xml.replace(/(<a:rPr\b[^>]*?)\skern="0"/g, '$1 kern="100"');
+        xml = applyPhotoMasks(xml);
+        xml = applyGradients(xml);
+        zip.file(path, xml);
+      }));
+    });
+    return Promise.all(jobs).then(function () {
+      return zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
+    });
+  }).then(function (buf) {
+    var out = new Blob([buf], { type: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' });
+    var url = URL.createObjectURL(out);
+    var a = document.createElement('a');
+    a.href = url; a.download = fileName;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+    finish('PPTX downloaded!');
   }).catch(function (err) {
     if (downloadBtn) { downloadBtn.disabled = false; downloadBtn.textContent = '\u2B07 Download'; }
     showToast('Export failed: ' + err.message, 'bad'); console.error('[SD] Export error:', err);
@@ -493,32 +573,177 @@ try {
 // ============================================================
 
 function exportElement(slide, el, isDark, accent, pptx) {
-  var m = { t: exportText, s: exportShape, o: exportOval, d: exportDivider, p: exportPill, b: exportBar, chart: exportChart, tbl: exportTable, i: exportIcon, img: exportImage };
+  var m = { t: exportText, s: exportShape, o: exportOval, d: exportDivider, p: exportPill, b: exportBar, ln: exportLine, chart: exportChart, tbl: exportTable, i: exportIcon, img: exportImage };
   var fn = m[el.type]; if (fn) fn(slide, el, isDark, accent, pptx);
+}
+
+// PptxGenJS margin is in POINTS, ordered [top, right, bottom, left].
+function insetMargin(el) {
+  if (!el.insets) return [0, 0, 0, 0];
+  return [(el.insets.t || 0) * 72, (el.insets.r || 0) * 72,
+          (el.insets.b || 0) * 72, (el.insets.l || 0) * 72];
 }
 
 function exportText(slide, el, isDark) {
   var isCompact = el.w <= 0.80 && el.h <= 0.80;
-  var textStyle = SD.getTextStyle(el); var exportedText = el.text || '';
-  if (['L1','L2','L3','L5'].indexOf(textStyle) > -1) exportedText = exportedText.toUpperCase();
-  var cs = 0;
-  if (textStyle === 'L1') cs = 12; else if (textStyle === 'L3') cs = 3; else if (textStyle === 'L2') cs = 2; else if (textStyle === 'L5') cs = 4;
-  var ts = SD.TEXT_STYLES[textStyle];
+  var exportedText = el.text || '';
+  var cs, lsm, boldFlag;
+
+  // EXPLICIT TYPOGRAPHY (v2.0) -- see the matching note in standard-deck.js.
+  // `caps` present => the layout specified casing/tracking/line-height from the
+  // template; do not let getTextStyle() guess and override them.
+  if (el.caps !== undefined) {
+    if (el.caps) exportedText = exportedText.toUpperCase();
+    cs = (el.charSpacing != null) ? el.charSpacing : 0;
+    lsm = (el.lineSpacing != null) ? el.lineSpacing : 1.0;
+    boldFlag = !!el.bold;
+  } else {
+    var textStyle = SD.getTextStyle(el);
+    if (['L1','L2','L3','L5'].indexOf(textStyle) > -1) exportedText = exportedText.toUpperCase();
+    cs = 0;
+    if (textStyle === 'L1') cs = 12; else if (textStyle === 'L3') cs = 3;
+    else if (textStyle === 'L2') cs = 2; else if (textStyle === 'L5') cs = 4;
+    var ts = SD.TEXT_STYLES[textStyle];
+    lsm = isCompact ? 1.0 : 1.35;
+    boldFlag = ts.weight >= 700 || el.bold;
+  }
+
+  // Rich paragraphs -- see the matching note in standard-deck.js. PptxGenJS
+  // takes an array of {text, options}; breakLine ends a paragraph, and bullet /
+  // indentLevel carry the sub-bullet treatment.
+  if (el.paras && el.paras.length) {
+    var seq = [];
+    el.paras.forEach(function (p, pi) {
+      var runs = p.runs || [];
+      runs.forEach(function (r, ri) {
+        var o = { fontFace: fontFor(el), fontSize: p.size || el.size,
+                  color: SD.colorForPptx(r.color || el.color || 'body', isDark),
+                  bold: (r.bold !== undefined) ? r.bold : !!el.bold,
+                  charSpacing: el.charSpacing || 0,
+                  lineSpacingMultiple: el.lineSpacing != null ? el.lineSpacing : 1.0 };
+        if (r.size) o.fontSize = r.size;
+        if (p.bullet) {
+          o.bullet = { characterCode: (p.bulletCode || '2022') };
+          // PptxGenJS defaults the bullet margin to 27pt (0.375in) and sets
+          // marL/indent from it. The template hangs its bullets much tighter --
+          // 0.125in on the spend bars -- so derive the gap from the paragraph's
+          // own hanging indent instead of taking the library default.
+          if (p.indent) o.bullet.indent = Math.abs(p.indent) * 72;
+          if (p.indentLevel) o.indentLevel = p.indentLevel;
+        }
+        // breakLine on the last run of each paragraph except the final one
+        if (ri === runs.length - 1 && pi < el.paras.length - 1) o.breakLine = true;
+        seq.push({ text: (el.caps ? String(r.text || '').toUpperCase() : (r.text || '')),
+                   options: o });
+      });
+    });
+    slide.addText(seq, { x: el.x, y: el.y, w: el.w, h: el.h,
+      align: el.align || 'left', valign: el.valign || 'top',
+      margin: insetMargin(el), wrap: true });
+    return;
+  }
+
   slide.addText(exportedText, {
-    x: el.x, y: el.y, w: el.w, h: el.h, fontSize: el.size, fontFace: FONT,
-    bold: ts.weight >= 700 || el.bold, italic: !!el.italic,
+    x: el.x, y: el.y, w: el.w, h: el.h, fontSize: el.size, fontFace: fontFor(el),
+    bold: boldFlag, italic: !!el.italic,
     color: SD.colorForPptx(el.color || 'body', isDark),
     align: el.align || (isCompact ? 'center' : 'left'), valign: el.valign || 'top',
-    charSpacing: cs, lineSpacingMultiple: isCompact ? 1.0 : 1.35,
-    wrap: !isCompact, margin: [0,0,0,0], shrinkText: isCompact
+    charSpacing: cs, lineSpacingMultiple: lsm,
+    wrap: !isCompact, margin: insetMargin(el), shrinkText: isCompact
   });
+}
+
+// Swap the rect geometry of a tagged picture for its real outline. PptxGenJS
+// cannot emit a masked picture, so the shape is stamped with a unique
+// objectName at build time and rewritten here. Points are fractions of the
+// frame; PowerPoint's path space is arbitrary, so 21600 (its own convention)
+// keeps the numbers integral.
+function applyPhotoMasks(xml) {
+  if (!_maskSeq) return xml;
+  return xml.replace(/<p:pic>[\s\S]*?<\/p:pic>/g, function (pic) {
+    var m = pic.match(/<p:cNvPr[^>]*name="(mmwmask\d+)"/);
+    if (!m || !_maskJobs[m[1]]) return pic;
+    var pts = _maskJobs[m[1]], U = 21600, d = '';
+    pts.forEach(function (p, i) {
+      var x = Math.round(p[0] * U), y = Math.round(p[1] * U);
+      d += (i === 0 ? '<a:moveTo>' : '<a:lnTo>') +
+           '<a:pt x="' + x + '" y="' + y + '"/>' +
+           (i === 0 ? '</a:moveTo>' : '</a:lnTo>');
+    });
+    var geom = '<a:custGeom><a:avLst/><a:gdLst/><a:ahLst/><a:cxnLst/>' +
+      '<a:rect l="0" t="0" r="r" b="b"/><a:pathLst>' +
+      '<a:path w="' + U + '" h="' + U + '" extrusionOk="0">' + d +
+      '<a:close/></a:path></a:pathLst></a:custGeom>';
+    // Drop the build-time tag: only reader-facing names belong in the file.
+    pic = pic.replace(/(<p:cNvPr[^>]*name=")mmwmask\d+(")/, '$1Image$2');
+    return pic.replace(/<a:prstGeom[^>]*>[\s\S]*?<\/a:prstGeom>|<a:prstGeom[^>]*\/>/, geom);
+  });
+}
+
+// PptxGenJS has no gradient fill: passing { type:'gradient' } silently yields a
+// solid WHITE shape. Tag it and rewrite the fill during the repack instead --
+// the same mechanism the kerning and photo-mask fixes use.
+function tagGradient(opts, el, isDark) {
+  if (!el.gradient) return;
+  var tag = 'mmwgrad' + (_gradSeq++);
+  opts.objectName = tag;
+  _gradJobs[tag] = {
+    from: SD.colorForPptx(el.gradient.from, isDark),
+    to:   SD.colorForPptx(el.gradient.to, isDark),
+    angle: (el.gradient.angle == null) ? 45 : el.gradient.angle
+  };
+}
+
+function applyGradients(xml) {
+  if (!_gradSeq) return xml;
+  return xml.replace(/<p:sp>[\s\S]*?<\/p:sp>/g, function (sp) {
+    var m = sp.match(/<p:cNvPr[^>]*name="(mmwgrad\d+)"/);
+    if (!m || !_gradJobs[m[1]]) return sp;
+    var g = _gradJobs[m[1]];
+    var grad = '<a:gradFill flip="none" rotWithShape="1"><a:gsLst>' +
+      '<a:gs pos="0"><a:srgbClr val="' + g.from + '"/></a:gs>' +
+      '<a:gs pos="100000"><a:srgbClr val="' + g.to + '"/></a:gs>' +
+      '</a:gsLst><a:lin ang="' + Math.round(g.angle * 60000) + '" scaled="0"/></a:gradFill>';
+    sp = sp.replace(/(<p:cNvPr[^>]*name=")mmwgrad\d+(")/, '$1Shape$2');
+    return sp.replace(/<a:solidFill>[\s\S]*?<\/a:solidFill>/, grad);
+  });
+}
+
+// <a:custDash> has no PptxGenJS equivalent, but the presets are close enough:
+// the template's spoke ring is an even dash and its boxes are round dots.
+function lineOpts(el, isDark) {
+  if (!el.stroke) return null;
+  var o = { color: SD.colorForPptx(el.stroke, isDark), width: el.strokeWidth || 1 };
+  if (el.dash === 'dash') o.dashType = 'dash';
+  else if (el.dash === 'dot') o.dashType = 'sysDot';
+  return o;
+}
+
+function shadowOpts(el) {
+  if (!el.shadow) return null;
+  var sh = (el.shadow === true) ? {} : el.shadow;
+  return { type:'outer',
+    blur:   (sh.blur   == null ? 0.104 : sh.blur)   * 72,
+    offset: (sh.offset == null ? 0.167 : sh.offset) * 72,
+    angle:  (sh.angle  == null ? 172   : sh.angle),
+    color:  sh.color || '000000',
+    opacity:(sh.opacity == null ? 0.05 : sh.opacity) };
 }
 
 function exportShape(slide, el, isDark, accent, pptx) {
   // Image placeholder: export as addImage for "Change Picture..." support
   if (el._imgPlaceholder) {
     var phData = generatePlaceholderImage(el.w, el.h, isDark);
-    slide.addImage({ data: phData, x: el.x, y: el.y, w: el.w, h: el.h });
+    var phOpts = { data: phData, x: el.x, y: el.y, w: el.w, h: el.h };
+    // An empty well keeps its outline too, so the slot the user right-clicks is
+    // the shape the photo will actually take -- not a rectangle that changes
+    // silhouette the moment a picture lands in it.
+    if (el.points && el.points.length > 2) {
+      var phTag = 'mmwmask' + (_maskSeq++);
+      phOpts.objectName = phTag;
+      _maskJobs[phTag] = el.points;
+    }
+    slide.addImage(phOpts);
     return;
   }
 
@@ -531,13 +756,64 @@ function exportShape(slide, el, isDark, accent, pptx) {
   }
 
   var opts = { x: el.x, y: el.y, w: el.w, h: el.h, fill: fillOpt };
+  // fill:'none' -> omit the fill entirely. PptxGenJS writes <a:noFill/> when no
+  // fill is given; passing { type:'none' } instead yields a SOLID shape.
+  if (el.fill === 'none') delete opts.fill;
   if (el.border) opts.line = { color: SD.colorForPptx(el.border, isDark), width: 1 };
+  var lo = lineOpts(el, isDark); if (lo) opts.line = lo;
+  var so = shadowOpts(el);       if (so) opts.shadow = so;
+  tagGradient(opts, el, isDark);
   if (el.transparency) opts.fill.transparency = el.transparency;
   if (!isDark && el.fill === 'cardBg' && !el.noShadow && !el._pptxGradient) opts.shadow = { type:'outer', color:'000000', blur:4, offset:2, angle:135, opacity:0.08 };
+
+  // Custom geometry: el.points are fractions of the shape box, so they scale
+  // with w/h. PowerPoint gets a real editable polygon, not a picture of one.
+  if (el.points && el.points.length > 2) {
+    // PptxGenJS wants points relative to the shape box, in inches -- NOT slide
+    // coordinates. The <a:xfrm> already carries x/y, so adding them here would
+    // translate the outline by its own position.
+    opts.points = el.points.map(function (p) {
+      return { x: +(p[0] * el.w).toFixed(4), y: +(p[1] * el.h).toFixed(4) };
+    });
+    opts.points.push({ close: true });
+    slide.addShape(pptx.shapes.CUSTOM_GEOMETRY, opts);
+    return;
+  }
+  // Corner radius -> ROUNDED_RECTANGLE. rectRadius is in inches; 'pill' rounds
+  // the short axis fully, which reproduces the template's adj=50000 bars exactly.
+  if (el.radius != null) {
+    opts.rectRadius = (el.radius === 'pill') ? Math.min(el.w, el.h) / 2 : el.radius;
+    slide.addShape(pptx.shapes.ROUNDED_RECTANGLE, opts);
+    return;
+  }
   slide.addShape(pptx.shapes.RECTANGLE, opts);
 }
 
-function exportOval(slide, el, isDark, accent, pptx) { slide.addShape(pptx.shapes.OVAL, { x:el.x, y:el.y, w:el.w, h:el.h, fill:{color:SD.colorForPptx(el.fill||'accent',isDark)} }); }
+function exportLine(slide, el, isDark, accent, pptx) {
+  var col = SD.colorForPptx(el.color || 'ltGray', isDark);
+  var ln = { color: col, width: el.weight || 1.5 };
+  if (el.arrows === 'both' || el.arrows === 'start') ln.beginArrowType = 'triangle';
+  if (el.arrows === 'both' || el.arrows === 'end') ln.endArrowType = 'triangle';
+  // A line drawn up or to the left has a negative w/h in element space, but
+  // <a:ext> may not be negative -- PowerPoint rejects the file and offers to
+  // repair it. Normalise to a positive box and express direction with flipH /
+  // flipV, which is how OOXML encodes it.
+  var w = el.w || 0, h = el.h || 0;
+  var o = { x: el.x + Math.min(0, w), y: el.y + Math.min(0, h),
+            w: Math.abs(w), h: Math.abs(h), line: ln };
+  if (w < 0) o.flipH = true;
+  if (h < 0) o.flipV = true;
+  slide.addShape(pptx.shapes.LINE, o);
+}
+
+function exportOval(slide, el, isDark, accent, pptx) {
+  var opts = { x:el.x, y:el.y, w:el.w, h:el.h,
+    fill:{ color: SD.colorForPptx(el.fill || 'accent', isDark) } };
+  var lo = lineOpts(el, isDark); if (lo) opts.line = lo;
+  var so = shadowOpts(el);       if (so) opts.shadow = so;
+  tagGradient(opts, el, isDark);
+  slide.addShape(pptx.shapes.OVAL, opts);
+}
 function exportDivider(slide, el, isDark, accent, pptx) { slide.addShape(pptx.shapes.RECTANGLE, { x:el.x, y:el.y, w:el.w, h:0.015, fill:{color:SD.colorForPptx(el.color||'ltGray',isDark)} }); }
 
 function exportPill(slide, el, isDark, accent, pptx) {
@@ -557,6 +833,16 @@ if (_iconCache[key]) {
   slide.addImage({ data: _iconCache[key], x: el.x, y: el.y, w: el.w, h: el.h });
   return;
 }
+// The cache is filled by rasterising each icon on a canvas. Where there is no
+// canvas -- the headless reference build -- fall back to the icon's SVG data
+// URI, which needs no rendering surface. PowerPoint reads SVG images fine.
+if (window.DeckIcons && window.DeckIcons.toDataURL) {
+  var svg = window.DeckIcons.toDataURL(el.icon, sizePx, '#' + color);
+  if (svg) {
+    slide.addImage({ data: svg, x: el.x, y: el.y, w: el.w, h: el.h });
+    return;
+  }
+}
 // Fallback: emoji as text
 var scale = (el.w >= 0.45) ? 0.50 : 0.42;
 slide.addText(el.icon || '', { x: el.x, y: el.y, w: el.w, h: el.h,
@@ -571,7 +857,12 @@ function exportChart(slide, el, isDark, accent, pptx) {
   if (ct) rc = ct.map(function(t){return SD.colorForPptx(t,isDark);}); else rc = SD.CHART_SERIES.map(function(h){return h.replace('#','');});
   var co = { x:el.x, y:el.y, w:el.w, h:el.h, chartColors:rc, showValue:opts.showValue!==false, showTitle:!!opts.showTitle, title:opts.title||'',
     titleColor:SD.colorForPptx('title',isDark), titleFontSize:12, showLegend:opts.showLegend||false, legendPos:opts.legendPos||'b', legendColor:SD.colorForPptx('body',isDark),
-    chartArea:{fill:{color:isDark?'535B69':'FFFFFF'},roundedCorners:true}, valGridLine:{color:isDark?'535B69':'E2E8F0',size:0.5}, catGridLine:{style:'none'} };
+    valGridLine:{color:isDark?'535B69':'E2E8F0',size:0.5}, catGridLine:{style:'none'} };
+  // No chartArea fill. The template's own charts are <a:noFill/> so the slide
+  // ground shows through -- every chart slide sits on the gray or asphalt
+  // canvas, and a white chart area paints a bright slab over it. Opt back in
+  // per slide with chart.opts.chartArea if a panel is ever wanted.
+  if (opts.chartArea) co.chartArea = opts.chartArea;
   if (el.chartType==='bar'||el.chartType==='line'||el.chartType==='area') {
     co.barGrouping=opts.barGrouping||'clustered'; co.barDir=opts.barDir||'bar'; co.valAxisHidden=opts.valAxisHidden||false;
     co.catAxisLabelColor=SD.colorForPptx('body',isDark); co.valAxisLabelColor=SD.colorForPptx('body',isDark);
@@ -595,10 +886,48 @@ function exportTable(slide, el, isDark) {
 }
 
 function exportImage(slide, el) {
-  if (el.src) { var c = _imageCache[el.src]; if (c) slide.addImage({data:c,x:el.x,y:el.y,w:el.w,h:el.h}); else console.warn('[deck-shell] Image not cached: '+el.src); return; }
-  var imgEl = document.getElementById(el.ref); if (!imgEl) return;
-  var img = imgEl.querySelector('img');
-  if (img && img.src && img.src.indexOf('data:') === 0) slide.addImage({data:img.src,x:el.x,y:el.y,w:el.w,h:el.h});
+  // v1.0 looked up getElementById(el.ref) then querySelector('img') on it -- but
+  // the artifact declares refs as <img id="gi0"> directly, and an <img> has no
+  // child <img>, so this returned null and every brand mark was silently dropped
+  // from the PPTX. Resolve via the shared helper, and fall back to a linked path
+  // when the image could not be cached as a data URI.
+  var src = SD.resolveImgSrc ? SD.resolveImgSrc(el) : el.src;
+  if (!src) { console.warn('[deck-shell] image element has no resolvable src/ref: ' + (el.ref || '?')); return; }
+  var opts = { x: el.x, y: el.y, w: el.w, h: el.h };
+  var data = (src.indexOf('data:') === 0) ? src : _imageCache[src];
+  if (data) opts.data = data; else opts.path = src;
+  // alphaModFix -> PptxGenJS transparency (0 = opaque, 100 = invisible).
+  if (typeof el.transparency === 'number') opts.transparency = el.transparency;
+  // A photo supplied into a well fills the frame; PptxGenJS crops to do that.
+  if (el.fit === 'cover' && !el.crop) opts.sizing = { type: 'cover', w: el.w, h: el.h };
+  // srcRect -> PptxGenJS crop sizing.
+  //
+  // Its crop model is "place the image at w/h, then keep the box at x/y/w/h",
+  // and it computes r/b as (imageSize - box). So the image option must describe
+  // the FULL image and the box the kept region -- passing the frame size for
+  // both yields r = -x, a negative srcRect PowerPoint renders as a visible,
+  // wrongly-scaled box. It also resizes the picture to the crop box, so the
+  // image option additionally has to be pre-divided by the kept fraction for
+  // the picture to land at the size the layout asked for.
+  if (el.crop) {
+    var cl = el.crop.l || 0, ct = el.crop.t || 0,
+        cr = el.crop.r || 0, cb = el.crop.b || 0;
+    var kw = Math.max(1 - cl - cr, 0.001), kh = Math.max(1 - ct - cb, 0.001);
+    opts.w = el.w / kw; opts.h = el.h / kh;
+    opts.sizing = { type: 'crop',
+      x: cl * opts.w, y: ct * opts.h,
+      w: el.w, h: el.h };
+  }
+  // A masked photo has no PptxGenJS API: pictures only ever get prstGeom
+  // rect or ellipse. Tag this one with a unique objectName so the repack step
+  // can swap in the real <a:custGeom>, giving PowerPoint a natively masked
+  // picture the user can still right-click and replace.
+  if (el.mask && el.mask.length > 2) {
+    var tag = 'mmwmask' + (_maskSeq++);
+    opts.objectName = tag;
+    _maskJobs[tag] = el.mask;
+  }
+  slide.addImage(opts);
 }
 
 // ============================================================
@@ -620,11 +949,64 @@ else if (config.contentFooter) SD.setContentFooter(config.contentFooter);
 
 window._deckTitle = config.title || 'Presentation';
 
+// ------------------------------------------------------------
+// DEFAULT PHOTOGRAPHY -- assigned ONCE, here.
+// Image-led layouts (coverPhoto, coverPhoto2, headlinePhotoWell, headlinePhoto)
+// pre-populate with real photography from the template deck, rotating through
+// the pool so consecutive image covers in one deck do not repeat.
+//
+// This runs at init rather than inside the layout functions on purpose:
+// dispatch() is called several times per slide (preview render, asset prefetch,
+// icon pre-render, PPTX export). A rotation counter inside a layout would
+// advance on every one of those passes, so the preview and the exported file
+// would disagree about which photo each slide got. Assigning into _D once makes
+// dispatch a pure function of the slide data.
+//
+// Anything the deck already specifies wins -- this only fills gaps. Disable
+// entirely with deckInit({ defaultPhotos:false }).
+// ------------------------------------------------------------
+if (config.defaultPhotos !== false && window.DeckLayouts && window.DeckLayouts.PHOTO_DEFAULTS) {
+  var _pools = window.DeckLayouts.PHOTO_DEFAULTS;
+  var _seen = {};
+  _D.forEach(function (sd) {
+    if (!sd || !sd.layout) return;
+    var spec = _pools[sd.layout];
+    if (!spec || !spec.pool || !spec.pool.length) return;
+    var n = (_seen[sd.layout] = (_seen[sd.layout] === undefined ? 0 : _seen[sd.layout] + 1));
+    var pick = spec.pool[n % spec.pool.length];
+    if (spec.target === 'bgImage') {
+      if (!sd.bgImage) sd.bgImage = pick;
+    } else {
+      var slot = spec.slot || 0;
+      if (!Array.isArray(sd.images)) sd.images = sd.images ? sd.images : [];
+      if (!sd.images[slot]) sd.images[slot] = pick;
+    }
+  });
+}
+
 var vp = document.getElementById('sd-viewport');
 if (!vp && !_imageMode) { vp = document.createElement('div'); vp.id = 'sd-viewport'; document.body.appendChild(vp); }
 if (!_imageMode && vp) SD.renderAll(_D, vp);
 
 if (window.DeckLayouts && window.DeckLayouts.getPrefetchUrls) window.DeckLayouts.getPrefetchUrls().forEach(prefetchImage);
+
+// Data-driven asset prefetch. Layout functions never call registerPrefetch(), so
+// _prefetchUrls is empty in practice -- backgrounds and brand marks were never
+// cached and therefore never embedded on export. Collect them off the deck data
+// itself: every slide background, plus every image element the layouts emit.
+(function prefetchDeckAssets() {
+  var urls = {};
+  function want(u) { if (u && u.indexOf('data:') !== 0) urls[u] = 1; }
+  _D.forEach(function (sd) {
+    if (!sd) return;
+    want(sd.bgImage);
+    var els = (sd.layout && window.DeckLayouts) ? window.DeckLayouts.dispatch(sd) : (sd.els || []);
+    els.forEach(function (el) {
+      if (el && el.type === 'img') want(SD.resolveImgSrc ? SD.resolveImgSrc(el) : el.src);
+    });
+  });
+  Object.keys(urls).forEach(prefetchImage);
+})();
 
 // Pre-render icons for PPTX export
 if (window.DeckIcons) {
@@ -667,7 +1049,10 @@ showSlide(0);
 // PUBLIC API
 // ============================================================
 
+// Exposed so standard-deck.js's HTML preview can paint slideData.bgImage
+// from the same prefetched data the PPTX export uses.
 window.StandardShell = {
+  _imageCache: _imageCache,
   init: deckInit, showSlide: showSlide, exportPPTX: exportPPTX, rerenderAll: rerenderAll,
   showToast: showToast, closeAllPanels: closeAllPanels,
   getConfig: function () { return _config; },
