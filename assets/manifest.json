@@ -1,0 +1,198 @@
+[
+ {
+  "file": "logos/mmw_logo_black.png",
+  "source": "image6.png",
+  "bytes": 1392970,
+  "md5": "5c682cf6efce",
+  "note": "MMW logo mark, black \u2014 for light backgrounds. 13968x3818. (=image10)"
+ },
+ {
+  "file": "logos/mmw_logo_white.png",
+  "source": "image2.png",
+  "bytes": 13187,
+  "md5": "39e3e44cb9d6",
+  "note": "MMW logo mark, white \u2014 for dark backgrounds. 530x145. Cover Dark / Cover Photo."
+ },
+ {
+  "file": "logos/mmw_logo_white_lg.png",
+  "source": "image13.png",
+  "bytes": 15371,
+  "md5": "3d389035da02",
+  "note": "MMW logo mark, white, alternate master. 571x157. Thank You Dark mid-slide mark."
+ },
+ {
+  "file": "logos/wpp_mazda_lockup_black.png",
+  "source": "image5.png",
+  "bytes": 8957,
+  "md5": "50569db39f5a",
+  "note": "WPP|Mazda lockup, black \u2014 light backgrounds. 308x58. (=image9)"
+ },
+ {
+  "file": "logos/wpp_mazda_lockup_white.png",
+  "source": "image3.png",
+  "bytes": 9915,
+  "md5": "6d04bb7b7267",
+  "note": "WPP|Mazda lockup, white \u2014 dark backgrounds. 308x58."
+ },
+ {
+  "file": "backgrounds/pattern_light.png",
+  "source": "image4.png",
+  "bytes": 309228,
+  "md5": "40abafc6a651",
+  "note": "Light geometric brand pattern. 8000x4500. Cover Light, Cover Light2. (=image8)"
+ },
+ {
+  "file": "backgrounds/pattern_dark.png",
+  "source": "image1.png",
+  "bytes": 239081,
+  "md5": "d7715919c471",
+  "note": "Dark geometric brand pattern. 8000x4500. Cover Dark, Divider Dark. (=image15)"
+ },
+ {
+  "file": "backgrounds/pattern_light2.png",
+  "source": "image14.png",
+  "bytes": 99429,
+  "md5": "3749732d78e9",
+  "note": "Light pattern, secondary. 1920x1080. Divider Light2."
+ },
+ {
+  "file": "backgrounds/pattern_dark2.png",
+  "source": "image16.png",
+  "bytes": 53453,
+  "md5": "3f866d939777",
+  "note": "Dark pattern, secondary. 1920x1080. Divider Dark2."
+ },
+ {
+  "file": "backgrounds/scenic_photo.png",
+  "source": "image7.png",
+  "bytes": 8147156,
+  "md5": "e3f929baa265",
+  "note": "Scenic cover photograph. 3840x2160. Cover Photo."
+ },
+ {
+  "file": "backgrounds/headline_photo.png",
+  "source": "image17.png",
+  "bytes": 7454641,
+  "md5": "247ca52e67f4",
+  "note": "Headline statement photograph. 3840x2160. Headline Photo Divider."
+ },
+ {
+  "file": "backgrounds/thankyou_texture.png",
+  "source": "image11.png",
+  "bytes": 558101,
+  "md5": "67787d373750",
+  "note": "Full-bleed texture. 5117x4084. Thank You Light/Dark, Table of contents, Content 2 Rows - Light. (=image12)"
+ },
+ {
+  "file": "backgrounds/headline_dark_mark.png",
+  "source": "image18.png",
+  "bytes": 208501,
+  "md5": "cbb61cd36137",
+  "note": "Small mark, top edge. 4845x2120. Content -headline dark."
+ },
+ {
+  "file": "social/social_divider_photo.png",
+  "source": "image19.png",
+  "bytes": 302329,
+  "md5": "57ce1f2a8379",
+  "note": "Shared divider photograph. 4505x3186. Meta / Pinterest / Reddit dividers."
+ },
+ {
+  "file": "social/meta_logo.png",
+  "source": "image20.png",
+  "bytes": 16581,
+  "md5": "5a9d301e0c22",
+  "note": "Meta platform logo. 512x512."
+ },
+ {
+  "file": "social/meta_wordmark.png",
+  "source": "image22.png",
+  "bytes": 88960,
+  "md5": "944a757e6768",
+  "note": "Meta wordmark. 2134x431."
+ },
+ {
+  "file": "social/device_frame_meta_carousel.png",
+  "source": "image21.png",
+  "bytes": 1340368,
+  "md5": "de71a9c3e6fd",
+  "note": "Phone chrome, Meta carousel. 1683x2714."
+ },
+ {
+  "file": "social/device_frame_9x16.png",
+  "source": "image23.png",
+  "bytes": 117015,
+  "md5": "5149b6f6b7f0",
+  "note": "Phone chrome 9:16. 1683x2714. Meta Video&Static, Pinterest."
+ },
+ {
+  "file": "social/device_frame_reddit.png",
+  "source": "image24.png",
+  "bytes": 572927,
+  "md5": "f73a59d989a2",
+  "note": "Phone chrome, Reddit. 1683x2714."
+ },
+ {
+  "file": "social/device_frame_reddit_1x1.png",
+  "source": "image26.png",
+  "bytes": 548843,
+  "md5": "68541dbfa4bf",
+  "note": "Phone chrome, Reddit 1:1. 1683x2714."
+ },
+ {
+  "file": "social/reddit_ui_chrome.png",
+  "source": "image25.png",
+  "bytes": 37017,
+  "md5": "8a1b2e746d8c",
+  "note": "Reddit UI chrome. 1440x2205."
+ },
+ {
+  "file": "social/reddit_brand_photo.png",
+  "source": "image27.png",
+  "bytes": 327073,
+  "md5": "c1357f14ca84",
+  "note": "Reddit brand photograph. 3840x2160."
+ },
+ {
+  "file": "social/tiktok_chrome.png",
+  "source": "image28.png",
+  "bytes": 255346,
+  "md5": "1542b39fc359",
+  "note": "TikTok chrome. 4596x1357."
+ },
+ {
+  "file": "social/pinterest_wordmark.png",
+  "source": "image29.png",
+  "bytes": 4444,
+  "md5": "0d6b3c45e8b9",
+  "note": "Pinterest wordmark. 1000x210."
+ },
+ {
+  "file": "social/pinterest_logo.png",
+  "source": "image30.png",
+  "bytes": 30080,
+  "md5": "487456915bc6",
+  "note": "Pinterest logo. 1279x307."
+ },
+ {
+  "file": "social/pinterest_device_frame.png",
+  "source": "image31.png",
+  "bytes": 1759929,
+  "md5": "68ba35d686d0",
+  "note": "Pinterest phone chrome. 2090x4358."
+ },
+ {
+  "file": "social/youtube_chrome.png",
+  "source": "image32.png",
+  "bytes": 44578,
+  "md5": "5cccd95933c3",
+  "note": "YouTube player chrome. 1920x1501."
+ },
+ {
+  "file": "social/youtube_logo.png",
+  "source": "image33.png",
+  "bytes": 45570,
+  "md5": "88b600e951cf",
+  "note": "YouTube logo. 1657x385."
+ }
+]

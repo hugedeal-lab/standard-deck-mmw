@@ -1,0 +1,68 @@
+[
+ {
+  "file": "photos/cover_scenic_01.jpg",
+  "source_media": "image7.png",
+  "source_slide": 9,
+  "for_layout": "coverPhoto",
+  "px": [
+   1920,
+   1080
+  ],
+  "kb": 165
+ },
+ {
+  "file": "photos/cover_scenic_02.jpg",
+  "source_media": "image40.png",
+  "source_slide": 8,
+  "for_layout": "coverPhoto",
+  "px": [
+   1920,
+   1083
+  ],
+  "kb": 267
+ },
+ {
+  "file": "photos/cover_hero_01.jpg",
+  "source_media": "image41.tif",
+  "source_slide": 10,
+  "for_layout": "coverPhoto2",
+  "px": [
+   1920,
+   1072
+  ],
+  "kb": 296
+ },
+ {
+  "file": "photos/cover_hero_02.jpg",
+  "source_media": "image42.tif",
+  "source_slide": 11,
+  "for_layout": "coverPhoto2",
+  "px": [
+   1920,
+   1072
+  ],
+  "kb": 261
+ },
+ {
+  "file": "photos/statement_01.jpg",
+  "source_media": "image17.png",
+  "source_slide": 41,
+  "for_layout": "headlinePhotoWell",
+  "px": [
+   1920,
+   1080
+  ],
+  "kb": 210
+ },
+ {
+  "file": "photos/statement_02.jpg",
+  "source_media": "image48.jpeg",
+  "source_slide": 34,
+  "for_layout": "headlinePhotoWell",
+  "px": [
+   1536,
+   1024
+  ],
+  "kb": 189
+ }
+]
