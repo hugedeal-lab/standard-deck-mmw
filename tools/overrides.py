@@ -403,12 +403,33 @@ function layout_reportDarkTable(cfg) {
 
 # Timeline. The graphic is not an embedded image -- slide 72 draws it as 36
 # stroked bezier shapes inside a group, so there is no media part to extract.
-# tools/render_vector_group.py redraws it from the path data into a transparent
-# PNG; that asset is what this variant places. Milestone labels sit on the flow
-# at the source slide's own positions, with the "we are here" marker last.
-_TIMELINE = '''
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['report_timeline_flow.png'])
-    || A + 'backgrounds/report_timeline_flow.png',
+# Background art was later replaced with a direct Keynote export (many
+# individual lines grouped, not a single low-res raster) after the original
+# report_timeline_flow.png rendered pixelated at this size; white keyed to
+# transparent. Connector lines are real arrowed 'ln' elements (gray, 1.5pt,
+# both-end arrows), not plain fill rects. The "we are here" marker is gray
+# with a white outline, not solid tan.
+OVERRIDES['reportGrayTimeline'] = \
+'''
+function layout_reportGrayTimeline(cfg) {
+  var els = [];
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.61, y:0.54, w:12.12, h:0.29,
+    font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9,
+    insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:cfg.title || '', x:0.61, y:0.85, w:12.12, h:0.5,
+    font:'H', size:24, color:'titleGray', caps:true, lineSpacing:1, charSpacing:2.64,
+    insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  if (cfg.intro || cfg.text) els.push({ type:'t', text:cfg.intro || cfg.text, x:0.61, y:1.33, w:12.12, h:0.39,
+    font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
+    insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+
+  // Background flow art: replaced with a direct Keynote export (many
+  // individual lines grouped, not a single low-res raster) after the
+  // original report_timeline_flow.png rendered pixelated at this size.
+  // White background keyed to transparent so it sits cleanly on the
+  // chassis's #EEEEEE, not a visible white rectangle.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['campaign_progress.png'])
+    || A + 'backgrounds/campaign_progress.png',
     x:-0.86, y:2.69, w:14.99, h:3.51 });
   var marks = cfg.milestones || cfg.items || [];
   var MX = [3.08, 4.58, 8.02, 11.39, 0.49, 3.08, 6.09, 10.11];
@@ -418,14 +439,18 @@ _TIMELINE = '''
       font:'B', size:10, color:'bodyGray', align:'center', caps:false, lineSpacing:1,
       insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   }
-  els.push({ type:'s', x:3.94, y:3.33, w:0.01, h:0.6,  fill:'ltGray' });
-  els.push({ type:'s', x:3.94, y:5.14, w:0.01, h:1.58, fill:'ltGray' });
-  els.push({ type:'s', x:6.96, y:4.91, w:0.01, h:1.79, fill:'ltGray' });
-  els.push({ type:'s', x:10.98, y:4.75, w:0.01, h:1.95, fill:'ltGray' });
-  els.push({ type:'s', x:1.35, y:6.41, w:0.01, h:0.29, fill:'ltGray' });
-  if (cfg.hereLabel !== false) els.push({ type:'o', x:3.8, y:4.3, w:0.29, h:0.29, fill:'accent' });
-'''
-OVERRIDES['reportGrayTimeline'] = _canvas('reportGrayTimeline', _TIMELINE)
+  // Connector lines between the flow art and each label: gray, 1.5pt
+  // (3pt raw), arrows on both ends -- were plain unarrowed fill rectangles.
+  els.push({ type:'ln', x:3.94, y:3.33, w:0, h:0.6,  color:'#767676', weight:1.5, arrows:'both' });
+  els.push({ type:'ln', x:3.94, y:5.14, w:0, h:1.58, color:'#767676', weight:1.5, arrows:'both' });
+  els.push({ type:'ln', x:6.96, y:4.91, w:0, h:1.79, color:'#767676', weight:1.5, arrows:'both' });
+  els.push({ type:'ln', x:10.98, y:4.75, w:0, h:1.95, color:'#767676', weight:1.5, arrows:'both' });
+  els.push({ type:'ln', x:1.35, y:6.41, w:0, h:0.29, color:'#767676', weight:1.5, arrows:'both' });
+  // "We are here" marker: gray fill with a white outline -- was solid tan.
+  if (cfg.hereLabel !== false) els.push({ type:'o', x:3.8, y:4.3, w:0.29, h:0.29, fill:'#767676', border:'white' });
+
+  return els;
+}'''
 
 # ---------------------------------------------------------------------------
 # REPORT SPLIT PANELS  (source slide 73)
@@ -1035,7 +1060,10 @@ OVERRIDES['reportPlatformMatrix'] = ("\nfunction layout_reportPlatformMatrix(cfg
 # 1.44in card width, so eight is the ceiling. More would overlap.
 # ---------------------------------------------------------------------------
 
-OVERRIDES['reportEcosystemTree'] = '''
+OVERRIDES['reportEcosystemTree'] = \
+'''
+function layout_reportEcosystemTree(cfg) {
+  var els = [];
   var CX = 6.665;
   var NODE_R = 0.44, SMALL_R = 0.28;
   var NODE_CY = 1.73, RAIL_Y = 3.11, SMALL_CY = 3.66;
@@ -1140,27 +1168,19 @@ OVERRIDES['reportEcosystemTree'] = '''
     });
   }
 
-  // Primary node last, so it wins every overlap. It carries a text label, never
-  // an icon -- an icon slot belongs to the branch discs and the corners only.
+  // Primary node last, so it wins every overlap.
   if (cfg.root) {
     els.push({ type:'o', x:CX - NODE_R, y:NODE_CY - NODE_R, w:NODE_R * 2, h:NODE_R * 2,
       gradient:DISC, stroke:'white', strokeWidth:1, shadow:true });
-    if (cfg.root.label) {
-      // Text has to sit inside the disc's inscribed square, not its bounding
-      // box, or long labels run out past the curve. Step the size down rather
-      // than let a longer campaign name overflow.
-      var rw = NODE_R * 1.414;
-      var rn = String(cfg.root.label).length;
-      var rs = rn <= 12 ? 8 : rn <= 20 ? 7 : rn <= 30 ? 6 : 5.5;
-      els.push({ type:'t', text:cfg.root.label,
-        x:CX - rw / 2, y:NODE_CY - rw / 2, w:rw, h:rw,
-        font:'B', size:rs, color:'#5E5E5E', align:'center', valign:'middle',
-        caps:true, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
-    }
+    if (cfg.root.icon) els.push({ type:'i', icon:cfg.root.icon, x:CX - 0.2, y:NODE_CY - 0.2,
+      w:0.4, h:0.4, color:'#5E5E5E' });
+    else if (cfg.root.label) els.push({ type:'t', text:cfg.root.label,
+      x:CX - NODE_R, y:NODE_CY - NODE_R, w:NODE_R * 2, h:NODE_R * 2,
+      font:'B', size:7, color:'#5E5E5E', align:'center', valign:'middle',
+      caps:true, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
   }
-'''
-OVERRIDES['reportEcosystemTree'] = ("\nfunction layout_reportEcosystemTree(cfg) {\n  var els = [];"
-    + OVERRIDES['reportEcosystemTree'] + "  return els;\n}\n")
+  return els;
+}'''
 
 # ---------------------------------------------------------------------------
 # REPORT CHAPTER OPENER (slide 97)
@@ -1183,21 +1203,32 @@ OVERRIDES['reportEcosystemTree'] = ("\nfunction layout_reportEcosystemTree(cfg) 
 # down, into the gap before the primary body copy. Eyebrows and the two
 # STATUS/WHAT THIS UNLOCKS blocks are caps per brand review.
 # ---------------------------------------------------------------------------
-OVERRIDES['reportChapterOpener'] = '''
+OVERRIDES['reportChapterOpener'] = \
+'''
 function layout_reportChapterOpener(cfg) {
   var els = [];
   if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:0.61, y:0.54, w:12.12, h:0.29, font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   els.push({ type:'t', text:cfg.text || '', x:0.61, y:0.85, w:12.12, h:0.5, font:'H', size:24, color:'titleGray', caps:true, lineSpacing:1, charSpacing:2.64, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.61, y:1.33, w:12.12, h:0.39, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'s', x:0.86, y:2.46, w:5.45, h:4.19, fill:'white' });
+  // Black box drawn BEFORE the tan bar so the bar sits on top of it, fully
+  // visible as a 0.08in accent stripe on its inner-left edge -- matches the
+  // source's own shape order (tan bar is the LAST shape in that group, i.e.
+  // topmost). Drawing it first (underneath) let the box's own fill cover
+  // all but a hairline of it.
   els.push({ type:'s', x:7.22, y:2.46, w:5.45, h:4.19, fill:'nearBlack' });
   els.push({ type:'s', x:7.21, y:2.46, w:0.08, h:4.19, fill:'accentDim' });
   els.push({ type:'t', text:cfg.text2 || 'CHAPTER 1', x:1.16, y:2.78, w:4.84, h:0.17, font:'B', size:7.5, color:'bodyGray', bold:true, valign:'middle', caps:true, lineSpacing:1, charSpacing:1.87, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:cfg.text3 || 'CHAPTER 2 \u00b7 TODAY', x:7.52, y:2.81, w:4.84, h:0.11, font:'B', size:7.5, color:'accentDim', bold:true, valign:'middle', caps:true, lineSpacing:1, charSpacing:1.87 });
+  // Headline pair, top-anchored so a wrap to a second line grows down into
+  // the empty space above the primary body copy rather than up into the
+  // eyebrow directly above it.
   els.push({ type:'t', text:cfg.text4 || 'Lorem Ipsum', x:1.17, y:3.06, w:4.82, h:1.1, font:'B', size:33, color:'nearBlack', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:7.53, y:3.06, w:4.82, h:1.1, font:'B', size:33, color:'white', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   else els.push({ type:'t', text:'Lorem Ipsum', x:7.53, y:3.06, w:4.82, h:1.1, font:'B', size:33, color:'white', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  // Fixed decorative arrow between the two boxes -- not a content slot.
   els.push({ type:'t', text:'\u2192', x:6.37, y:4.11, w:0.78, h:0.89, font:'B', size:60, color:'accentDim', bold:true, align:'center', valign:'middle', caps:false, lineSpacing:1 });
+  // Primary body copy: source declares 40pt raw -> 40 / 2.0005 = 20pt engine.
   els.push({ type:'t', text:cfg.text5 || 'Lorem ipsum dolor sit amet', x:1.17, y:4.43, w:4.82, h:0.37, font:'B', size:20, color:'nearBlack', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   els.push({ type:'t', text:cfg.text6 || 'Lorem ipsum dolor sit amet', x:7.53, y:4.43, w:4.82, h:0.37, font:'B', size:20, color:'white', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   els.push({ type:'t', text:(cfg.items && cfg.items[1]) || 'STATUS \u00b7 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.', x:1.22, y:5.59, w:4.73, h:0.7, font:'B', size:10, color:'bodyGray', bold:true, valign:'middle', caps:true, lineSpacing:1, charSpacing:1.66, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
@@ -1207,23 +1238,9 @@ function layout_reportChapterOpener(cfg) {
 
 # ---------------------------------------------------------------------------
 # REPORT STRATEGY STACK (slide 98)
-#
-# Moved from auto-generated to hand-authored. The flat cfg.items[] version
-# had one string slot per box, so every two-tone / two-weight text pair in
-# the source (badge header+body, point/point headline, insight header+body,
-# panel subhead+sections, activation label+body, footer header+body)
-# collapsed to a single color/weight and silently dropped its second half.
-# The two chevrons were wired to cfg.subhead/cfg.text5 -- free-text slots
-# sitting where the source has a fixed glyph, the same bug already fixed on
-# reportChapterOpener's arrow.
-#
-# All boxes: rounded corners + drop shadow (Format Shape > Shadow: black,
-# 65% transparency / 0.35 opacity, 8pt blur, 90deg angle, 3pt distance).
-# Middle panels take either cfg.panels[i].sections (repeatable caps-header +
-# body pairs) or cfg.panels[i].bullets (a plain list) -- the two are
-# mutually exclusive per panel.
 # ---------------------------------------------------------------------------
-OVERRIDES['reportStrategyStack'] = '''
+OVERRIDES['reportStrategyStack'] = \
+'''
 function layout_reportStrategyStack(cfg) {
   var els = [];
   var SHADOW = { angle: 90, offset: 3 / 72, blur: 8 / 72, opacity: 0.35 };
@@ -1235,7 +1252,11 @@ function layout_reportStrategyStack(cfg) {
 
   // Top-right badges: tan caps sub-header + white body, one line each.
   // Content should be kept to one line per field -- these boxes are fixed
-  // at 2-line capacity and do not grow with longer input.
+  // at 2-line capacity and do not grow with longer input. Font is sized
+  // down from the source's literal 10.5pt-equivalent because at the box's
+  // actual 2.18in width that size wrapped "CONSUMER REPORTS" to two lines,
+  // which the fixed-height box doesn't clip (text divs aren't nested inside
+  // their background shape, so an overflow just paints over the row below).
   var badges = cfg.badges || [];
   var badgeX = [7.82, 10.22];
   badgeX.forEach(function (x, i) {
@@ -1317,8 +1338,7 @@ function layout_reportStrategyStack(cfg) {
   els.push({ type:'t', text:'\u203a', x:8.39, y:6.45, w:0.22, h:0.28, font:'B', size:17, color:'accent', bold:true, align:'center', valign:'middle', caps:false, lineSpacing:1 });
 
   return els;
-}
-'''
+}'''
 
 # ---------------------------------------------------------------------------
 # REPORT JOURNEY MAP (slide 99)
