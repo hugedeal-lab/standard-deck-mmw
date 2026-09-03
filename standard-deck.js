@@ -316,7 +316,7 @@ function enforceWidthRule(els) {
 // ============================================================
 
 function renderElement(el, isDark) {
-  var renderers = { t: renderText, s: renderShape, o: renderOval, i: renderIcon, d: renderDivider, p: renderPill, b: renderBar, ln: renderLine, chart: renderChart, tbl: renderTable, img: renderImage };
+  var renderers = { t: renderText, s: renderShape, o: renderOval, i: renderIcon, d: renderDivider, p: renderPill, b: renderBar, ln: renderLine, path: renderPath, chart: renderChart, tbl: renderTable, img: renderImage };
   var fn = renderers[el.type];
   if (!fn) { console.warn('[standard-deck] Unknown element type: ' + el.type); return document.createElement('div'); }
   return fn(el, isDark);
@@ -332,6 +332,10 @@ function renderText(el, isDark) {
   div.style.top = toY(el.y) + 'px';
   div.style.width = toX(el.w) + 'px';
   div.style.height = toY(el.h) + 'px';
+  if (el.rotation) {
+    div.style.transform = 'rotate(' + el.rotation + 'deg)';
+    div.style.transformOrigin = 'center';
+  }
   // Text insets (PowerPoint bodyPr lIns/tIns/rIns/bIns). x/y/w/h describe the
   // FRAME; text starts inset from it. 370 of the template's 392 text elements
   // carry non-zero insets -- mostly 0.079/0.104in -- so ignoring them shifted
@@ -531,20 +535,63 @@ function renderLine(el, isDark) {
   var col = resolveColor(el.color || 'ltGray', isDark);
   var wt = ptToPx(el.weight || 1.5);
   var id = 'ah' + Math.random().toString(36).slice(2, 8);
+  var isDot = el.markerStyle === 'dot';
   var a1 = (el.arrows === 'both' || el.arrows === 'start') ? ' marker-start="url(#' + id + ')"' : '';
   var a2 = (el.arrows === 'both' || el.arrows === 'end') ? ' marker-end="url(#' + id + ')"' : '';
+  var markerShape = isDot
+    ? '<circle cx="5" cy="5" r="4" fill="' + col + '"/>'
+    : '<path d="M 0 0 L 10 5 L 0 10 z" fill="' + col + '"/>';
+  var markerSize = isDot ? 3 : 4;
   div.innerHTML =
     '<svg width="100%" height="100%" style="overflow:visible">' +
     '<defs><marker id="' + id + '" viewBox="0 0 10 10" refX="5" refY="5" ' +
-    'markerWidth="4" markerHeight="4" orient="auto-start-reverse">' +
-    '<path d="M 0 0 L 10 5 L 0 10 z" fill="' + col + '"/></marker></defs>' +
+    'markerWidth="' + markerSize + '" markerHeight="' + markerSize + '" orient="auto-start-reverse">' +
+    markerShape + '</marker></defs>' +
     '<line x1="' + (pad + (fx ? w : 0)) + '" y1="' + (pad + (fy ? h : 0)) + '" ' +
     'x2="' + (pad + (fx ? 0 : w)) + '" y2="' + (pad + (fy ? 0 : h)) + '" ' +
-    'stroke="' + col + '" stroke-width="' + wt + '"' + a1 + a2 + '/></svg>';
+    'stroke="' + col + '" stroke-width="' + wt + '" stroke-linecap="square"' + a1 + a2 + '/></svg>';
   return div;
 }
 
 function renderOval(el, isDark) { var div = renderShape(el, isDark); div.style.borderRadius = '50%'; return div; }
+
+// Curved connector: el.path is a list of segments, each either
+// {cmd:'M'|'L', x, y} or {cmd:'C', x1, y1, x2, y2, x, y} -- all coordinates
+// are fractions (0-1) of el.x/y/w/h, the same convention renderShape's
+// el.points uses for polygons. Needed because renderLine only draws
+// straight segments; the source's process connectors are genuine bezier
+// S-curves (straight where they run along a row, curved at the turns).
+// el.startMarker / el.endMarker: 'oval' | 'triangle' | none.
+function renderPath(el, isDark) {
+  var div = document.createElement('div');
+  div.style.cssText = 'position:absolute;overflow:visible;';
+  var pad = 12;
+  div.style.left = (toX(el.x) - pad) + 'px'; div.style.top = (toY(el.y) - pad) + 'px';
+  var w = toX(el.w), h = toY(el.h);
+  div.style.width = (w + pad * 2) + 'px'; div.style.height = (h + pad * 2) + 'px';
+  var col = resolveColor(el.color || 'ltGray', isDark);
+  var wt = ptToPx(el.weight || 1.5);
+  function px(x) { return pad + x * w; }
+  function py(y) { return pad + y * h; }
+  var d = '';
+  (el.path || []).forEach(function (seg) {
+    if (seg.cmd === 'M') d += 'M ' + px(seg.x) + ' ' + py(seg.y) + ' ';
+    else if (seg.cmd === 'L') d += 'L ' + px(seg.x) + ' ' + py(seg.y) + ' ';
+    else if (seg.cmd === 'C') d += 'C ' + px(seg.x1) + ' ' + py(seg.y1) + ', ' + px(seg.x2) + ' ' + py(seg.y2) + ', ' + px(seg.x) + ' ' + py(seg.y) + ' ';
+  });
+  var id = 'ap' + Math.random().toString(36).slice(2, 8);
+  function markerDef(kind, sfx) {
+    if (kind === 'oval') return '<marker id="' + id + sfx + '" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="4.5" markerHeight="4.5"><circle cx="5" cy="5" r="4.5" fill="' + col + '"/></marker>';
+    if (kind === 'triangle') return '<marker id="' + id + sfx + '" viewBox="0 0 10 10" refX="6" refY="5" markerWidth="4.5" markerHeight="4.5" orient="auto-start-reverse"><path d="M 0 0 L 10 5 L 0 10 z" fill="' + col + '"/></marker>';
+    return '';
+  }
+  var defs = markerDef(el.startMarker, 's') + markerDef(el.endMarker, 'e');
+  var a1 = el.startMarker ? ' marker-start="url(#' + id + 's)"' : '';
+  var a2 = el.endMarker ? ' marker-end="url(#' + id + 'e)"' : '';
+  div.innerHTML = '<svg width="100%" height="100%" style="overflow:visible"><defs>' + defs + '</defs>' +
+    '<path d="' + d + '" fill="none" stroke="' + col + '" stroke-width="' + wt + '" stroke-linecap="round"' + a1 + a2 + '/></svg>';
+  return div;
+}
 
 function renderIcon(el, isDark) {
 var div = document.createElement('div');
@@ -593,6 +640,17 @@ function renderBar(el, isDark) {
   div.style.left = toX(el.x) + 'px'; div.style.top = toY(el.y) + 'px';
   div.style.width = toX(el.w) + 'px'; div.style.height = toY(el.h) + 'px';
   div.style.backgroundColor = resolveColor(el.fill || 'accent', isDark);
+  // No default rounding -- confirmed against source: only horizontal bars
+  // get rounded (pill) ends in this deck, vertical bars stay square. This
+  // helper doesn't know its own orientation, so callers opt in explicitly
+  // with el.radius:'pill' (or a number) for a horizontal bar; el.radius
+  // must be omitted/falsy for vertical ones. See reportSplitPanels /
+  // reportSpendBars(Light/Dark) for the horizontal convention in practice.
+  if (el.radius) {
+    div.style.borderRadius = (el.radius === 'pill')
+      ? toX(Math.min(el.w, el.h)) / 2 + 'px'
+      : toX(el.radius) + 'px';
+  }
   return div;
 }
 
@@ -637,6 +695,9 @@ function renderBarChart(ctx, data, opts, cw, ch, isDark) {
     s.values.forEach(function (val, vi) {
       var bx = padding.left + vi * groupW + gap / 2 + si * barW;
       var bh = (val / maxVal) * plotH; var by = padding.top + plotH - bh;
+      // Square corners -- confirmed against source: vertical (column) bars
+      // do not get rounded ends in this deck. Only horizontal bars do (see
+      // reportSplitPanels / reportSpendBars(Light/Dark), radius:'pill').
       ctx.fillStyle = colors[si]; ctx.fillRect(bx, by, barW - 2, bh);
       if (opts.showValue) {
         ctx.font = '500 ' + ptToPx(8) + 'px Mazda Type, Arial, sans-serif';

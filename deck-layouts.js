@@ -143,12 +143,23 @@ function layout_coverPhoto(cfg) {
 // ==========================================================
 // LAYOUT: COVER PHOTO2  ->  cfg.layout = "coverPhoto2"
 // Template: "Cover Photo2"
-// Source slide: 10   Background: solid #EEEEEE
+// Source slide: 10 (variant 1, default) / 11 (variant 2)   Background: solid #EEEEEE
 // Set slideData.bgColor = "#EEEEEE" (engine honours bgColor on export + preview).
+// Both slides share the "Cover Photo2" master but use genuinely different
+// diagonal crop shapes on the photo well, not the same shape with a
+// different photo -- confirmed by comparing the raw custGeom point lists.
+// cfg.variant: 1 (default, slide 10's cut) or 2 (slide 11's cut).
 // ==========================================================
 function layout_coverPhoto2(cfg) {
   var els = [];
-  ph(els, cfg, 1.99, -0.02, 11.43, 7.57, 0, [[0.99713,0],[1,1],[0.60968,1],[0.35847,0.62088],[0.35847,0.99653],[0,0.99653],[0,0.5681],[0.32366,0.5681],[0.1788,0.3488],[0.1788,0.00292],[0.66745,0.00523],[0.89463,0.34806],[0.89463,0]]);
+  var VARIANTS = {
+    1: { x:1.99, y:-0.02, w:11.43, h:7.57,
+      points:[[0.99713,0],[1,1],[0.60968,1],[0.35847,0.62088],[0.35847,0.99653],[0,0.99653],[0,0.5681],[0.32366,0.5681],[0.1788,0.3488],[0.1788,0.00292],[0.66745,0.00523],[0.89463,0.34806],[0.89463,0]] },
+    2: { x:3.349, y:0, w:10.074, h:7.538,
+      points:[[1,0.50565],[0.99579,0.99866],[0.88431,1],[0.55148,1],[0.40519,0.80509],[0.40588,1],[0.00069,1],[0,0.75639],[0.36912,0.75639],[0.20389,0.53491],[0.20458,0.00056],[0.25773,0],[0.61806,0]] }
+  };
+  var v = VARIANTS[cfg.variant] || VARIANTS[1];
+  ph(els, cfg, v.x, v.y, v.w, v.h, 0, v.points);
   els.push({ type:'img', ref:logoRef(cfg), x:0.41, y:0.37, w:1.12, h:0.31 }); // brand mark (placeholder slot in template)
   els.push({ type:'t', text:cfg.title || "", x:0.39, y:4.37, w:6.48, h:1.12, font:'H', size:54.5, color:'asphalt', valign:'bottom', caps:true, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   els.push({ type:'img', ref:lockupRef(cfg), x:0.42, y:7.06, w:1.02, h:0.19 }); // brand mark (placeholder slot in template)
@@ -294,13 +305,16 @@ function layout_headlineDark(cfg) {
 
 // ==========================================================
 // LAYOUT: 1_CONTENT -HEADLINE PHOTO COPY  ->  cfg.layout = "headlinePhotoWell"
-// Template: "1_Content -headline photo copy"
+// Template: "1_Content -headline photo copy" / "Headline Photo Divider" (renamed 7/30/26)
 // Source slide: 34   Background: solid #262626
 // Set slideData.bgColor = "#262626" (engine honours bgColor on export + preview).
+// UPDATED FOR 7/30/26 TEMPLATE: the full-bleed photo well is gone from the
+// source -- confirmed no picture, no placeholder, and no "place your own
+// image" callout remain (unlike the 5 social dividers). Solid-color text-only
+// slide now.
 // ==========================================================
 function layout_headlinePhotoWell(cfg) {
   var els = [];
-  ph(els, cfg, -0, 0, 13.33, 7.5, 0);
   if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:2.92, y:2.42, w:7.49, h:0.42, font:'B', size:15.5, color:'accent', bold:true, align:'center', valign:'bottom', caps:true, lineSpacing:0.9, charSpacing:6.97, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:140, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:14, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   return els;
@@ -1443,111 +1457,218 @@ function layout_reportJourneyMap(cfg) {
 // Template: "Report Gate Status (slide 100)"
 // Source slide: 100   Background: solid #FFFFFF
 // Set slideData.bgColor = "#FFFFFF" (engine honours bgColor on export + preview).
+// HAND-AUTHORED: replaces a flat 32-slot cfg.items[] version. Fully rebuilt
+// from the real source: the ribbon headers are PowerPoint's native
+// "chevron" preset shape (adj=0.2004), not a generic rectangle -- verified
+// by reading the shape XML directly, not guessed from appearance.
+//
+// cfg.gates: array of 6 { number, title, subhead, bullets }. number is a
+// plain string ("1", "2", ...) rendered as "N. TITLE" on the ribbon.
+// subhead is optional (the black caps box); bullets is an array of strings.
+// cfg.dividers: array of up to 5 { label } "gate cleared" markers, one per
+// gap between ribbons (2 gaps per row + return gap = 5 max). Pass fewer to
+// only show some; omit cfg.dividers entirely to hide all of them.
+// cfg.showConnector: false to hide the row1->row2 connector line (shown by
+// default).
 // ==========================================================
 function layout_reportGateStatus(cfg) {
   var els = [];
-  els.push({ type:'s', x:0.65, y:0.41, w:3.95, h:0.54, fill:'bodyGray' });
-  els.push({ type:'s', x:4.56, y:0.41, w:3.95, h:0.54, fill:'bodyGray' });
-  els.push({ type:'s', x:8.49, y:0.41, w:3.95, h:0.54, fill:'bodyGray' });
-  els.push({ type:'t', text:cfg.title || "", x:0.92, y:0.54, w:3.41, h:0.29, font:'B', size:14, color:'white', bold:true, valign:'middle', caps:false, lineSpacing:1, charSpacing:1.5, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:4.83, y:0.54, w:3.41, h:0.29, font:'B', size:14, color:'white', bold:true, valign:'middle', caps:false, lineSpacing:1, charSpacing:1.5, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:8.76, y:0.54, w:3.41, h:0.29, font:'B', size:14, color:'white', bold:true, valign:'middle', caps:false, lineSpacing:1, charSpacing:1.5, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  // unfilled container at x:0.32 y:0.69 w:12.51 h:3.27 -- invisible in source, not emitted
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:1.06, y:1.18, w:3.15, h:0.22, font:'B', size:9, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.88, y:1.18, w:3.15, h:0.22, font:'B', size:9, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[4]) || "", x:8.79, y:1.18, w:3.15, h:0.22, font:'B', size:9, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[5]) || "", x:4.93, y:1.52, w:3.05, h:0.54, font:'B', size:10, color:'black', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[6]) || "", x:8.84, y:1.52, w:3.05, h:0.77, font:'B', size:10, color:'black', caps:false, lineSpacing:1.15, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[7]) || "", x:1.11, y:1.53, w:3.05, h:0.77, font:'B', size:10, color:'black', caps:false, lineSpacing:1.15, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'s', x:7.52, y:1.92, w:1.77, h:0.24, fill:'accentDim' });
-  els.push({ type:'s', x:11.44, y:1.92, w:1.77, h:0.24, fill:'accentDim' });
-  els.push({ type:'t', text:(cfg.items && cfg.items[8]) || "", x:7.52, y:1.94, w:1.77, h:0.21, font:'B', size:7, color:'white', bold:true, align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.05,t:0.05,r:0.05,b:0.05} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[9]) || "", x:11.44, y:1.94, w:1.77, h:0.21, font:'B', size:7, color:'white', bold:true, align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.05,t:0.05,r:0.05,b:0.05} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[10]) || "", x:8.79, y:2.32, w:3.15, h:0.22, font:'B', size:9, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[11]) || "", x:8.84, y:2.56, w:2.97, h:0.77, font:'B', size:10, color:'black', caps:false, lineSpacing:1.15, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'s', x:0.65, y:3.69, w:3.95, h:0.54, fill:'bodyGray' });
-  els.push({ type:'s', x:4.56, y:3.69, w:3.95, h:0.54, fill:'bodyGray' });
-  els.push({ type:'s', x:8.49, y:3.69, w:3.95, h:0.54, fill:'bodyGray' });
-  els.push({ type:'t', text:(cfg.items && cfg.items[12]) || "", x:0.92, y:3.82, w:3.41, h:0.29, font:'B', size:14, color:'white', bold:true, valign:'middle', caps:false, lineSpacing:1, charSpacing:1.5, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[13]) || "", x:4.83, y:3.82, w:3.41, h:0.29, font:'B', size:14, color:'white', bold:true, valign:'middle', caps:false, lineSpacing:1, charSpacing:1.5, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[14]) || "", x:8.76, y:3.82, w:3.41, h:0.29, font:'B', size:14, color:'white', bold:true, valign:'middle', caps:false, lineSpacing:1, charSpacing:1.5, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[15]) || "", x:1.06, y:4.41, w:3.15, h:0.22, font:'B', size:9, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[16]) || "", x:4.88, y:4.41, w:3.15, h:0.22, font:'B', size:9, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[17]) || "", x:8.79, y:4.41, w:3.15, h:0.22, font:'B', size:9, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[18]) || "", x:1.11, y:4.74, w:3.05, h:0.41, font:'B', size:10, color:'black', caps:false, lineSpacing:1.15, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[19]) || "", x:4.93, y:4.74, w:3.05, h:0.41, font:'B', size:10, color:'black', caps:false, lineSpacing:1.15, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[20]) || "", x:8.84, y:4.75, w:3.13, h:0.22, font:'B', size:10, color:'black', caps:false, lineSpacing:1.15, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'s', x:3.66, y:5.12, w:1.77, h:0.24, fill:'accentDim' });
-  els.push({ type:'s', x:7.53, y:5.12, w:1.77, h:0.24, fill:'accentDim' });
-  els.push({ type:'s', x:11.39, y:5.12, w:1.77, h:0.24, fill:'accentDim' });
-  els.push({ type:'t', text:(cfg.items && cfg.items[21]) || "", x:11.39, y:5.13, w:1.77, h:0.21, font:'B', size:7, color:'white', bold:true, align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.05,t:0.05,r:0.05,b:0.05} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[22]) || "", x:3.66, y:5.14, w:1.77, h:0.21, font:'B', size:7, color:'white', bold:true, align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.05,t:0.05,r:0.05,b:0.05} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[23]) || "", x:7.53, y:5.14, w:1.77, h:0.21, font:'B', size:7, color:'white', bold:true, align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.05,t:0.05,r:0.05,b:0.05} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[24]) || "", x:8.79, y:5.24, w:3.15, h:0.22, font:'B', size:9, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[25]) || "", x:4.88, y:5.26, w:3.15, h:0.22, font:'B', size:9, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[26]) || "", x:1.06, y:5.29, w:3.15, h:0.22, font:'B', size:9, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[27]) || "", x:8.84, y:5.57, w:2.7, h:0.22, font:'B', size:10, color:'black', caps:false, lineSpacing:1.15, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[28]) || "", x:4.93, y:5.59, w:3.05, h:0.59, font:'B', size:10, color:'black', caps:false, lineSpacing:1.15, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[29]) || "", x:1.11, y:5.6, w:3.05, h:0.41, font:'B', size:10, color:'black', caps:false, lineSpacing:1.15, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[30]) || "", x:4.88, y:6.29, w:3.15, h:0.22, font:'B', size:9, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[31]) || "", x:4.93, y:6.63, w:3.03, h:0.59, font:'B', size:10, color:'black', caps:false, lineSpacing:1.15, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  var COL_W = 3.954, ROW_H = 0.539, GAP = 0.07;
+  var COL_X = [0.654, 0.654 + COL_W + GAP, 0.654 + (COL_W + GAP) * 2];
+  var ROW_Y = [0.412, 3.693];
+  var SUB_GAP = 0.233, SUB_H = 0.22, SUB_W = 3.149;
+  var BULLET_GAP = 0.08;
+  // Chevron polygon: PowerPoint's "chevron" preset, adj=0.2004 -- notch/point
+  // depth = min(w,h) * adj. Left corners stay at x=0 (clean 90deg corners,
+  // not cut on a diagonal); the notch tip is pulled inward from there. Right
+  // corners stay at x=1-nd with the point tip at x=1. An earlier version of
+  // this shape started the top/bottom edges at x=nd instead of x=0, which
+  // both angled the corners AND put the "notch" outside the shape as a
+  // leftward bulge instead of cutting into it -- fixed here.
+  var ADJ = 0.2004;
+  var depthFrac = (Math.min(COL_W, ROW_H) * ADJ);
+  var nd = depthFrac / COL_W;
+  var CHEVRON_PTS = [[0,0],[1-nd,0],[1,0.5],[1-nd,1],[0,1],[nd,0.5]];
+
+  // Gate dividers pushed BEFORE the chevrons/gates below. Confirmed against
+  // the source's actual per-instance Y positions: dividers sit just below
+  // each row's ribbon (a ~0.12-0.2in gap), not centered on/overlapping it --
+  // an earlier version of this wrongly centered the divider vertically on
+  // the ribbon row, which pushed row 1's dividers above the canvas top.
+  var DIV_W = 0.236, DIV_H = 1.771, DIV_TOP_GAP = 0.16;
+  var GAP_CENTERS = [
+    { x: COL_X[0] + COL_W + GAP / 2, y: ROW_Y[0] },
+    { x: COL_X[1] + COL_W + GAP / 2, y: ROW_Y[0] },
+    { x: COL_X[0] + COL_W + GAP / 2, y: ROW_Y[1] },
+    { x: COL_X[1] + COL_W + GAP / 2, y: ROW_Y[1] },
+    { x: COL_X[2] + COL_W + GAP / 2, y: ROW_Y[1] }
+  ];
+  var dividers = cfg.dividers || [];
+  dividers.slice(0, 5).forEach(function (d, i) {
+    var c = GAP_CENTERS[i]; if (!c) return;
+    var dx0 = c.x - DIV_W / 2, dy0 = c.y + ROW_H + DIV_TOP_GAP;
+    els.push({ type:'s', x:dx0, y:dy0, w:DIV_W, h:DIV_H, fill:'accentDim' });
+    var cx = dx0 + DIV_W / 2, cy = dy0 + DIV_H / 2;
+    els.push({ type:'t', text:d.label || d, x:cx - DIV_H / 2, y:cy - DIV_W / 2, w:DIV_H, h:DIV_W, font:'B', size:7, color:'white', bold:true, align:'center', valign:'middle', caps:true, lineSpacing:1, rotation:90 });
+  });
+
+  var gates = cfg.gates || [];
+  var gateBottom = []; // per-column bottom Y of each row's content, for reference
+  COL_X.forEach(function (colX, ci) {
+    ROW_Y.forEach(function (rowY, ri) {
+      var g = gates[ri * 3 + ci] || {};
+      els.push({ type:'s', x:colX, y:rowY, w:COL_W, h:ROW_H, fill:'gray', points:CHEVRON_PTS });
+      els.push({ type:'t', text:((g.number || (ri*3+ci+1)) + '. ' + (g.title || '')), x:colX + 0.27, y:rowY + 0.127, w:COL_W - 0.54, h:0.285, font:'B', size:13.5, color:'white', bold:true, valign:'middle', caps:true, lineSpacing:1 });
+      var y = rowY + ROW_H + SUB_GAP;
+      // Centered in the column's width beneath the chevron above it -- both
+      // the subhead box and the bullets under it share this offset, so the
+      // whole content block stays aligned as one unit. Previously only
+      // colX (the column/chevron's own left edge) was used, which put all
+      // the box's margin-from-column on the right side only.
+      var subX = colX + (COL_W - SUB_W) / 2;
+      if (g.subhead) {
+        els.push({ type:'s', x:subX, y:y, w:SUB_W, h:SUB_H, fill:'#3A3A3A' });
+        // Insets trimmed from the source's 0.104in to 0.05in to reclaim
+        // width for the text without changing the box itself (box size is
+        // correct per the source; this sandbox's Arial fallback for Mazda
+        // Type is what's actually causing the wrap -- see note below).
+        els.push({ type:'t', text:g.subhead, x:subX, y:y, w:SUB_W, h:SUB_H, font:'B', size:9, color:'white', bold:true, valign:'middle', caps:true, lineSpacing:1, insets:{l:0.05,t:0.035,r:0.05,b:0.035} });
+        y += SUB_H + BULLET_GAP;
+      }
+      if (g.bullets && g.bullets.length) {
+        els.push({ type:'t', x:subX, y:y, w:SUB_W, h:(ROW_Y[1] - ROW_Y[0]) - (y - rowY) - 0.1, font:'B', size:10, color:'black', valign:'top', caps:false, lineSpacing:1.15,
+          insets:{l:0.104,t:0.035,r:0.104,b:0.035},
+          paras:g.bullets.map(function (b) { return { runs:[{ text:b }], bullet:true, marL:0.12, indent:-0.12 }; }) });
+      }
+    });
+  });
+
+  // Gate dividers: comment kept with the code above where they're actually
+  // pushed now (before the chevrons). Text is built as a normal horizontal
+  // box (matches the source's own pre-rotation text properties -- middle
+  // valign, horizontal direction) sized to the divider's visible HEIGHT,
+  // then rotated 90deg in place so it reads vertically.
+
+  // Connector: dotted-end line from the last ribbon of row 1 (its outward
+  // point) down to the first ribbon of row 2 (its inward notch), held off
+  // the ribbons by CONNECTOR_GAP rather than touching them. The horizontal
+  // run sits just above row 2's chevrons (not halfway between the rows) so
+  // it clears row 1's tan gate dividers, which extend down to ~2.88in --
+  // the previous halfway placement cut straight through them.
+  if (cfg.showConnector !== false) {
+    var CONNECTOR_GAP = 0.12, ROW2_CLEARANCE = 0.1;
+    var r1x = COL_X[2] + COL_W + CONNECTOR_GAP, r1y = ROW_Y[0] + ROW_H / 2;
+    var r2x = COL_X[0] - CONNECTOR_GAP, r2y = ROW_Y[1] + ROW_H / 2;
+    var midY = ROW_Y[1] - ROW2_CLEARANCE;
+    els.push({ type:'ln', x:r1x, y:r1y, w:0.3, h:0, color:'black', weight:2, markerStyle:'dot', arrows:'start' });
+    els.push({ type:'ln', x:r1x + 0.3, y:r1y, w:0, h:midY - r1y, color:'black', weight:2 });
+    els.push({ type:'ln', x:r1x + 0.3, y:midY, w:r2x - 0.3 - (r1x + 0.3), h:0, color:'black', weight:2 });
+    els.push({ type:'ln', x:r2x - 0.3, y:midY, w:0, h:r2y - midY, color:'black', weight:2 });
+    els.push({ type:'ln', x:r2x - 0.3, y:r2y, w:0.3, h:0, color:'black', weight:2, markerStyle:'dot', arrows:'end' });
+  }
+
   return els;
 }
 
+// ==========================================================
 // ==========================================================
 // LAYOUT: REPORT NUMBERED STEPS (SLIDE 101)  ->  cfg.layout = "reportNumberedSteps"
 // Template: "Report Numbered Steps (slide 101)"
 // Source slide: 101   Background: solid #FFFFFF
 // Set slideData.bgColor = "#FFFFFF" (engine honours bgColor on export + preview).
+// HAND-AUTHORED: replaces a flat 24-slot cfg.items[] version. Rebuilt from
+// the real source, including its connector line's exact bezier path (read
+// from the custGeom XML directly, not approximated) -- required the engine
+// to gain a new element type (type:'path') since the connector is a real
+// S-curve, not straight segments; renderLine only ever drew straight lines.
+//
+// 6 fixed steps in a 3-col x 2-row serpentine (row 2 is offset right of
+// row 1 by design, not misaligned -- matches the source). cfg.steps: array
+// of 6 { number, label, subhead, intro, bullets }. label is shown on BOTH
+// the tan pill above and the black pill below, matching the source (both
+// pills carry identical text per step, just different fill/text color).
+// number defaults to the step's position (1-6) if omitted. intro is an
+// optional non-bulleted first line before bullets, matching the source's
+// own body-copy pattern.
 // ==========================================================
 function layout_reportNumberedSteps(cfg) {
   var els = [];
-  if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:0.61, y:0.54, w:12.12, h:0.29, font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:cfg.title || "", x:0.61, y:0.85, w:12.12, h:0.5, font:'H', size:24, color:'titleGray', caps:true, lineSpacing:1, charSpacing:2.64, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.61, y:1.33, w:12.12, h:0.39, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'s', x:0.93, y:1.98, w:1.6, h:0.29, fill:'accentDim' });
-  els.push({ type:'s', x:4.81, y:1.98, w:1.6, h:0.29, fill:'accentDim' });
-  els.push({ type:'s', x:8.58, y:1.98, w:1.6, h:0.29, fill:'accentDim' });
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:0.97, y:2, w:1.73, h:0.26, font:'B', size:12, color:'paper', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:4.85, y:2, w:1.73, h:0.26, font:'B', size:12, color:'paper', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:8.62, y:2, w:1.73, h:0.26, font:'B', size:12, color:'paper', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  // unfilled container at x:0.64 y:2.12 w:12.05 h:4.64 -- invisible in source, not emitted
-  els.push({ type:'s', x:1.38, y:2.34, w:1.6, h:0.29, fill:'asphalt' });
-  els.push({ type:'s', x:5.22, y:2.34, w:1.6, h:0.29, fill:'asphalt' });
-  els.push({ type:'s', x:9.07, y:2.34, w:1.6, h:0.29, fill:'asphalt' });
-  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:1.42, y:2.36, w:1.73, h:0.26, font:'B', size:12, color:'mutedGray', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[4]) || "", x:5.26, y:2.36, w:1.73, h:0.26, font:'B', size:12, color:'mutedGray', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[5]) || "", x:9.11, y:2.36, w:1.73, h:0.26, font:'B', size:12, color:'mutedGray', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[6]) || "", x:1.63, y:2.67, w:2.36, h:0.36, font:'B', size:10, color:'#CAA380', bold:true, caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[7]) || "", x:5.47, y:2.67, w:2.36, h:0.36, font:'B', size:10, color:'#CAA380', bold:true, caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[8]) || "", x:9.32, y:2.67, w:2.36, h:0.36, font:'B', size:10, color:'#CAA380', bold:true, caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'s', x:1.62, y:2.7, w:0.01, h:1.41, fill:'ltGray' }); // rule
-  els.push({ type:'s', x:5.47, y:2.7, w:0.01, h:1.41, fill:'ltGray' }); // rule
-  els.push({ type:'s', x:9.31, y:2.7, w:0.01, h:1.41, fill:'ltGray' }); // rule
-  els.push({ type:'t', text:(cfg.items && cfg.items[9]) || "", x:1.63, y:3.04, w:2.96, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[10]) || "", x:5.47, y:3.04, w:2.96, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[11]) || "", x:9.32, y:3.04, w:2.96, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'s', x:1.98, y:4.29, w:1.6, h:0.29, fill:'accentDim' });
-  els.push({ type:'s', x:5.85, y:4.29, w:1.6, h:0.29, fill:'accentDim' });
-  els.push({ type:'s', x:9.63, y:4.29, w:1.6, h:0.29, fill:'accentDim' });
-  els.push({ type:'t', text:(cfg.items && cfg.items[12]) || "", x:2.02, y:4.31, w:1.73, h:0.26, font:'B', size:12, color:'paper', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[13]) || "", x:5.89, y:4.31, w:1.73, h:0.26, font:'B', size:12, color:'paper', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[14]) || "", x:9.67, y:4.31, w:1.73, h:0.26, font:'B', size:12, color:'paper', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'s', x:2.42, y:4.65, w:1.6, h:0.29, fill:'asphalt' });
-  els.push({ type:'s', x:6.26, y:4.65, w:1.6, h:0.29, fill:'asphalt' });
-  els.push({ type:'s', x:10.11, y:4.65, w:1.6, h:0.29, fill:'asphalt' });
-  els.push({ type:'t', text:(cfg.items && cfg.items[15]) || "", x:2.46, y:4.67, w:1.73, h:0.26, font:'B', size:12, color:'mutedGray', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[16]) || "", x:6.3, y:4.67, w:1.73, h:0.26, font:'B', size:12, color:'mutedGray', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[17]) || "", x:10.15, y:4.67, w:1.73, h:0.26, font:'B', size:12, color:'mutedGray', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[18]) || "", x:2.67, y:4.98, w:2.36, h:0.36, font:'B', size:10, color:'#CAA380', bold:true, caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[19]) || "", x:6.52, y:4.98, w:2.36, h:0.36, font:'B', size:10, color:'#CAA380', bold:true, caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[20]) || "", x:10.36, y:4.98, w:2.36, h:0.36, font:'B', size:10, color:'#CAA380', bold:true, caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'s', x:2.67, y:5.01, w:0.01, h:1.41, fill:'ltGray' }); // rule
-  els.push({ type:'s', x:6.51, y:5.01, w:0.01, h:1.41, fill:'ltGray' }); // rule
-  els.push({ type:'s', x:10.35, y:5.01, w:0.01, h:1.41, fill:'ltGray' }); // rule
-  els.push({ type:'t', text:(cfg.items && cfg.items[21]) || "", x:2.67, y:5.35, w:2.96, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[22]) || "", x:6.52, y:5.35, w:2.96, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[23]) || "", x:10.36, y:5.35, w:2.96, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  // Column/row positions, taken directly from the source (row 2 is shifted
+  // ~1.04in right of row 1 -- part of the serpentine layout, not a mistake).
+  var TAN_X = [[0.934, 4.808, 8.583], [1.977, 5.851, 9.626]];
+  var TAN_Y = [1.978, 4.289];
+  var TAN_W = 1.6, TAN_H = 0.292;
+  var GRP_X = [[1.379, 5.222, 9.065], [2.422, 6.265, 10.108]];
+  var GRP_Y = [2.338, 4.649];
+
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.606, y:0.536, w:12.118, h:0.292, font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:cfg.title || '', x:0.606, y:0.847, w:12.118, h:0.5, font:'H', size:24, color:'titleGray', caps:true, lineSpacing:1, charSpacing:2.64, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  if (cfg.intro) els.push({ type:'t', text:cfg.intro, x:0.606, y:1.333, w:12.118, h:0.386, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+
+  // Connector: real bezier S-curve, decoded from the source's own custGeom
+  // path (straight along each row, curved at the turns) -- large tan dot
+  // at the start, arrow off-slide at the end.
+  if (cfg.showConnector !== false) {
+    els.push({ type:'path', x:0.641, y:2.121, w:12.049, h:4.639, color:'accentDim', weight:5,
+      startMarker:'oval', endMarker:'triangle',
+      path:[
+        { cmd:'M', x:0, y:0 },
+        { cmd:'L', x:0.9037, y:0 },
+        { cmd:'C', x1:0.9569, y1:0, x2:1, y2:0.1119, x:1, y:0.25 },
+        { cmd:'C', x1:1, y1:0.3881, x2:0.9569, y2:0.5, x:0.9037, y:0.5 },
+        { cmd:'L', x:0.0963, y:0.5 },
+        { cmd:'C', x1:0.0431, y1:0.5, x2:0, y2:0.6119, x:0, y:0.75 },
+        { cmd:'C', x1:0, y1:0.888, x2:0.0431, y2:1, x:0.0963, y:1 },
+        { cmd:'L', x:1, y:1 }
+      ] });
+  }
+
+  var steps = cfg.steps || [];
+  for (var row = 0; row < 2; row++) {
+    for (var col = 0; col < 3; col++) {
+      var i = row * 3 + col;
+      var st = steps[i] || {};
+      var label = (st.number || (i + 1)) + '. ' + (st.label || '');
+      var tx = TAN_X[row][col], ty = TAN_Y[row];
+      var gx = GRP_X[row][col], gy = GRP_Y[row];
+
+      // Tan pill (drawn on top of the connector, which passes behind it).
+      els.push({ type:'s', x:tx, y:ty, w:TAN_W, h:TAN_H, fill:'accentDim', radius:'pill' });
+      els.push({ type:'t', text:label, x:tx + 0.04, y:ty + 0.02, w:TAN_W + 0.13, h:TAN_H - 0.03, font:'B', size:12, color:'#EEEEEE', valign:'middle', caps:true, lineSpacing:1 });
+
+      // Black pill.
+      els.push({ type:'s', x:gx, y:gy, w:TAN_W, h:TAN_H, fill:'asphalt', radius:'pill' });
+      els.push({ type:'t', text:label, x:gx + 0.04, y:gy + 0.02, w:TAN_W + 0.13, h:TAN_H - 0.03, font:'B', size:12, color:'#868686', valign:'middle', caps:true, lineSpacing:1 });
+
+      // Tan pill -> black pill -> subhead is a 3-level stairstep in the
+      // source, each level offset ~0.70in (raw) / 0.35in (engine) right and
+      // down from the one above. The source's actual black-pill placement
+      // drifts off that clean diagonal by ~0.19in raw -- confirmed by
+      // reading its real coordinates, not assumed -- so anchoring the
+      // subhead/body/line to the black pill (gx/gy) inherited that drift.
+      // Anchoring them to the tan pill instead, two clean steps down,
+      // keeps them uniform across all 6 steps regardless of how far off
+      // any individual black pill happens to sit.
+      var STEP = 0.35;
+      var stairX = tx + 2 * STEP, stairY = ty + 2 * STEP;
+
+      // Vertical dark-gray double-arrow line beneath the black pill.
+      els.push({ type:'ln', x:stairX, y:stairY + 0.035, w:0, h:1.407, color:'#808080', weight:1.5, arrows:'both' });
+
+      // Subhead + body, stair-stepped to align with the vertical line (not
+      // flush with the pill's own left edge).
+      if (st.subhead) {
+        els.push({ type:'t', text:st.subhead, x:stairX, y:stairY, w:2.36, h:0.363, font:'B', size:10, color:'#CAA380', bold:true, caps:false, lineSpacing:1.1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+      }
+      var bodyParas = [];
+      if (st.intro) bodyParas.push({ runs:[{ text:st.intro }] });
+      (st.bullets || []).forEach(function (b) { bodyParas.push({ runs:[{ text:b }], bullet:true, marL:0.12, indent:-0.12 }); });
+      if (bodyParas.length) {
+        els.push({ type:'t', x:stairX, y:stairY + 0.372, w:2.96, h:1.064, font:'B', size:10, color:'#808080', valign:'top', caps:false, lineSpacing:1.15, insets:{l:0.035,t:0.035,r:0.035,b:0.035}, paras:bodyParas });
+      }
+    }
+  }
+
   return els;
 }
 
@@ -2227,12 +2348,18 @@ function layout_moodboardToneManner(cfg) {
 // Template: "Meta_Divider"
 // Source slide: 55   Background: solid #000000
 // Set slideData.bgColor = "#000000" (engine honours bgColor on export + preview).
+// UPDATED FOR 7/30/26 TEMPLATE: the full-bleed background photo (fixed image
+// + placeholder) is gone from the source -- background is solid black now.
+// In its place, the source has a "PLACE YOUR OWN IMAGE... click here" pink
+// instructional callout in the lower-right corner (not real content, never
+// rendered) marking where a real logo placeholder belongs -- added as ph()
+// slot 1 below, matching how the rest of the deck treats an author-fillable
+// image well.
 // ==========================================================
 function layout_metaDivider(cfg) {
   var els = [];
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['social_divider_photo.png']) || A+'social/social_divider_photo.png', x:5.48, y:-0.02, w:7.89, h:7.53, crop:{"t": 0.1347, "r": 0.4741, "b": 0.1556} });
-  ph(els, cfg, -0.01, 0, 13.35, 7.5, 0);
-  ph(els, cfg, 0.52, 3, 3.52, 0.71, 1); // was demo photo image103.png
+  ph(els, cfg, 0.52, 3, 3.52, 0.71, 0); // Meta logo well, unchanged
+  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 1); // "place your own image" corner well, new in 7/30/26
   els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
   return els;
 }
@@ -2258,7 +2385,12 @@ function layout_metaCarousel1x1(cfg) {
   els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_meta_carousel.png']) || A+'social/device_frame_meta_carousel.png', x:0, y:2.02, w:3.49, h:5.63 });
+  // Fixed device chrome: the real "Facebook & Instagram Carousel MockUp"
+  // asset (mazdausa header, dots, "Start customizing now" / "Shop now"
+  // footer all baked in), positioned by matching its transparent
+  // content-hole fraction against the source's own placeholder geometry --
+  // not the old bezel-only overlay.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_carousel_frame.png']) || A+'social/meta_carousel_frame.png', x:0.68, y:1.781, w:2.142, h:4.977 });
   els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   ph(els, cfg, 0.68, 3.15, 2.14, 3.27, 0);
   els.push({ type:'t', text:cfg.text2 || '', x:0.77, y:3.5, w:1.97, h:0.51, font:'B', size:6.5, color:'black', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
@@ -2291,7 +2423,10 @@ function layout_metaCarousel4x5(cfg) {
   els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_meta_carousel.png']) || A+'social/device_frame_meta_carousel.png', x:-0.02, y:2.02, w:3.49, h:5.63 });
+  // Fixed device chrome: same real Meta Carousel MockUp asset as the 1x1
+  // variant, repositioned for this format's own "main" content-well
+  // geometry (index5 below, not the filmstrip cards).
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_carousel_frame.png']) || A+'social/meta_carousel_frame.png', x:0.71, y:2.673, w:2.042, h:3.881 });
   els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   ph(els, cfg, 0.68, 2.99, 2.14, 0.32, 0);
   els.push({ type:'t', text:"4:5 Carousel", x:10.78, y:3.21, w:1.23, h:0.23, font:'B', size:11, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
@@ -2315,8 +2450,13 @@ function layout_metaVideoStatic(cfg) {
   var els = [];
   els.push({ type:'s', x:0, y:-0, w:3.52, h:7.5, fill:'#E2E2E2' });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_wordmark.png']) || A+'social/meta_wordmark.png', x:0.56, y:0.7, w:0.97, h:0.2 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_9x16.png']) || A+'social/device_frame_9x16.png', x:4.34, y:0.88, w:3.97, h:6.4 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_9x16.png']) || A+'social/device_frame_9x16.png', x:7.94, y:0.88, w:3.97, h:6.4 });
+  // Fixed device chrome: the real "Facebook & Instagram Reel MockUp" asset
+  // (status bar, "Learn more" card, mazdausa caption, bottom nav all baked
+  // in), positioned by matching its transparent content-hole fraction
+  // against the source's own placeholder geometry -- not the generic
+  // bezel-only overlay used before.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_reel_frame.png']) || A+'social/meta_reel_frame.png', x:5.13, y:1.154, w:2.465, h:6.279 });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_reel_frame.png']) || A+'social/meta_reel_frame.png', x:8.73, y:1.154, w:2.465, h:6.279 });
   els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:"9:16 STATIC REEL", x:5.63, y:1.02, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"9:16 STORY", x:9.44, y:1.02, w:0.97, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
@@ -2341,14 +2481,16 @@ function layout_metaVideoStatic(cfg) {
 // Template: "Reddit_Divider"
 // Source slide: 65   Background: solid #000000
 // Set slideData.bgColor = "#000000" (engine honours bgColor on export + preview).
+// UPDATED FOR 7/30/26 TEMPLATE: two overlapping full-bleed wells removed
+// (background is solid black now); the side photo and the Reddit logo well
+// are unchanged. Added the new "place your own image" corner well -- see
+// metaDivider's comment for why.
 // ==========================================================
 function layout_redditDivider(cfg) {
   var els = [];
-  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // was demo photo image112.png
-  ph(els, cfg, 0, 0, 13.33, 7.5, 1);
-  ph(els, cfg, 0, 0.3, 13.33, 7.21, 2); // was demo photo image107.tif
-  ph(els, cfg, 1.01, 3.28, 3.28, 1.85, 3);
-  ph(els, cfg, 1.01, 3.28, 3.28, 1.85, 4); // was demo photo image114.png
+  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // side photo, unchanged
+  ph(els, cfg, 1.01, 3.28, 3.28, 1.85, 1); // Reddit logo well, unchanged
+  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 2); // "place your own image" corner well, new in 7/30/26
   els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
   return els;
 }
@@ -2374,9 +2516,13 @@ function layout_redditCarousel(cfg) {
   els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', bold:true, caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_reddit.png']) || A+'social/device_frame_reddit.png', x:0.55, y:2.05, w:3.48, h:5.62 });
+  // Fixed device chrome around the first carousel card only (matches how
+  // Reddit's real carousel ads render -- first card carries full post
+  // context, the rest are plain swipeable thumbnails). Repositioned to the
+  // real Reddit UI mockup's content-hole fraction; the previous overlay
+  // pair didn't match this card's actual bounds.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:0.74, y:3.304, w:3.123, h:3.164 });
   els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_ui_chrome.png']) || A+'social/reddit_ui_chrome.png', x:1.25, y:3.26, w:2.08, h:3.19 });
   els.push({ type:'t', text:"4:5 Carousel", x:11.45, y:3.3, w:0.83, h:0.16, font:'B', size:7, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 3.53, 3.56, 2.1, 2.62, 1);
   ph(els, cfg, 1.26, 3.57, 2.08, 2.6, 2);
@@ -2396,8 +2542,12 @@ function layout_redditVideoStatic1x1(cfg) {
   var els = [];
   els.push({ type:'s', x:-0.01, y:-0.01, w:3.52, h:7.5, fill:'#E2E2E2' });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_brand_photo.png']) || A+'social/reddit_brand_photo.png', x:0.44, y:0.23, w:1.75, h:0.98 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_reddit_1x1.png']) || A+'social/device_frame_reddit_1x1.png', x:4.16, y:0.26, w:4.65, h:7.5 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_reddit_1x1.png']) || A+'social/device_frame_reddit_1x1.png', x:7.57, y:0.26, w:4.65, h:7.5 });
+  // Fixed device chrome: the real Reddit UI mockup (status bar, upvote/
+  // comment/share/award row, u/username caption, Home/Inbox/You nav all
+  // baked in), positioned by matching its checkerboard content-hole
+  // fraction against the source's own placeholder geometry.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:4.413, y:2.32, w:4.129, h:5.124 });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:7.813, y:2.32, w:4.129, h:5.124 });
   ph(els, cfg, 0.61, 0.44, 1.22, 0.62, 0); // was demo photo image114.png
   els.push({ type:'t', text:"1:1 STATIC", x:5.75, y:0.51, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"1:1 VIDEO", x:9.37, y:0.56, w:0.63, h:0.17, font:'B', size:7.5, color:'captionGray', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
@@ -2405,18 +2555,13 @@ function layout_redditVideoStatic1x1(cfg) {
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_ui_chrome.png']) || A+'social/reddit_ui_chrome.png', x:5.1, y:2.69, w:2.75, h:3.03, crop:{"b": 0.28} });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_ui_chrome.png']) || A+'social/reddit_ui_chrome.png', x:8.5, y:2.69, w:2.75, h:3.03, crop:{"b": 0.28} });
   els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   ph(els, cfg, 5.1, 2.75, 2.75, 4.21, 1);
   ph(els, cfg, 8.5, 2.75, 2.75, 4.21, 2);
-  ph(els, cfg, 8.5, 3.16, 2.75, 2.75, 3);
   els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_ui_chrome.png']) || A+'social/reddit_ui_chrome.png', x:5.1, y:5.7, w:2.75, h:0.64, crop:{"t": 0.8487} });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_ui_chrome.png']) || A+'social/reddit_ui_chrome.png', x:8.5, y:5.7, w:2.75, h:0.64, crop:{"t": 0.8487} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -2432,15 +2577,16 @@ function layout_redditVideoStatic1x1(cfg) {
 function layout_redditVideoStatic4x5(cfg) {
   var els = [];
   els.push({ type:'s', x:0, y:0, w:3.52, h:7.5, fill:'#E2E2E2' });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_reddit.png']) || A+'social/device_frame_reddit.png', x:4.16, y:0.26, w:4.65, h:7.5 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_reddit.png']) || A+'social/device_frame_reddit.png', x:7.71, y:0.26, w:4.65, h:7.5 });
   ph(els, cfg, 0.61, 0.44, 1.22, 0.62, 0);
   els.push({ type:'t', text:"1:1 STATIC", x:5.75, y:0.51, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"9:16 VIDEO", x:9.55, y:0.51, w:0.97, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_ui_chrome.png']) || A+'social/reddit_ui_chrome.png', x:5.09, y:1.9, w:2.8, h:4.28 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_ui_chrome.png']) || A+'social/reddit_ui_chrome.png', x:8.67, y:1.9, w:2.8, h:4.28 });
+  // Fixed device chrome: the real Reddit UI mockup, positioned per column by
+  // matching its checkerboard content-hole fraction against each column's
+  // own placeholder geometry (the two columns aren't the same height).
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:4.405, y:1.475, w:4.174, h:5.184 });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:7.97, y:1.981, w:4.204, h:4.272 });
   ph(els, cfg, 5.1, 1.91, 2.78, 4.26, 1);
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -2461,13 +2607,15 @@ function layout_redditVideoStatic4x5(cfg) {
 // Template: "TikTok_Divider"
 // Source slide: 62   Background: solid #000000
 // Set slideData.bgColor = "#000000" (engine honours bgColor on export + preview).
+// UPDATED FOR 7/30/26 TEMPLATE: full-bleed well removed (background is solid
+// black now); the side photo and the TikTok logo well are unchanged. Added
+// the new "place your own image" corner well -- see metaDivider's comment.
 // ==========================================================
 function layout_tiktokDivider(cfg) {
   var els = [];
-  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // was demo photo image112.png
-  ph(els, cfg, -0.01, 0, 13.35, 7.5, 1);
-  ph(els, cfg, 0.72, 2.99, 3.35, 0.99, 2);
-  ph(els, cfg, 0.72, 2.99, 3.35, 0.99, 3); // was demo photo image111.png
+  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // side photo, unchanged
+  ph(els, cfg, 0.72, 2.99, 3.35, 0.99, 1); // TikTok logo well, unchanged
+  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 2); // "place your own image" corner well, new in 7/30/26
   els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
   return els;
 }
@@ -2494,11 +2642,10 @@ function layout_tiktokCarousel(cfg) {
   els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_9x16.png']) || A+'social/device_frame_9x16.png', x:6.3, y:2.9, w:2.88, h:4.64 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_9x16.png']) || A+'social/device_frame_9x16.png', x:8.4, y:2.9, w:2.88, h:4.64 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_9x16.png']) || A+'social/device_frame_9x16.png', x:-0.03, y:2.91, w:2.88, h:4.64 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_9x16.png']) || A+'social/device_frame_9x16.png', x:2.08, y:2.91, w:2.88, h:4.64 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_9x16.png']) || A+'social/device_frame_9x16.png', x:4.14, y:2.91, w:2.88, h:4.64 });
+  // The 5 filmstrip cards are plain, unframed image wells in the source --
+  // confirmed directly, no device chrome around any of them (matching the
+  // same pattern Meta's carousel filmstrip uses). Removed 5 oversized
+  // generic device_frame_9x16.png overlays that didn't match the source.
   ph(els, cfg, 6.87, 3.35, 1.75, 3.73, 0);
   ph(els, cfg, 8.97, 3.35, 1.75, 3.73, 1);
   ph(els, cfg, 0.54, 3.36, 1.75, 3.73, 2);
@@ -2518,8 +2665,13 @@ function layout_tiktokVideoStatic(cfg) {
   var els = [];
   els.push({ type:'s', x:-0.01, y:-0.01, w:3.52, h:7.5, fill:'#E2E2E2' });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['tiktok_chrome.png']) || A+'social/tiktok_chrome.png', x:0.54, y:0.6, w:1.23, h:0.36 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_9x16.png']) || A+'social/device_frame_9x16.png', x:4.15, y:0.79, w:3.97, h:6.4 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_9x16.png']) || A+'social/device_frame_9x16.png', x:8.05, y:0.79, w:3.97, h:6.4 });
+  // Fixed device chrome: the real "TikTok MockUp" asset (status bar,
+  // Following/For You tabs, right-side icon rail, @Mazda USA caption, red
+  // "Learn more" CTA, bottom nav all baked in), positioned by matching its
+  // checkerboard content-hole fraction against the source's own placeholder
+  // geometry -- not the generic bezel-only overlay used before.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['tiktok_video_frame.png']) || A+'social/tiktok_video_frame.png', x:4.92, y:1.036, w:2.432, h:6.1 });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['tiktok_video_frame.png']) || A+'social/tiktok_video_frame.png', x:8.83, y:1.036, w:2.432, h:6.1 });
   els.push({ type:'t', text:"9:16 STATIC", x:5.44, y:0.86, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"9:16 VIDEO", x:9.35, y:0.86, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -2544,13 +2696,15 @@ function layout_tiktokVideoStatic(cfg) {
 // Template: "Pinterest_Divider"
 // Source slide: 59   Background: solid #000000
 // Set slideData.bgColor = "#000000" (engine honours bgColor on export + preview).
+// UPDATED FOR 7/30/26 TEMPLATE: the full-bleed background photo (fixed image
+// + placeholder) is gone from the source -- background is solid black now.
+// Pinterest logo well is unchanged. Added the new "place your own image"
+// corner well -- see metaDivider's comment.
 // ==========================================================
 function layout_pinterestDivider(cfg) {
   var els = [];
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['social_divider_photo.png']) || A+'social/social_divider_photo.png', x:5.48, y:-0.02, w:7.89, h:7.53, crop:{"t": 0.1347, "r": 0.4741, "b": 0.1556} });
-  ph(els, cfg, 0, 0, 13.33, 7.5, 0);
-  ph(els, cfg, 0.98, 3.71, 3.23, 0.78, 1);
-  ph(els, cfg, 0.98, 3.71, 3.23, 0.78, 2); // was demo photo image108.png
+  ph(els, cfg, 0.98, 3.71, 3.23, 0.78, 0); // Pinterest logo well, unchanged
+  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 1); // "place your own image" corner well, new in 7/30/26
   els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
   return els;
 }
@@ -2565,9 +2719,16 @@ function layout_pinterest2x3(cfg) {
   var els = [];
   els.push({ type:'s', x:0, y:-0, w:3.52, h:7.5, fill:'#E2E2E2' });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_logo.png']) || A+'social/pinterest_logo.png', x:0.51, y:0.64, w:1.27, h:0.31 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_9x16.png']) || A+'social/device_frame_9x16.png', x:3.92, y:0.77, w:3.97, h:6.4 });
+  // Fixed device chrome: the real Pinterest in-feed mockup (other pins for
+  // authentic context, our ad in the right column with "Craft your perfect
+  // ride / Mazda CX-90" caption baked in). Unlike the other platforms, this
+  // asset's own aspect ratio (0.4614) matches the source's right-column
+  // placeholder (index0 below, 2.40 x 5.20 = 0.4615) almost exactly, so it
+  // places directly at that placeholder's bounds -- no hole-fraction scaling
+  // needed. That also confirms index2 (the actual swappable ad card, 5.92,
+  // 2.97, 1.17, 2.00) already lines up with the mockup's real content hole.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_2x3_frame.jpg']) || A+'social/pinterest_2x3_frame.jpg', x:4.71, y:1.36, w:2.4, h:5.2 });
   els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 4.71, 1.36, 2.4, 5.2, 0);
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   ph(els, cfg, 8.76, 1.88, 2.44, 4.18, 1);
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -2598,16 +2759,19 @@ function layout_pinterest2x3(cfg) {
 function layout_pinterest1x1(cfg) {
   var els = [];
   els.push({ type:'s', x:0, y:-0, w:3.52, h:7.5, fill:'#E2E2E2' });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['device_frame_9x16.png']) || A+'social/device_frame_9x16.png', x:5.67, y:0.14, w:4.72, h:7.62 });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_logo.png']) || A+'social/pinterest_logo.png', x:0.51, y:0.64, w:1.27, h:0.31 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_device_frame.png']) || A+'social/pinterest_device_frame.png', x:6.6, y:0.89, w:2.85, h:6.08, crop:{"l": 0.0033, "r": 0.0176} });
+  // Fixed device chrome: the real Pinterest video-pin mockup (status bar,
+  // scrubber, "Learn more" arrow all baked in), positioned by matching its
+  // checkerboard content-hole fraction against the source's own placeholder.
+  // Replaces two overlapping overlays (a generic bezel + a partial Pinterest
+  // asset) with one correctly-positioned frame.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_1x1_frame.png']) || A+'social/pinterest_1x1_frame.png', x:6.566, y:0.752, w:2.902, h:6.198 });
   els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   ph(els, cfg, 6.61, 2.74, 2.77, 2.84, 0);
-  ph(els, cfg, 6.65, 2.8, 2.73, 2.77, 1); // was demo photo image109.png
   els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -2623,14 +2787,16 @@ function layout_pinterest1x1(cfg) {
 // Template: "Youtube_Divider"
 // Source slide: 69   Background: solid #000000
 // Set slideData.bgColor = "#000000" (engine honours bgColor on export + preview).
+// UPDATED FOR 7/30/26 TEMPLATE: two overlapping full-bleed wells removed
+// (background is solid black now); the side photo and the Youtube logo well
+// are unchanged. Added the new "place your own image" corner well -- see
+// metaDivider's comment.
 // ==========================================================
 function layout_youtubeDivider(cfg) {
   var els = [];
-  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // was demo photo image112.png
-  ph(els, cfg, -0.01, 0, 13.35, 7.5, 1);
-  ph(els, cfg, -0.01, 0, 13.35, 7.5, 2); // was demo photo image102.jpeg
-  ph(els, cfg, 0.92, 3.14, 3.14, 0.73, 3);
-  ph(els, cfg, 0.92, 3.14, 3.14, 0.73, 4); // was demo photo image119.png
+  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // side photo, unchanged
+  ph(els, cfg, 0.92, 3.14, 3.14, 0.73, 1); // Youtube logo well, unchanged
+  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 2); // "place your own image" corner well, new in 7/30/26
   els.push({ type:'s', x:11.78, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
   return els;
 }
@@ -2640,15 +2806,25 @@ function layout_youtubeDivider(cfg) {
 // Template: "Youtube_VideoAd"
 // Source slide: 70   Background: solid #FFFFFF
 // Set slideData.bgColor = "#FFFFFF" (engine honours bgColor on export + preview).
+// UPDATED FOR 7/30/26 TEMPLATE REVIEW: the source bakes the whole YouTube
+// player chrome (title bar, timestamp badge, Mazda avatar, "Sponsored" bar)
+// into one fixed image with a flat gray rectangle standing in for the video
+// -- confirmed directly against the source's own picture ("YT01.png"),
+// whose bounds match the old ph() call below exactly. The auto-generated
+// version treated that whole region as ANOTHER swappable placeholder, so a
+// deck author could overwrite the entire chrome, not just the video. Now
+// the chrome is fixed and only the actual video/thumbnail area is a well.
+// There was also a duplicate ph() at the same position as the video well
+// (index1 below) -- removed, not a second, distinct well.
 // ==========================================================
 function layout_youtubeVideoAd(cfg) {
   var els = [];
   els.push({ type:'s', x:0, y:-0.01, w:3.52, h:7.5, fill:'#E2E2E2' });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['youtube_logo.png']) || A+'social/youtube_logo.png', x:0.52, y:0.66, w:1.27, h:0.3 });
+  // Fixed player chrome, drawn first so the video well sits on top of it.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['youtube_video_frame.png']) || A+'social/youtube_video_frame.png', x:4.35, y:0.99, w:7.65, h:5.98 });
   ph(els, cfg, 4.33, 0.96, 7.69, 4.33, 0);
-  ph(els, cfg, 4.33, 0.96, 7.69, 4.33, 1); // was demo photo image120.png
   els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 4.35, 0.99, 7.65, 5.98, 2); // was demo photo image121.png
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -2722,12 +2898,46 @@ function layout_reportDarkChart(cfg) {
 
 // ==========================================================
 // LAYOUT: REPORTGRAYTABLE  ->  cfg.layout = "reportGrayTable"
-// Variant of "Content Gray" -- table well (template slides 76, 78)
+// Variant of "Content Gray" -- 2-column report table (template slide 76)
 // Background: solid #EEEEEE
 // Set slideData.bgColor = "#EEEEEE".
-// HAND-AUTHORED: the base layout is a bare chassis; this adds the well.
+// HAND-AUTHORED: replaces a generic type:'tbl' well. The source is a real
+// PPTX table, but with per-cell formatting (a bold-caps header band, mixed
+// heading+bullet body cells, a colored divider) the generic table renderer
+// doesn't reproduce -- rebuilt as fixed positioned elements instead, with
+// every size/color read from the real table's cell XML, not estimated.
+// cfg.headers: [leftText, rightText] for the header band.
+// cfg.rows: array of up to 4 { left:{heading,bullets}, right:{heading,bullets} }.
+// bullets is optional on either side.
 // ==========================================================
 function layout_reportGrayTable(cfg) {
+  var els = tableBody(cfg, {
+    headerFill: '#262626', headerText: 'white', bg: '#EEEEEE'
+  });
+  return els;
+}
+
+// ==========================================================
+// LAYOUT: REPORTDARKTABLE  ->  cfg.layout = "reportDarkTable"
+// Variant of "Content Dark" -- 2-column report table (template slide 77)
+// Background: solid #262626
+// Set slideData.bgColor = "#262626".
+// HAND-AUTHORED: same rebuild as reportGrayTable -- only the header band's
+// fill/text colors invert (light band, dark text) to sit on a dark slide;
+// everything else (column widths, row heights, type sizes, divider/rule
+// colors) is identical, confirmed against both tables' real cell XML.
+// cfg.headers / cfg.rows: same shape as reportGrayTable.
+// ==========================================================
+function layout_reportDarkTable(cfg) {
+  var els = tableBody(cfg, {
+    headerFill: '#EFEFEF', headerText: '#262626', bg: '#262626'
+  });
+  return els;
+}
+
+// Shared body for both table variants -- the only real differences between
+// them are the header band's fill/text color, confirmed against the source.
+function tableBody(cfg, theme) {
   var els = [];
   if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.61, y:0.54, w:12.12, h:0.29,
     font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9,
@@ -2739,21 +2949,78 @@ function layout_reportGrayTable(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
-  els.push({ type:'tbl', x:0.64, y:2.04, w:12.06, h:4.72,
-    headers:cfg.headers || [], rows:cfg.rows || [], colW:cfg.colW });
+  var TBL_X = 0.64, TBL_Y = 2.04, COL1_W = 8.557, COL2_W = 3.498;
+  var HEADER_H = 0.904, ROW_H = 0.955;
+  var COL2_X = TBL_X + COL1_W;
+  var DIVIDER = '#5E5E5E';
+
+  var headers = cfg.headers || [];
+  els.push({ type:'s', x:TBL_X, y:TBL_Y, w:COL1_W + COL2_W, h:HEADER_H, fill:theme.headerFill });
+  els.push({ type:'t', text:headers[0] || '', x:TBL_X + 0.13, y:TBL_Y, w:COL1_W - 0.26, h:HEADER_H,
+    font:'B', size:17, color:theme.headerText, bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
+  els.push({ type:'t', text:headers[1] || '', x:COL2_X + 0.13, y:TBL_Y, w:COL2_W - 0.26, h:HEADER_H,
+    font:'B', size:17, color:theme.headerText, bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
+
+  var rows = cfg.rows || [];
+  function cell(x, w, y, h, content) {
+    if (!content) return;
+    var ty = y + 0.2;
+    if (content.heading) {
+      // Box tall enough for two lines so a wrap (narrower right column,
+      // or this sandbox's Arial fallback running wider than Mazda Type)
+      // doesn't get clipped -- but the bullets below only shift down a
+      // little, not a full second line's worth, or they end up cramped
+      // against the row boundary instead. In the normal single-line case
+      // this leaves a small gap; in the wrap case the bullets sit close
+      // under the wrapped second line rather than fully clear of it --
+      // the lesser of the two failure modes.
+      els.push({ type:'t', text:content.heading, x:x + 0.13, y:ty, w:w - 0.26, h:0.48,
+        font:'B', size:20, color:'#CFB496', caps:true, charSpacing:2.2, lineSpacing:1 });
+      ty += 0.44;
+    }
+    if (content.bullets && content.bullets.length) {
+      els.push({ type:'t', x:x + 0.13, y:ty, w:w - 0.26, h:(y + h) - ty - 0.1,
+        font:'B', size:8, color:'#919292', valign:'top', caps:true, lineSpacing:1.2,
+        insets:{l:0,t:0,r:0,b:0},
+        paras:content.bullets.map(function (b) { return { runs:[{ text:b }], bullet:true, marL:0.21, indent:-0.14 }; }) });
+    }
+  }
+
+  var y = TBL_Y + HEADER_H;
+  for (var i = 0; i < 4; i++) {
+    var r = rows[i] || {};
+    cell(TBL_X, COL1_W, y, ROW_H, r.left);
+    cell(COL2_X, COL2_W, y, ROW_H, r.right);
+    if (i < 3) els.push({ type:'s', x:TBL_X, y:y + ROW_H, w:COL1_W + COL2_W, h:0.0125, fill:DIVIDER });
+    y += ROW_H;
+  }
+  // Vertical divider between the two columns, full table height.
+  els.push({ type:'s', x:COL2_X, y:TBL_Y, w:0.0125, h:HEADER_H + ROW_H * 4, fill:DIVIDER });
 
   return els;
 }
 
 
 // ==========================================================
-// LAYOUT: REPORTDARKTABLE  ->  cfg.layout = "reportDarkTable"
-// Variant of "Content Dark" -- table well (template slide 77)
-// Background: solid #262626
-// Set slideData.bgColor = "#262626".
-// HAND-AUTHORED: the base layout is a bare chassis; this adds the well.
+// LAYOUT: REPORT CHANNEL MATRIX (SLIDE 78)  ->  cfg.layout = "reportChannelMatrix"
+// Variant of "Content Gray" -- funnel/channel role & budget matrix
+// Background: solid #EEEEEE
+// Set slideData.bgColor = "#EEEEEE".
+// HAND-AUTHORED, NEW: previously conflated with reportGrayTable (both cite
+// "Content Gray"), but this is a genuinely different table object in the
+// source (14 rows x 6 cols with a 2-row header, merged group-label cells,
+// a subtotal row, and a grand-total row) -- confirmed by reading the real
+// table's cell grid, merges and fills directly, not assumed from a visual
+// resemblance to the simpler 2-column report table.
+//
+// cfg.headerTotals: { basePlanOnly, basePlanIncremental } -- the two $
+// values shown in the header band itself (row 2 of the header).
+// cfg.groups: array of { label, rows: [ { channel, base, incremental,
+//   baseValue, incValue } ], subtotal: { baseValue, incValue } }.
+//   subtotal is optional per group; omit for a group with no subtotal bar.
+// cfg.grandTotal: { baseValue, incValue }.
 // ==========================================================
-function layout_reportDarkTable(cfg) {
+function layout_reportChannelMatrix(cfg) {
   var els = [];
   if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.61, y:0.54, w:12.12, h:0.29,
     font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9,
@@ -2765,8 +3032,76 @@ function layout_reportDarkTable(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
-  els.push({ type:'tbl', x:0.64, y:2.04, w:12.06, h:4.72,
-    headers:cfg.headers || [], rows:cfg.rows || [], colW:cfg.colW });
+  var TBL_X = 0.59, TBL_Y = 1.842;
+  var COL_W = [1.385, 1.361, 3.397, 3.654, 1.082, 1.272];
+  var COL_X = [TBL_X];
+  for (var c = 0; c < COL_W.length - 1; c++) COL_X.push(COL_X[c] + COL_W[c]);
+  var HEAD_H = [0.385, 0.375];
+  var ROW_H = 0.38, SUBTOTAL_H = 0.385, GRAND_H = 0.375;
+  var DARK = '#262626';
+
+  function txt(x, w, y, h, text, opts) {
+    var o = Object.assign({ type:'t', text:text || '', x:x + 0.09, y:y, w:w - 0.18, h:h,
+      font:'B', size:6, valign:'middle', lineSpacing:1, caps:true }, opts || {});
+    els.push(o);
+  }
+
+  // Header, 2 rows: FUNNEL & MESSAGING / CHANNEL each span both rows;
+  // ROLE OF CHANNEL spans row 0 across BASE PLAN + INCREMENTAL's width,
+  // then splits into those two labels on row 1; the last two columns show
+  // a header-level total on row 1 under their row-0 labels.
+  var headerBottom = TBL_Y + HEAD_H[0] + HEAD_H[1];
+  els.push({ type:'s', x:TBL_X, y:TBL_Y, w:COL_W.reduce(function(a,b){return a+b;},0), h:HEAD_H[0]+HEAD_H[1], fill:DARK });
+  txt(COL_X[0], COL_W[0], TBL_Y, HEAD_H[0]+HEAD_H[1], 'FUNNEL & MESSAGING', { color:'white', bold:true, valign:'bottom' });
+  txt(COL_X[1], COL_W[1], TBL_Y, HEAD_H[0]+HEAD_H[1], 'CHANNEL', { color:'white', bold:true, valign:'bottom' });
+  txt(COL_X[2], COL_W[2]+COL_W[3], TBL_Y, HEAD_H[0], 'ROLE OF CHANNEL', { color:'white', bold:true, valign:'bottom' });
+  txt(COL_X[2], COL_W[2], TBL_Y + HEAD_H[0], HEAD_H[1], 'BASE PLAN', { color:'white', bold:true, valign:'bottom' });
+  txt(COL_X[3], COL_W[3], TBL_Y + HEAD_H[0], HEAD_H[1], 'INCREMENTAL', { color:'white', bold:true, valign:'bottom' });
+  var ht = cfg.headerTotals || {};
+  txt(COL_X[4], COL_W[4], TBL_Y, HEAD_H[0], 'Base Plan Only', { color:'white', bold:true, valign:'bottom', size:6 });
+  txt(COL_X[4], COL_W[4], TBL_Y + HEAD_H[0], HEAD_H[1], ht.basePlanOnly || '$0M', { color:'white', bold:true });
+  txt(COL_X[5], COL_W[5], TBL_Y, HEAD_H[0], 'Base Plan + $18MM Incremental*', { color:'white', bold:true, valign:'bottom', size:6, lineSpacing:0.95 });
+  txt(COL_X[5], COL_W[5], TBL_Y + HEAD_H[0], HEAD_H[1], ht.basePlanIncremental || '$0M', { color:'white', bold:true });
+  // Column dividers across the whole header band.
+  [1,2,3,4,5].forEach(function (ci) {
+    els.push({ type:'s', x:COL_X[ci], y:TBL_Y, w:0.0125, h:HEAD_H[0]+HEAD_H[1], fill:'#5E5E5E' });
+  });
+
+  // Body groups.
+  var groups = cfg.groups || [];
+  var y = headerBottom;
+  var tableRight = TBL_X + COL_W.reduce(function(a,b){return a+b;},0);
+  groups.forEach(function (g) {
+    var rows = g.rows || [];
+    var groupTop = y;
+    rows.forEach(function (r) {
+      txt(COL_X[1], COL_W[1], y, ROW_H, r.channel, { color:'#CFB496', charSpacing:0.9 });
+      txt(COL_X[2], COL_W[2], y, ROW_H, r.base, { color:'#808080', bold:false, caps:false, lineSpacing:1.1 });
+      txt(COL_X[3], COL_W[3], y, ROW_H, r.incremental, { color:'#808080', bold:false, caps:false, lineSpacing:1.1 });
+      txt(COL_X[4], COL_W[4], y, ROW_H, r.baseValue, { color:'#CFB496' });
+      txt(COL_X[5], COL_W[5], y, ROW_H, r.incValue, { color:'#CFB496' });
+      els.push({ type:'s', x:TBL_X, y:y + ROW_H, w:tableRight - TBL_X, h:0.0125, fill:'#D9D9D9' });
+      y += ROW_H;
+    });
+    var groupH = y - groupTop;
+    txt(COL_X[0], COL_W[0], groupTop, groupH, g.label, { color:'#262626', bold:true, valign:'middle' });
+    [2,3,4,5].forEach(function (ci) {
+      els.push({ type:'s', x:COL_X[ci], y:groupTop, w:0.0125, h:groupH, fill:'#D9D9D9' });
+    });
+    if (g.subtotal) {
+      els.push({ type:'s', x:TBL_X, y:y, w:tableRight - TBL_X, h:SUBTOTAL_H, fill:DARK });
+      txt(COL_X[4], COL_W[4], y, SUBTOTAL_H, g.subtotal.baseValue, { color:'white', bold:true });
+      txt(COL_X[5], COL_W[5], y, SUBTOTAL_H, g.subtotal.incValue, { color:'white', bold:true });
+      y += SUBTOTAL_H;
+    }
+  });
+
+  // Grand total: label spans the first four columns.
+  els.push({ type:'s', x:TBL_X, y:y, w:tableRight - TBL_X, h:GRAND_H, fill:DARK });
+  txt(TBL_X, COL_W[0]+COL_W[1]+COL_W[2]+COL_W[3], y, GRAND_H, 'GRAND TOTALS', { color:'white', bold:true });
+  var gt = cfg.grandTotal || {};
+  txt(COL_X[4], COL_W[4], y, GRAND_H, gt.baseValue || '$0M', { color:'white', bold:true });
+  txt(COL_X[5], COL_W[5], y, GRAND_H, gt.incValue || '$0M', { color:'white', bold:true });
 
   return els;
 }
@@ -2791,8 +3126,13 @@ function layout_reportGrayTimeline(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['report_timeline_flow.png'])
-    || A + 'backgrounds/report_timeline_flow.png',
+  // Background flow art: replaced with a direct Keynote export (many
+  // individual lines grouped, not a single low-res raster) after the
+  // original report_timeline_flow.png rendered pixelated at this size.
+  // White background keyed to transparent so it sits cleanly on the
+  // chassis's #EEEEEE, not a visible white rectangle.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['campaign_progress.png'])
+    || A + 'backgrounds/campaign_progress.png',
     x:-0.86, y:2.69, w:14.99, h:3.51 });
   var marks = cfg.milestones || cfg.items || [];
   var MX = [3.08, 4.58, 8.02, 11.39, 0.49, 3.08, 6.09, 10.11];
@@ -2802,12 +3142,15 @@ function layout_reportGrayTimeline(cfg) {
       font:'B', size:10, color:'bodyGray', align:'center', caps:false, lineSpacing:1,
       insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   }
-  els.push({ type:'s', x:3.94, y:3.33, w:0.01, h:0.6,  fill:'ltGray' });
-  els.push({ type:'s', x:3.94, y:5.14, w:0.01, h:1.58, fill:'ltGray' });
-  els.push({ type:'s', x:6.96, y:4.91, w:0.01, h:1.79, fill:'ltGray' });
-  els.push({ type:'s', x:10.98, y:4.75, w:0.01, h:1.95, fill:'ltGray' });
-  els.push({ type:'s', x:1.35, y:6.41, w:0.01, h:0.29, fill:'ltGray' });
-  if (cfg.hereLabel !== false) els.push({ type:'o', x:3.8, y:4.3, w:0.29, h:0.29, fill:'accent' });
+  // Connector lines between the flow art and each label: gray, 1.5pt
+  // (3pt raw), arrows on both ends -- were plain unarrowed fill rectangles.
+  els.push({ type:'ln', x:3.94, y:3.33, w:0, h:0.6,  color:'#767676', weight:1.5, arrows:'both' });
+  els.push({ type:'ln', x:3.94, y:5.14, w:0, h:1.58, color:'#767676', weight:1.5, arrows:'both' });
+  els.push({ type:'ln', x:6.96, y:4.91, w:0, h:1.79, color:'#767676', weight:1.5, arrows:'both' });
+  els.push({ type:'ln', x:10.98, y:4.75, w:0, h:1.95, color:'#767676', weight:1.5, arrows:'both' });
+  els.push({ type:'ln', x:1.35, y:6.41, w:0, h:0.29, color:'#767676', weight:1.5, arrows:'both' });
+  // "We are here" marker: gray fill with a white outline -- was solid tan.
+  if (cfg.hereLabel !== false) els.push({ type:'o', x:3.8, y:4.3, w:0.29, h:0.29, fill:'#767676', border:'white' });
 
   return els;
 }
@@ -2922,6 +3265,7 @@ var LAYOUT_MAP = {
   reportDarkChart: layout_reportDarkChart,
   reportGrayTable: layout_reportGrayTable,
   reportDarkTable: layout_reportDarkTable,
+  reportChannelMatrix: layout_reportChannelMatrix,
   reportGrayTimeline: layout_reportGrayTimeline
 };
 
@@ -2976,6 +3320,7 @@ var TEMPLATE_NAMES = {
   "Divider Canopy": "dividerCanopy",
   "Divider Aurora": "dividerAurora",
   "Divider Tides": "dividerTides",
+  "1_Divider Tides": "dividerTides",
   "Content - Headline light": "headlineLight",
   "Content -headline dark": "headlineDark",
   "1_Content -headline photo copy": "headlinePhotoWell",
@@ -2990,6 +3335,7 @@ var TEMPLATE_NAMES = {
   "Report Platform Matrix (slide 91)": "reportPlatformMatrix",
   "Report Ecosystem Tree (slide 92)": "reportEcosystemTree",
   "Report Metric Table (slide 95)": "reportMetricTable",
+  "Report Channel Matrix (slide 78)": "reportChannelMatrix",
   "Report Quote Panel (slide 96)": "reportQuotePanel",
   "Report Chapter Opener (slide 97)": "reportChapterOpener",
   "Report Strategy Stack (slide 98)": "reportStrategyStack",
@@ -3092,7 +3438,8 @@ var LAYOUT_KEYS = {
     "title"
   ],
   "coverPhoto2": [
-    "title"
+    "title",
+    "variant"
   ],
   "dividerDark": [
     "tag",
@@ -3253,13 +3600,14 @@ var LAYOUT_KEYS = {
     "title"
   ],
   "reportGateStatus": [
-    "items",
-    "title"
+    "dividers",
+    "gates",
+    "showConnector"
   ],
   "reportNumberedSteps": [
-    "items",
-    "subhead",
-    "subtitle",
+    "intro",
+    "showConnector",
+    "steps",
     "tag",
     "title"
   ],
@@ -3516,7 +3864,6 @@ var LAYOUT_KEYS = {
     "title"
   ],
   "reportGrayTable": [
-    "colW",
     "headers",
     "intro",
     "rows",
@@ -3525,10 +3872,18 @@ var LAYOUT_KEYS = {
     "title"
   ],
   "reportDarkTable": [
-    "colW",
     "headers",
     "intro",
     "rows",
+    "tag",
+    "text",
+    "title"
+  ],
+  "reportChannelMatrix": [
+    "grandTotal",
+    "groups",
+    "headerTotals",
+    "intro",
     "tag",
     "text",
     "title"

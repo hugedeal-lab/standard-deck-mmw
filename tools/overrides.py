@@ -265,13 +265,141 @@ _CHART = '''
 OVERRIDES['reportGrayChart'] = _canvas('reportGrayChart', _CHART)
 OVERRIDES['reportDarkChart'] = _canvas('reportDarkChart', _CHART)
 
-# Table well: x=0.64 y=2.04 w=12.06 h=4.72, again identical in both colourways.
-_TABLE = '''
-  els.push({ type:'tbl', x:0.64, y:2.04, w:12.06, h:4.72,
-    headers:cfg.headers || [], rows:cfg.rows || [], colW:cfg.colW });
+# 2-column report table, rebuilt bespoke to match the real source table's
+# per-cell formatting (header band, mixed heading+bullet body cells,
+# coloured divider) -- a generic type:'tbl' well can't reproduce this.
+# Gray/Dark share the same body; only the header band's fill/text colour
+# inverts between them (confirmed against both tables' real cell XML).
+OVERRIDES['reportGrayTable'] = \
 '''
-OVERRIDES['reportGrayTable'] = _canvas('reportGrayTable', _TABLE)
-OVERRIDES['reportDarkTable'] = _canvas('reportDarkTable', _TABLE)
+function layout_reportGrayTable(cfg) {
+  var els = [];
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.61, y:0.54, w:12.12, h:0.29,
+    font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9,
+    insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:cfg.title || '', x:0.61, y:0.85, w:12.12, h:0.5,
+    font:'H', size:24, color:'titleGray', caps:true, lineSpacing:1, charSpacing:2.64,
+    insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  if (cfg.intro || cfg.text) els.push({ type:'t', text:cfg.intro || cfg.text, x:0.61, y:1.33, w:12.12, h:0.39,
+    font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
+    insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+
+  var TBL_X = 0.64, TBL_Y = 2.04, COL1_W = 8.557, COL2_W = 3.498;
+  var HEADER_H = 0.904, ROW_H = 0.955;
+  var COL2_X = TBL_X + COL1_W;
+  var DIVIDER = '#5E5E5E';
+
+  var headers = cfg.headers || [];
+  els.push({ type:'s', x:TBL_X, y:TBL_Y, w:COL1_W + COL2_W, h:HEADER_H, fill:'#262626' });
+  els.push({ type:'t', text:headers[0] || '', x:TBL_X + 0.13, y:TBL_Y, w:COL1_W - 0.26, h:HEADER_H,
+    font:'B', size:17, color:'white', bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
+  els.push({ type:'t', text:headers[1] || '', x:COL2_X + 0.13, y:TBL_Y, w:COL2_W - 0.26, h:HEADER_H,
+    font:'B', size:17, color:'white', bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
+
+  var rows = cfg.rows || [];
+  function cell(x, w, y, h, content) {
+    if (!content) return;
+    var ty = y + 0.2;
+    if (content.heading) {
+      // Box tall enough for two lines so a wrap (narrower right column,
+      // or this sandbox's Arial fallback running wider than Mazda Type)
+      // doesn't get clipped -- but the bullets below only shift down a
+      // little, not a full second line's worth, or they end up cramped
+      // against the row boundary instead. In the normal single-line case
+      // this leaves a small gap; in the wrap case the bullets sit close
+      // under the wrapped second line rather than fully clear of it --
+      // the lesser of the two failure modes.
+      els.push({ type:'t', text:content.heading, x:x + 0.13, y:ty, w:w - 0.26, h:0.48,
+        font:'B', size:20, color:'#CFB496', caps:true, charSpacing:2.2, lineSpacing:1 });
+      ty += 0.44;
+    }
+    if (content.bullets && content.bullets.length) {
+      els.push({ type:'t', x:x + 0.13, y:ty, w:w - 0.26, h:(y + h) - ty - 0.1,
+        font:'B', size:8, color:'#919292', valign:'top', caps:true, lineSpacing:1.2,
+        insets:{l:0,t:0,r:0,b:0},
+        paras:content.bullets.map(function (b) { return { runs:[{ text:b }], bullet:true, marL:0.21, indent:-0.14 }; }) });
+    }
+  }
+
+  var y = TBL_Y + HEADER_H;
+  for (var i = 0; i < 4; i++) {
+    var r = rows[i] || {};
+    cell(TBL_X, COL1_W, y, ROW_H, r.left);
+    cell(COL2_X, COL2_W, y, ROW_H, r.right);
+    if (i < 3) els.push({ type:'s', x:TBL_X, y:y + ROW_H, w:COL1_W + COL2_W, h:0.0125, fill:DIVIDER });
+    y += ROW_H;
+  }
+  // Vertical divider between the two columns, full table height.
+  els.push({ type:'s', x:COL2_X, y:TBL_Y, w:0.0125, h:HEADER_H + ROW_H * 4, fill:DIVIDER });
+
+  return els;
+}
+'''
+OVERRIDES['reportDarkTable'] = \
+'''
+function layout_reportDarkTable(cfg) {
+  var els = [];
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.61, y:0.54, w:12.12, h:0.29,
+    font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9,
+    insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:cfg.title || '', x:0.61, y:0.85, w:12.12, h:0.5,
+    font:'H', size:24, color:'titleGray', caps:true, lineSpacing:1, charSpacing:2.64,
+    insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  if (cfg.intro || cfg.text) els.push({ type:'t', text:cfg.intro || cfg.text, x:0.61, y:1.33, w:12.12, h:0.39,
+    font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
+    insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+
+  var TBL_X = 0.64, TBL_Y = 2.04, COL1_W = 8.557, COL2_W = 3.498;
+  var HEADER_H = 0.904, ROW_H = 0.955;
+  var COL2_X = TBL_X + COL1_W;
+  var DIVIDER = '#5E5E5E';
+
+  var headers = cfg.headers || [];
+  els.push({ type:'s', x:TBL_X, y:TBL_Y, w:COL1_W + COL2_W, h:HEADER_H, fill:'#EFEFEF' });
+  els.push({ type:'t', text:headers[0] || '', x:TBL_X + 0.13, y:TBL_Y, w:COL1_W - 0.26, h:HEADER_H,
+    font:'B', size:17, color:'#262626', bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
+  els.push({ type:'t', text:headers[1] || '', x:COL2_X + 0.13, y:TBL_Y, w:COL2_W - 0.26, h:HEADER_H,
+    font:'B', size:17, color:'#262626', bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
+
+  var rows = cfg.rows || [];
+  function cell(x, w, y, h, content) {
+    if (!content) return;
+    var ty = y + 0.2;
+    if (content.heading) {
+      // Box tall enough for two lines so a wrap (narrower right column,
+      // or this sandbox's Arial fallback running wider than Mazda Type)
+      // doesn't get clipped -- but the bullets below only shift down a
+      // little, not a full second line's worth, or they end up cramped
+      // against the row boundary instead. In the normal single-line case
+      // this leaves a small gap; in the wrap case the bullets sit close
+      // under the wrapped second line rather than fully clear of it --
+      // the lesser of the two failure modes.
+      els.push({ type:'t', text:content.heading, x:x + 0.13, y:ty, w:w - 0.26, h:0.48,
+        font:'B', size:20, color:'#CFB496', caps:true, charSpacing:2.2, lineSpacing:1 });
+      ty += 0.44;
+    }
+    if (content.bullets && content.bullets.length) {
+      els.push({ type:'t', x:x + 0.13, y:ty, w:w - 0.26, h:(y + h) - ty - 0.1,
+        font:'B', size:8, color:'#919292', valign:'top', caps:true, lineSpacing:1.2,
+        insets:{l:0,t:0,r:0,b:0},
+        paras:content.bullets.map(function (b) { return { runs:[{ text:b }], bullet:true, marL:0.21, indent:-0.14 }; }) });
+    }
+  }
+
+  var y = TBL_Y + HEADER_H;
+  for (var i = 0; i < 4; i++) {
+    var r = rows[i] || {};
+    cell(TBL_X, COL1_W, y, ROW_H, r.left);
+    cell(COL2_X, COL2_W, y, ROW_H, r.right);
+    if (i < 3) els.push({ type:'s', x:TBL_X, y:y + ROW_H, w:COL1_W + COL2_W, h:0.0125, fill:DIVIDER });
+    y += ROW_H;
+  }
+  // Vertical divider between the two columns, full table height.
+  els.push({ type:'s', x:COL2_X, y:TBL_Y, w:0.0125, h:HEADER_H + ROW_H * 4, fill:DIVIDER });
+
+  return els;
+}
+'''
 
 # Timeline. The graphic is not an embedded image -- slide 72 draws it as 36
 # stroked bezier shapes inside a group, so there is no media part to extract.
@@ -1409,6 +1537,290 @@ function layout_reportMetricTable(cfg) {
   if (cfg.date) els.push({ type: 't', text: cfg.date, x: 4.46, y: 7.13, w: 1.2, h: 0.22,
     font: 'B', size: 10, color: 'white', bold: true, align: 'center', valign: 'middle',
     caps: false, lineSpacing: 1, insets: { l: 0.035, t: 0.035, r: 0.035, b: 0.035 } });
+
+  return els;
+}'''
+
+# Gate/status ribbon chevrons -- full rebuild from source XML (real
+# PowerPoint "chevron" preset shape, adj=0.2004), replacing a flat
+# cfg.items[] version. See MMW_Layout_Spec.md for the cfg.gates/cfg.dividers
+# shape.
+OVERRIDES['reportGateStatus'] = \
+'''
+function layout_reportGateStatus(cfg) {
+  var els = [];
+  var COL_W = 3.954, ROW_H = 0.539, GAP = 0.07;
+  var COL_X = [0.654, 0.654 + COL_W + GAP, 0.654 + (COL_W + GAP) * 2];
+  var ROW_Y = [0.412, 3.693];
+  var SUB_GAP = 0.233, SUB_H = 0.22, SUB_W = 3.149;
+  var BULLET_GAP = 0.08;
+  // Chevron polygon: PowerPoint's "chevron" preset, adj=0.2004 -- notch/point
+  // depth = min(w,h) * adj. Left corners stay at x=0 (clean 90deg corners,
+  // not cut on a diagonal); the notch tip is pulled inward from there. Right
+  // corners stay at x=1-nd with the point tip at x=1. An earlier version of
+  // this shape started the top/bottom edges at x=nd instead of x=0, which
+  // both angled the corners AND put the "notch" outside the shape as a
+  // leftward bulge instead of cutting into it -- fixed here.
+  var ADJ = 0.2004;
+  var depthFrac = (Math.min(COL_W, ROW_H) * ADJ);
+  var nd = depthFrac / COL_W;
+  var CHEVRON_PTS = [[0,0],[1-nd,0],[1,0.5],[1-nd,1],[0,1],[nd,0.5]];
+
+  // Gate dividers pushed BEFORE the chevrons/gates below. Confirmed against
+  // the source's actual per-instance Y positions: dividers sit just below
+  // each row's ribbon (a ~0.12-0.2in gap), not centered on/overlapping it --
+  // an earlier version of this wrongly centered the divider vertically on
+  // the ribbon row, which pushed row 1's dividers above the canvas top.
+  var DIV_W = 0.236, DIV_H = 1.771, DIV_TOP_GAP = 0.16;
+  var GAP_CENTERS = [
+    { x: COL_X[0] + COL_W + GAP / 2, y: ROW_Y[0] },
+    { x: COL_X[1] + COL_W + GAP / 2, y: ROW_Y[0] },
+    { x: COL_X[0] + COL_W + GAP / 2, y: ROW_Y[1] },
+    { x: COL_X[1] + COL_W + GAP / 2, y: ROW_Y[1] },
+    { x: COL_X[2] + COL_W + GAP / 2, y: ROW_Y[1] }
+  ];
+  var dividers = cfg.dividers || [];
+  dividers.slice(0, 5).forEach(function (d, i) {
+    var c = GAP_CENTERS[i]; if (!c) return;
+    var dx0 = c.x - DIV_W / 2, dy0 = c.y + ROW_H + DIV_TOP_GAP;
+    els.push({ type:'s', x:dx0, y:dy0, w:DIV_W, h:DIV_H, fill:'accentDim' });
+    var cx = dx0 + DIV_W / 2, cy = dy0 + DIV_H / 2;
+    els.push({ type:'t', text:d.label || d, x:cx - DIV_H / 2, y:cy - DIV_W / 2, w:DIV_H, h:DIV_W, font:'B', size:7, color:'white', bold:true, align:'center', valign:'middle', caps:true, lineSpacing:1, rotation:90 });
+  });
+
+  var gates = cfg.gates || [];
+  var gateBottom = []; // per-column bottom Y of each row's content, for reference
+  COL_X.forEach(function (colX, ci) {
+    ROW_Y.forEach(function (rowY, ri) {
+      var g = gates[ri * 3 + ci] || {};
+      els.push({ type:'s', x:colX, y:rowY, w:COL_W, h:ROW_H, fill:'gray', points:CHEVRON_PTS });
+      els.push({ type:'t', text:((g.number || (ri*3+ci+1)) + '. ' + (g.title || '')), x:colX + 0.27, y:rowY + 0.127, w:COL_W - 0.54, h:0.285, font:'B', size:13.5, color:'white', bold:true, valign:'middle', caps:true, lineSpacing:1 });
+      var y = rowY + ROW_H + SUB_GAP;
+      // Centered in the column's width beneath the chevron above it -- both
+      // the subhead box and the bullets under it share this offset, so the
+      // whole content block stays aligned as one unit. Previously only
+      // colX (the column/chevron's own left edge) was used, which put all
+      // the box's margin-from-column on the right side only.
+      var subX = colX + (COL_W - SUB_W) / 2;
+      if (g.subhead) {
+        els.push({ type:'s', x:subX, y:y, w:SUB_W, h:SUB_H, fill:'#3A3A3A' });
+        // Insets trimmed from the source's 0.104in to 0.05in to reclaim
+        // width for the text without changing the box itself (box size is
+        // correct per the source; this sandbox's Arial fallback for Mazda
+        // Type is what's actually causing the wrap -- see note below).
+        els.push({ type:'t', text:g.subhead, x:subX, y:y, w:SUB_W, h:SUB_H, font:'B', size:9, color:'white', bold:true, valign:'middle', caps:true, lineSpacing:1, insets:{l:0.05,t:0.035,r:0.05,b:0.035} });
+        y += SUB_H + BULLET_GAP;
+      }
+      if (g.bullets && g.bullets.length) {
+        els.push({ type:'t', x:subX, y:y, w:SUB_W, h:(ROW_Y[1] - ROW_Y[0]) - (y - rowY) - 0.1, font:'B', size:10, color:'black', valign:'top', caps:false, lineSpacing:1.15,
+          insets:{l:0.104,t:0.035,r:0.104,b:0.035},
+          paras:g.bullets.map(function (b) { return { runs:[{ text:b }], bullet:true, marL:0.12, indent:-0.12 }; }) });
+      }
+    });
+  });
+
+  // Gate dividers: comment kept with the code above where they're actually
+  // pushed now (before the chevrons). Text is built as a normal horizontal
+  // box (matches the source's own pre-rotation text properties -- middle
+  // valign, horizontal direction) sized to the divider's visible HEIGHT,
+  // then rotated 90deg in place so it reads vertically.
+
+  // Connector: dotted-end line from the last ribbon of row 1 (its outward
+  // point) down to the first ribbon of row 2 (its inward notch), held off
+  // the ribbons by CONNECTOR_GAP rather than touching them. The horizontal
+  // run sits just above row 2's chevrons (not halfway between the rows) so
+  // it clears row 1's tan gate dividers, which extend down to ~2.88in --
+  // the previous halfway placement cut straight through them.
+  if (cfg.showConnector !== false) {
+    var CONNECTOR_GAP = 0.12, ROW2_CLEARANCE = 0.1;
+    var r1x = COL_X[2] + COL_W + CONNECTOR_GAP, r1y = ROW_Y[0] + ROW_H / 2;
+    var r2x = COL_X[0] - CONNECTOR_GAP, r2y = ROW_Y[1] + ROW_H / 2;
+    var midY = ROW_Y[1] - ROW2_CLEARANCE;
+    els.push({ type:'ln', x:r1x, y:r1y, w:0.3, h:0, color:'black', weight:2, markerStyle:'dot', arrows:'start' });
+    els.push({ type:'ln', x:r1x + 0.3, y:r1y, w:0, h:midY - r1y, color:'black', weight:2 });
+    els.push({ type:'ln', x:r1x + 0.3, y:midY, w:r2x - 0.3 - (r1x + 0.3), h:0, color:'black', weight:2 });
+    els.push({ type:'ln', x:r2x - 0.3, y:midY, w:0, h:r2y - midY, color:'black', weight:2 });
+    els.push({ type:'ln', x:r2x - 0.3, y:r2y, w:0.3, h:0, color:'black', weight:2, markerStyle:'dot', arrows:'end' });
+  }
+
+  return els;
+}'''
+
+# Numbered process steps with a curved connector -- full rebuild from source
+# XML, replacing a flat cfg.items[] version. Needs standard-deck.js's
+# type:'path' element (bezier connector) and el.rotation (vertical gate
+# labels), both added alongside this layout.
+OVERRIDES['reportNumberedSteps'] = \
+'''
+function layout_reportNumberedSteps(cfg) {
+  var els = [];
+  // Column/row positions, taken directly from the source (row 2 is shifted
+  // ~1.04in right of row 1 -- part of the serpentine layout, not a mistake).
+  var TAN_X = [[0.934, 4.808, 8.583], [1.977, 5.851, 9.626]];
+  var TAN_Y = [1.978, 4.289];
+  var TAN_W = 1.6, TAN_H = 0.292;
+  var GRP_X = [[1.379, 5.222, 9.065], [2.422, 6.265, 10.108]];
+  var GRP_Y = [2.338, 4.649];
+
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.606, y:0.536, w:12.118, h:0.292, font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:cfg.title || '', x:0.606, y:0.847, w:12.118, h:0.5, font:'H', size:24, color:'titleGray', caps:true, lineSpacing:1, charSpacing:2.64, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  if (cfg.intro) els.push({ type:'t', text:cfg.intro, x:0.606, y:1.333, w:12.118, h:0.386, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+
+  // Connector: real bezier S-curve, decoded from the source's own custGeom
+  // path (straight along each row, curved at the turns) -- large tan dot
+  // at the start, arrow off-slide at the end.
+  if (cfg.showConnector !== false) {
+    els.push({ type:'path', x:0.641, y:2.121, w:12.049, h:4.639, color:'accentDim', weight:5,
+      startMarker:'oval', endMarker:'triangle',
+      path:[
+        { cmd:'M', x:0, y:0 },
+        { cmd:'L', x:0.9037, y:0 },
+        { cmd:'C', x1:0.9569, y1:0, x2:1, y2:0.1119, x:1, y:0.25 },
+        { cmd:'C', x1:1, y1:0.3881, x2:0.9569, y2:0.5, x:0.9037, y:0.5 },
+        { cmd:'L', x:0.0963, y:0.5 },
+        { cmd:'C', x1:0.0431, y1:0.5, x2:0, y2:0.6119, x:0, y:0.75 },
+        { cmd:'C', x1:0, y1:0.888, x2:0.0431, y2:1, x:0.0963, y:1 },
+        { cmd:'L', x:1, y:1 }
+      ] });
+  }
+
+  var steps = cfg.steps || [];
+  for (var row = 0; row < 2; row++) {
+    for (var col = 0; col < 3; col++) {
+      var i = row * 3 + col;
+      var st = steps[i] || {};
+      var label = (st.number || (i + 1)) + '. ' + (st.label || '');
+      var tx = TAN_X[row][col], ty = TAN_Y[row];
+      var gx = GRP_X[row][col], gy = GRP_Y[row];
+
+      // Tan pill (drawn on top of the connector, which passes behind it).
+      els.push({ type:'s', x:tx, y:ty, w:TAN_W, h:TAN_H, fill:'accentDim', radius:'pill' });
+      els.push({ type:'t', text:label, x:tx + 0.04, y:ty + 0.02, w:TAN_W + 0.13, h:TAN_H - 0.03, font:'B', size:12, color:'#EEEEEE', valign:'middle', caps:true, lineSpacing:1 });
+
+      // Black pill.
+      els.push({ type:'s', x:gx, y:gy, w:TAN_W, h:TAN_H, fill:'asphalt', radius:'pill' });
+      els.push({ type:'t', text:label, x:gx + 0.04, y:gy + 0.02, w:TAN_W + 0.13, h:TAN_H - 0.03, font:'B', size:12, color:'#868686', valign:'middle', caps:true, lineSpacing:1 });
+
+      // Tan pill -> black pill -> subhead is a 3-level stairstep in the
+      // source, each level offset ~0.70in (raw) / 0.35in (engine) right and
+      // down from the one above. The source's actual black-pill placement
+      // drifts off that clean diagonal by ~0.19in raw -- confirmed by
+      // reading its real coordinates, not assumed -- so anchoring the
+      // subhead/body/line to the black pill (gx/gy) inherited that drift.
+      // Anchoring them to the tan pill instead, two clean steps down,
+      // keeps them uniform across all 6 steps regardless of how far off
+      // any individual black pill happens to sit.
+      var STEP = 0.35;
+      var stairX = tx + 2 * STEP, stairY = ty + 2 * STEP;
+
+      // Vertical dark-gray double-arrow line beneath the black pill.
+      els.push({ type:'ln', x:stairX, y:stairY + 0.035, w:0, h:1.407, color:'#808080', weight:1.5, arrows:'both' });
+
+      // Subhead + body, stair-stepped to align with the vertical line (not
+      // flush with the pill's own left edge).
+      if (st.subhead) {
+        els.push({ type:'t', text:st.subhead, x:stairX, y:stairY, w:2.36, h:0.363, font:'B', size:10, color:'#CAA380', bold:true, caps:false, lineSpacing:1.1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+      }
+      var bodyParas = [];
+      if (st.intro) bodyParas.push({ runs:[{ text:st.intro }] });
+      (st.bullets || []).forEach(function (b) { bodyParas.push({ runs:[{ text:b }], bullet:true, marL:0.12, indent:-0.12 }); });
+      if (bodyParas.length) {
+        els.push({ type:'t', x:stairX, y:stairY + 0.372, w:2.96, h:1.064, font:'B', size:10, color:'#808080', valign:'top', caps:false, lineSpacing:1.15, insets:{l:0.035,t:0.035,r:0.035,b:0.035}, paras:bodyParas });
+      }
+    }
+  }
+
+  return els;
+}'''
+
+# Funnel/channel role & budget matrix -- previously conflated with
+# reportGrayTable (both cite "Content Gray"), but slide 78 is a genuinely
+# different table object (14 rows x 6 cols, 2-row header, merged group
+# labels, subtotal + grand-total rows). New layout, not a variant.
+OVERRIDES['reportChannelMatrix'] = \
+'''
+function layout_reportChannelMatrix(cfg) {
+  var els = [];
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.61, y:0.54, w:12.12, h:0.29,
+    font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9,
+    insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:cfg.title || '', x:0.61, y:0.85, w:12.12, h:0.5,
+    font:'H', size:24, color:'titleGray', caps:true, lineSpacing:1, charSpacing:2.64,
+    insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  if (cfg.intro || cfg.text) els.push({ type:'t', text:cfg.intro || cfg.text, x:0.61, y:1.33, w:12.12, h:0.39,
+    font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
+    insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+
+  var TBL_X = 0.59, TBL_Y = 1.842;
+  var COL_W = [1.385, 1.361, 3.397, 3.654, 1.082, 1.272];
+  var COL_X = [TBL_X];
+  for (var c = 0; c < COL_W.length - 1; c++) COL_X.push(COL_X[c] + COL_W[c]);
+  var HEAD_H = [0.385, 0.375];
+  var ROW_H = 0.38, SUBTOTAL_H = 0.385, GRAND_H = 0.375;
+  var DARK = '#262626';
+
+  function txt(x, w, y, h, text, opts) {
+    var o = Object.assign({ type:'t', text:text || '', x:x + 0.09, y:y, w:w - 0.18, h:h,
+      font:'B', size:6, valign:'middle', lineSpacing:1, caps:true }, opts || {});
+    els.push(o);
+  }
+
+  // Header, 2 rows: FUNNEL & MESSAGING / CHANNEL each span both rows;
+  // ROLE OF CHANNEL spans row 0 across BASE PLAN + INCREMENTAL's width,
+  // then splits into those two labels on row 1; the last two columns show
+  // a header-level total on row 1 under their row-0 labels.
+  var headerBottom = TBL_Y + HEAD_H[0] + HEAD_H[1];
+  els.push({ type:'s', x:TBL_X, y:TBL_Y, w:COL_W.reduce(function(a,b){return a+b;},0), h:HEAD_H[0]+HEAD_H[1], fill:DARK });
+  txt(COL_X[0], COL_W[0], TBL_Y, HEAD_H[0]+HEAD_H[1], 'FUNNEL & MESSAGING', { color:'white', bold:true, valign:'bottom' });
+  txt(COL_X[1], COL_W[1], TBL_Y, HEAD_H[0]+HEAD_H[1], 'CHANNEL', { color:'white', bold:true, valign:'bottom' });
+  txt(COL_X[2], COL_W[2]+COL_W[3], TBL_Y, HEAD_H[0], 'ROLE OF CHANNEL', { color:'white', bold:true, valign:'bottom' });
+  txt(COL_X[2], COL_W[2], TBL_Y + HEAD_H[0], HEAD_H[1], 'BASE PLAN', { color:'white', bold:true, valign:'bottom' });
+  txt(COL_X[3], COL_W[3], TBL_Y + HEAD_H[0], HEAD_H[1], 'INCREMENTAL', { color:'white', bold:true, valign:'bottom' });
+  var ht = cfg.headerTotals || {};
+  txt(COL_X[4], COL_W[4], TBL_Y, HEAD_H[0], 'Base Plan Only', { color:'white', bold:true, valign:'bottom', size:6 });
+  txt(COL_X[4], COL_W[4], TBL_Y + HEAD_H[0], HEAD_H[1], ht.basePlanOnly || '$0M', { color:'white', bold:true });
+  txt(COL_X[5], COL_W[5], TBL_Y, HEAD_H[0], 'Base Plan + $18MM Incremental*', { color:'white', bold:true, valign:'bottom', size:6, lineSpacing:0.95 });
+  txt(COL_X[5], COL_W[5], TBL_Y + HEAD_H[0], HEAD_H[1], ht.basePlanIncremental || '$0M', { color:'white', bold:true });
+  // Column dividers across the whole header band.
+  [1,2,3,4,5].forEach(function (ci) {
+    els.push({ type:'s', x:COL_X[ci], y:TBL_Y, w:0.0125, h:HEAD_H[0]+HEAD_H[1], fill:'#5E5E5E' });
+  });
+
+  // Body groups.
+  var groups = cfg.groups || [];
+  var y = headerBottom;
+  var tableRight = TBL_X + COL_W.reduce(function(a,b){return a+b;},0);
+  groups.forEach(function (g) {
+    var rows = g.rows || [];
+    var groupTop = y;
+    rows.forEach(function (r) {
+      txt(COL_X[1], COL_W[1], y, ROW_H, r.channel, { color:'#CFB496', charSpacing:0.9 });
+      txt(COL_X[2], COL_W[2], y, ROW_H, r.base, { color:'#808080', bold:false, caps:false, lineSpacing:1.1 });
+      txt(COL_X[3], COL_W[3], y, ROW_H, r.incremental, { color:'#808080', bold:false, caps:false, lineSpacing:1.1 });
+      txt(COL_X[4], COL_W[4], y, ROW_H, r.baseValue, { color:'#CFB496' });
+      txt(COL_X[5], COL_W[5], y, ROW_H, r.incValue, { color:'#CFB496' });
+      els.push({ type:'s', x:TBL_X, y:y + ROW_H, w:tableRight - TBL_X, h:0.0125, fill:'#D9D9D9' });
+      y += ROW_H;
+    });
+    var groupH = y - groupTop;
+    txt(COL_X[0], COL_W[0], groupTop, groupH, g.label, { color:'#262626', bold:true, valign:'middle' });
+    [2,3,4,5].forEach(function (ci) {
+      els.push({ type:'s', x:COL_X[ci], y:groupTop, w:0.0125, h:groupH, fill:'#D9D9D9' });
+    });
+    if (g.subtotal) {
+      els.push({ type:'s', x:TBL_X, y:y, w:tableRight - TBL_X, h:SUBTOTAL_H, fill:DARK });
+      txt(COL_X[4], COL_W[4], y, SUBTOTAL_H, g.subtotal.baseValue, { color:'white', bold:true });
+      txt(COL_X[5], COL_W[5], y, SUBTOTAL_H, g.subtotal.incValue, { color:'white', bold:true });
+      y += SUBTOTAL_H;
+    }
+  });
+
+  // Grand total: label spans the first four columns.
+  els.push({ type:'s', x:TBL_X, y:y, w:tableRight - TBL_X, h:GRAND_H, fill:DARK });
+  txt(TBL_X, COL_W[0]+COL_W[1]+COL_W[2]+COL_W[3], y, GRAND_H, 'GRAND TOTALS', { color:'white', bold:true });
+  var gt = cfg.grandTotal || {};
+  txt(COL_X[4], COL_W[4], y, GRAND_H, gt.baseValue || '$0M', { color:'white', bold:true });
+  txt(COL_X[5], COL_W[5], y, GRAND_H, gt.incValue || '$0M', { color:'white', bold:true });
 
   return els;
 }'''
