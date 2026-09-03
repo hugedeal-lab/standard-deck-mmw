@@ -49,6 +49,7 @@ SLUG={
  'Report Journey Map (slide 99)':'reportJourneyMap',
  'Report Gate Status (slide 100)':'reportGateStatus',
  'Report Numbered Steps (slide 101)':'reportNumberedSteps',
+ 'Report Channel Matrix (slide 78)':'reportChannelMatrix',
  'Table of contents':'tableOfContents','Thank You Light':'thankYouLight','Thank You Dark':'thankYouDark',
  'Content 01':'content01','Content 02':'content02','Content 03':'content03','Content 05':'content05',
  'Content 06':'content06','Content 07':'content07','Content 08':'content08','Content 09':'content09',
@@ -56,8 +57,12 @@ SLUG={
  'Content 2 Rows - Dark':'twoRowsDark','Content 2 Rows - Light':'twoRowsLight',
  'Content - 2 rows - Light':'twoRowsLightAlt',
  'Content Gray':'reportGray','Content Dark':'reportDark',
- 'Blank Dark':'blankDark','Blank Grey':'blankGrey','Blank Light':'blankLight',
- 'Title & Bullets':'titleBullets',
+ # 'Blank Dark' / 'Blank Grey' / 'Blank Light' / 'Title & Bullets' are real
+ # template masters, but their own auto-generated compositions turned out to
+ # be broken duplicates of a slide that got a proper report* name later
+ # (confirmed by comparing source slide numbers, not assumed). Retired via
+ # RETIRED_TEMPLATE_NAMES below instead of generating dead duplicate
+ # functions here -- do not re-add these keys without re-checking that.
  'Storyboard 01':'storyboardVO','Storyboard 02':'storyboardGrid','Scripts 01':'scriptsCompare',
  'Video Reference':'videoReference','Casting':'castingGrid','Casting_Talent':'castingTalent',
  'Location Overview':'locationOverview','Location Detail':'locationDetail',
@@ -84,7 +89,15 @@ LEGACY={'coverGeometric':'coverLight','coverScenic':'coverPhoto','coverLogoCutou
 RETIRED={'headlinePhoto':'headlinePhotoWell',
          # slide 92 is a campaign ecosystem TREE, not a funnel -- renamed once
          # its structure was understood.
-         'reportGoalFunnel':'reportEcosystemTree'}
+         'reportGoalFunnel':'reportEcosystemTree',
+         # These four share a source slide with a report* composition and are
+         # true duplicates, not a chassis/variant pair -- the report* name in
+         # each pair is the one that's hand-authored and fixed (structured
+         # content API, correct z-order, real strokes/bullets/underline).
+         'blankLight':'reportJourneyMap',
+         'blankDark':'reportStatRow',
+         'blankGrey':'reportEcosystemTree',
+         'titleBullets':'reportPlatformMatrix'}
 
 # Variants that have no template layout of their own: "Content Gray" and
 # "Content Dark" each back many differently-composed slides, so the base layout
@@ -100,7 +113,15 @@ DERIVED = {
 
 # Template names that no longer generate their own layout, mapped to the one
 # that supersedes them. Keeps the spec doc and the engine in agreement.
-RETIRED_TEMPLATE_NAMES={'Headline Photo Divider':'headlinePhotoWell'}
+RETIRED_TEMPLATE_NAMES={'Headline Photo Divider':'headlinePhotoWell',
+ 'Blank Dark':'reportStatRow','Blank Grey':'reportEcosystemTree',
+ 'Blank Light':'reportJourneyMap','Title & Bullets':'reportPlatformMatrix',
+ # 7/30/26 template renamed a second "Divider Tides" instance (slide 20,
+ # previously just another "Divider Tides") to "1_Divider Tides" after its
+ # background photo was removed -- its remaining content (tag + title) is
+ # now identical to dividerTides' own slide 19, confirmed geometry match,
+ # so it resolves to the existing function rather than a new one.
+ '1_Divider Tides':'dividerTides'}
 
 TOKEN={'#262626':'asphalt','#EEEEEE':'paper','#FFFFFF':'white','#000000':'black',
  '#C4A584':'accent','#BFA588':'accentDim','#919292':'titleGray','#808080':'bodyGray',

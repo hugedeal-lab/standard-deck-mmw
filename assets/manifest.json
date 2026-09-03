@@ -91,74 +91,11 @@
   "note": "Small mark, top edge. 4845x2120. Content -headline dark."
  },
  {
-  "file": "social/social_divider_photo.png",
-  "source": "image19.png",
-  "bytes": 302329,
-  "md5": "57ce1f2a8379",
-  "note": "Shared divider photograph. 4505x3186. Meta / Pinterest / Reddit dividers."
- },
- {
-  "file": "social/meta_logo.png",
-  "source": "image20.png",
-  "bytes": 16581,
-  "md5": "5a9d301e0c22",
-  "note": "Meta platform logo. 512x512."
- },
- {
   "file": "social/meta_wordmark.png",
   "source": "image22.png",
   "bytes": 88960,
   "md5": "944a757e6768",
   "note": "Meta wordmark. 2134x431."
- },
- {
-  "file": "social/device_frame_meta_carousel.png",
-  "source": "image21.png",
-  "bytes": 1340368,
-  "md5": "de71a9c3e6fd",
-  "note": "Phone chrome, Meta carousel. 1683x2714."
- },
- {
-  "file": "social/device_frame_9x16.png",
-  "source": "image23.png",
-  "bytes": 117015,
-  "md5": "5149b6f6b7f0",
-  "note": "Phone chrome 9:16. 1683x2714. Meta Video&Static, Pinterest."
- },
- {
-  "file": "social/device_frame_reddit.png",
-  "source": "image24.png",
-  "bytes": 572927,
-  "md5": "f73a59d989a2",
-  "note": "Phone chrome, Reddit. 1683x2714."
- },
- {
-  "file": "social/device_frame_reddit_1x1.png",
-  "source": "image26.png",
-  "bytes": 548843,
-  "md5": "68541dbfa4bf",
-  "note": "Phone chrome, Reddit 1:1. 1683x2714."
- },
- {
-  "file": "social/reddit_ui_chrome.png",
-  "source": "image25.png",
-  "bytes": 37017,
-  "md5": "8a1b2e746d8c",
-  "note": "Reddit UI chrome. 1440x2205."
- },
- {
-  "file": "social/reddit_brand_photo.png",
-  "source": "image27.png",
-  "bytes": 327073,
-  "md5": "c1357f14ca84",
-  "note": "Reddit brand photograph. 3840x2160."
- },
- {
-  "file": "social/tiktok_chrome.png",
-  "source": "image28.png",
-  "bytes": 255346,
-  "md5": "1542b39fc359",
-  "note": "TikTok chrome. 4596x1357."
  },
  {
   "file": "social/pinterest_wordmark.png",
@@ -175,24 +112,52 @@
   "note": "Pinterest logo. 1279x307."
  },
  {
-  "file": "social/pinterest_device_frame.png",
-  "source": "image31.png",
-  "bytes": 1759929,
-  "md5": "68ba35d686d0",
-  "note": "Pinterest phone chrome. 2090x4358."
- },
- {
-  "file": "social/youtube_chrome.png",
-  "source": "image32.png",
-  "bytes": 44578,
-  "md5": "5cccd95933c3",
-  "note": "YouTube player chrome. 1920x1501."
- },
- {
   "file": "social/youtube_logo.png",
   "source": "image33.png",
   "bytes": 45570,
   "md5": "88b600e951cf",
   "note": "YouTube logo. 1657x385."
+ },
+ {
+  "file": "social/reddit_brand_photo.png",
+  "source": "image27.png",
+  "bytes": 327073,
+  "md5": "c1357f14ca84",
+  "note": "Reddit brand photograph. 3840x2160."
+ },
+ {
+  "file": "social/tiktok_chrome.png",
+  "source": "image28.png",
+  "bytes": 255346,
+  "md5": "1542b39fc359",
+  "note": "TikTok chrome (top status/nav bar). 4596x1357."
+ },
+ {
+  "file": "social/youtube_video_frame.png",
+  "note": "Real YouTube player chrome (status bar, title zone, timestamp, Sponsored bar), replaces device_frame_9x16.png -- extracted from Keynote mockup, not the old generic bezel."
+ },
+ {
+  "file": "social/tiktok_video_frame.png",
+  "note": "Real TikTok UI chrome (status bar, tabs, icon rail, caption, CTA, nav), replaces device_frame_9x16.png."
+ },
+ {
+  "file": "social/meta_reel_frame.png",
+  "note": "Real Instagram/Facebook Reel chrome, replaces device_frame_9x16.png."
+ },
+ {
+  "file": "social/meta_carousel_frame.png",
+  "note": "Real Meta carousel chrome (mazdausa header, dots, footer CTA), replaces device_frame_meta_carousel.png."
+ },
+ {
+  "file": "social/reddit_video_frame.png",
+  "note": "Real Reddit UI chrome (upvote/comment/share row, username, nav), replaces device_frame_reddit.png / device_frame_reddit_1x1.png / reddit_ui_chrome.png."
+ },
+ {
+  "file": "social/pinterest_2x3_frame.jpg",
+  "note": "Real Pinterest in-feed mockup with surrounding pins for context, replaces device_frame_9x16.png. JPEG (photo content), not PNG."
+ },
+ {
+  "file": "social/pinterest_1x1_frame.png",
+  "note": "Real Pinterest video-pin mockup (scrubber, Learn more arrow), replaces pinterest_device_frame.png."
  }
 ]

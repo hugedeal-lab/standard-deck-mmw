@@ -111,6 +111,7 @@ REPORT_SLIDES = [
     ( 99, 'Blank Light',     'Report Journey Map (slide 99)',       'report'),
     (100, 'Blank Light',     'Report Gate Status (slide 100)',      'report'),
     (101, 'Content Gray',    'Report Numbered Steps (slide 101)',   'report'),
+    ( 78, 'Content Gray',    'Report Channel Matrix (slide 78)',    'report'),
 ]
 SPLITS += [(tpl, sn, name, fam) for sn, tpl, name, fam in REPORT_SLIDES]
 
