@@ -573,7 +573,7 @@ try {
 // ============================================================
 
 function exportElement(slide, el, isDark, accent, pptx) {
-  var m = { t: exportText, s: exportShape, o: exportOval, d: exportDivider, p: exportPill, b: exportBar, ln: exportLine, chart: exportChart, tbl: exportTable, i: exportIcon, img: exportImage };
+  var m = { t: exportText, s: exportShape, o: exportOval, d: exportDivider, p: exportPill, b: exportBar, ln: exportLine, path: exportPath, chart: exportChart, tbl: exportTable, i: exportIcon, img: exportImage };
   var fn = m[el.type]; if (fn) fn(slide, el, isDark, accent, pptx);
 }
 
@@ -639,7 +639,7 @@ function exportText(slide, el, isDark) {
     });
     slide.addText(seq, { x: el.x, y: el.y, w: el.w, h: el.h,
       align: el.align || 'left', valign: el.valign || 'top',
-      margin: insetMargin(el), wrap: true });
+      margin: insetMargin(el), wrap: true, rotate: el.rotation || undefined });
     return;
   }
 
@@ -649,7 +649,8 @@ function exportText(slide, el, isDark) {
     color: SD.colorForPptx(el.color || 'body', isDark),
     align: el.align || (isCompact ? 'center' : 'left'), valign: el.valign || 'top',
     charSpacing: cs, lineSpacingMultiple: lsm,
-    wrap: !isCompact, margin: insetMargin(el), shrinkText: isCompact
+    wrap: !isCompact, margin: insetMargin(el), shrinkText: isCompact,
+    rotate: el.rotation || undefined
   });
 }
 
@@ -765,6 +766,9 @@ function exportShape(slide, el, isDark, accent, pptx) {
   tagGradient(opts, el, isDark);
   if (el.transparency) opts.fill.transparency = el.transparency;
   if (!isDark && el.fill === 'cardBg' && !el.noShadow && !el._pptxGradient) opts.shadow = { type:'outer', color:'000000', blur:4, offset:2, angle:135, opacity:0.08 };
+  // Rotation (degrees clockwise about centre) -- matches renderShape's CSS
+  // transform:rotate(). Carried on all three addShape paths below.
+  if (el.rotation) opts.rotate = el.rotation;
 
   // Custom geometry: el.points are fractions of the shape box, so they scale
   // with w/h. PowerPoint gets a real editable polygon, not a picture of one.
@@ -792,8 +796,11 @@ function exportShape(slide, el, isDark, accent, pptx) {
 function exportLine(slide, el, isDark, accent, pptx) {
   var col = SD.colorForPptx(el.color || 'ltGray', isDark);
   var ln = { color: col, width: el.weight || 1.5 };
-  if (el.arrows === 'both' || el.arrows === 'start') ln.beginArrowType = 'triangle';
-  if (el.arrows === 'both' || el.arrows === 'end') ln.endArrowType = 'triangle';
+  // markerStyle:'dot' -> circle end-cap (matches renderLine's <circle> marker);
+  // default is the triangle arrowhead.
+  var endType = (el.markerStyle === 'dot') ? 'oval' : 'triangle';
+  if (el.arrows === 'both' || el.arrows === 'start') ln.beginArrowType = endType;
+  if (el.arrows === 'both' || el.arrows === 'end') ln.endArrowType = endType;
   // A line drawn up or to the left has a negative w/h in element space, but
   // <a:ext> may not be negative -- PowerPoint rejects the file and offers to
   // repair it. Normalise to a positive box and express direction with flipH /
@@ -806,12 +813,42 @@ function exportLine(slide, el, isDark, accent, pptx) {
   slide.addShape(pptx.shapes.LINE, o);
 }
 
+// Curved connector -- mirrors renderPath() in standard-deck.js. el.path is a
+// list of {cmd:'M'|'L', x, y} or {cmd:'C', x1,y1, x2,y2, x, y} segments whose
+// coordinates are fractions (0-1) of el.x/y/w/h. Exported as a PowerPoint
+// custom-geometry freeform: an OPEN stroked path (no close, no fill), with
+// optional oval/triangle end markers from el.startMarker / el.endMarker.
+// PptxGenJS points are box-relative inches; the <a:xfrm> carries x/y.
+function exportPath(slide, el, isDark, accent, pptx) {
+  var segs = el.path || [];
+  if (!segs.length) return;
+  var w = el.w, h = el.h;
+  var ARROWS = { oval: 'oval', triangle: 'triangle' };
+  var pts = segs.map(function (s) {
+    if (s.cmd === 'C') {
+      return { x: +(s.x * w).toFixed(4), y: +(s.y * h).toFixed(4),
+        curve: { type: 'cubic',
+          x1: +(s.x1 * w).toFixed(4), y1: +(s.y1 * h).toFixed(4),
+          x2: +(s.x2 * w).toFixed(4), y2: +(s.y2 * h).toFixed(4) } };
+    }
+    // 'M' (first segment) is the moveTo; 'L' is a lineTo. PptxGenJS treats the
+    // first point as the start and the rest as lineTo unless curved.
+    return { x: +(s.x * w).toFixed(4), y: +(s.y * h).toFixed(4) };
+  });
+  var ln = { color: SD.colorForPptx(el.color || 'ltGray', isDark), width: el.weight || 1.5 };
+  if (el.startMarker && ARROWS[el.startMarker]) ln.beginArrowType = ARROWS[el.startMarker];
+  if (el.endMarker && ARROWS[el.endMarker]) ln.endArrowType = ARROWS[el.endMarker];
+  // No fill key -> PptxGenJS emits <a:noFill/>; no { close:true } -> path stays open.
+  slide.addShape(pptx.shapes.CUSTOM_GEOMETRY, { x: el.x, y: el.y, w: w, h: h, points: pts, line: ln });
+}
+
 function exportOval(slide, el, isDark, accent, pptx) {
   var opts = { x:el.x, y:el.y, w:el.w, h:el.h,
     fill:{ color: SD.colorForPptx(el.fill || 'accent', isDark) } };
   var lo = lineOpts(el, isDark); if (lo) opts.line = lo;
   var so = shadowOpts(el);       if (so) opts.shadow = so;
   tagGradient(opts, el, isDark);
+  if (el.rotation) opts.rotate = el.rotation;
   slide.addShape(pptx.shapes.OVAL, opts);
 }
 function exportDivider(slide, el, isDark, accent, pptx) { slide.addShape(pptx.shapes.RECTANGLE, { x:el.x, y:el.y, w:el.w, h:0.015, fill:{color:SD.colorForPptx(el.color||'ltGray',isDark)} }); }
