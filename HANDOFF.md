@@ -4,22 +4,22 @@
 
 ## What this project is
 
-Rebuilding the MMW Presentation Builder agent against the real `MMW PPT Template_7.24.26.pptx`. The previous agent (v1.0, `standard-deck-mmw@ecb720e`) knew 22 layouts and carried a systematic typography bug. v2.0 covers all **67** layouts (66 template names; one carries two designs and is split) and is generated from the template rather than transcribed.
+Rebuilding the MMW Presentation Builder agent against the real `MMW_PPT_Template_7_30_26.pptx` (originally built against `_7.24.26`; template revisions since have been reviewed and folded in). The previous agent (v1.0, `standard-deck-mmw@ecb720e`) knew 22 layouts and carried a systematic typography bug. v2.0 is now at **84** engine-addressable layouts (up from the original 67 template-name-derived set — growth is new report-detail compositions and 23 layouts promoted to hand-authored status, not new template masters) and is generated from the template rather than transcribed, except where hand-authoring was required (see "How to regenerate" below).
 
 ## State: what is done
 
 | Area | Status |
 |---|---|
-| Layout spec, all 66 layouts | Complete — `MMW_Layout_Spec.md` |
-| `deck-layouts.js` rebuilt | Complete — 67 functions, generated |
+| Layout spec, all layouts | Complete — `MMW_Layout_Spec.md` (84 layouts, includes the 24 in the reporting family) |
+| `deck-layouts.js` rebuilt | Complete — 84 functions; 23 hand-authored in `overrides.py`, rest generated |
 | Engine patches | 9 applied to `standard-deck.js` / `deck-shell.js` |
 | System prompt | Rewritten for v2.0 |
 | Brand assets | 28 extracted + 6 photo defaults |
 | Covers (5) | Reviewed against template, fixed |
 | Dividers (8) | Reviewed against template, fixed |
 | Typography | font / casing / line-spacing / tracking — 377 elements, 0 mismatches |
-| **Browser + PPTX export** | **NOT YET VALIDATED — this is the next step** |
-| Content, production, social layouts | Not yet reviewed slide-by-slide |
+| **Browser + PPTX export** | **Validated** — `type:'path'` (bezier connectors) and `el.rotation` (rotated text) both confirmed present in the exported XML via real `pptxgenjs` export, not just the browser preview |
+| Content, production, social layouts | Reviewed and fixed against the 7/30/26 template (all 16 social layouts, `coverPhoto2`, `headlinePhotoWell`) |
 
 ## The two things that matter most
 
@@ -29,22 +29,33 @@ Rebuilding the MMW Presentation Builder agent against the real `MMW PPT Template
 
 ## How to regenerate the layouts
 
-Do **not** hand-edit `deck-layouts.js` — it is generated. To change a layout, change the generator and re-run:
+**This is no longer a blanket "don't hand-edit" situation.** 23 layouts are
+now deliberately hand-authored in `tools/overrides.py` and will be silently
+regressed by a regeneration if their `OVERRIDES` entry isn't kept in sync
+with `deck-layouts.js` — most because their correct content (real platform
+mockup chrome, chevron shapes read from the source XML, a bezier connector,
+etc.) doesn't exist anywhere in the raw template geometry, extractable or
+not, so the generator can never reproduce them from template data alone. If
+you add or change a hand-authored layout, mirror it into `overrides.py` in
+the same session, not later. Before trusting any regeneration, actually run
+it and diff against committed — don't assume `overrides.py` is in sync.
 
 ```bash
 cd tools
-export MMW_TEMPLATE="/path/to/MMW PPT Template_7.24.26.pptx"
+export MMW_TEMPLATE="/path/to/MMW_PPT_Template_7_30_26.pptx"   # or whichever revision is current
 python 1_extract_template.py     # PPTX  -> build/resolved.json   (needs python-pptx)
 python 2_build_layout_data.py    #       -> build/mmw_layouts.json
 python 3_build_deck_layouts.py   #       -> build/deck-layouts.js
-node   mkharness.js              #       -> build/test-deck.html (67 slides)
+node   mkharness.js              #       -> build/test-deck.html
 ```
 
-Between steps 1 and 2 the layout names need HTML-unescaping (`&amp;` → `&`) — see the snippet at the end of this file.
+Last verified: 80 of 84 layouts regenerate byte-identical to committed; the
+other 4 are confirmed cosmetic-only (two are a unicode-escape display
+difference with identical runtime values, two are an intentional inlining
+of a shared helper the generator has no mechanism to inject) — not a
+behavioral difference. Checked via real dispatch comparison, not assumed.
 
-Verified: this chain reproduces the shipped `deck-layouts.js` byte-for-byte.
-
-**60 layouts are machine-generated. 6 are hand-authored** in `tools/overrides.py` — `storyboardGrid`, `tableOfContents`, `castingGrid`, `locationOverview`, `moodboardProps`, `moodboardWardrobe` — because auto-generation flattens their grids into an unusable flat array. Edit those by hand, in that file.
+**32 layouts are machine-generated. 52 are hand-authored** in `tools/overrides.py` (the full list is `OVERRIDES`'s keys in that file) — some because auto-generation flattens their grids into an unusable flat array (`storyboardGrid`, `tableOfContents`, `castingGrid`, `locationOverview`, `moodboardProps`, `moodboardWardrobe`), the rest because their correct content doesn't exist in the raw template geometry at all (real platform mockup chrome, chevron shapes, a bezier connector, etc. — see "This is no longer a blanket..." above). Edit those by hand, in that file.
 
 ## How to test
 
@@ -86,13 +97,10 @@ Photo wells export via `addImage()`, so right-click → *Change Picture* works, 
 
 Also: PptxGenJS 3.12 does not expose PowerPoint's `kern` attribute, so exported kerning falls back to PowerPoint's default. Tracking (`charSpacing`) does export correctly.
 
-## Name-unescape snippet (between steps 1 and 2)
+## Name-unescape (fixed in the script, no longer a manual step)
 
-```python
-import json, html
-p = 'build/resolved.json'
-d = json.load(open(p))
-d['layouts'] = {html.unescape(k): v for k, v in d['layouts'].items()}
-for k, v in d['slides'].items(): v['layout'] = html.unescape(v['layout'])
-json.dump(d, open(p, 'w'), indent=1)
-```
+`1_extract_template.py` used to pull layout names via a regex on raw XML
+bytes, not a real parse, so `&amp;` never became `&` and the pipeline threw
+`KeyError: 'Title & Bullets'` downstream. Fixed directly in the script
+(`html.unescape()` on the extracted name) — the manual snippet this section
+used to document is no longer needed.

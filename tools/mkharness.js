@@ -204,7 +204,7 @@ for (const r of rows) {
 
 const H=['<!DOCTYPE html>',
 '<html data-type="html" data-title="MMW Layout Test Harness" width="1920" height="1200">',
-'<head><meta charset="utf-8"><title>MMW Layout Test Harness \u2014 all 67 layouts</title></head>',
+'<head><meta charset="utf-8"><title>MMW Layout Test Harness \u2014 all 84 layouts</title></head>',
 '<!--',
 '  SERVE OVER http, NOT file://',
 '      python -m http.server 8000   ->   http://localhost:8000/test-deck.html',

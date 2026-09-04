@@ -4,7 +4,11 @@
 // no relative-path resolution for code. Images stay relative; if they are
 // missing you still see correct geometry and type, just with empty frames.
 const fs=require('fs'), path=require('path');
-const B='/mnt/workspace/output/mmw-v2/';
+// Portable path, matching MMW_TEMPLATE elsewhere in tools/ -- this used to be
+// hardcoded to one session's /mnt/workspace/output/mmw-v2/, which doesn't
+// exist outside that specific environment. Defaults to the repo root (one
+// level up from tools/).
+const B=process.env.MMW_REPO_ROOT || path.join(__dirname, '..');
 const read=f=>fs.readFileSync(path.join(B,f),'utf8');
 const harness=fs.readFileSync('build/test-deck.html','utf8');
 const D=harness.split('var D=[')[1].split('\n];')[0];

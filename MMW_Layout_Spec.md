@@ -848,7 +848,7 @@ Row 1 label y:2.11, body y:2.60. Row 2 label y:3.84, body y:4.32. **Row pitch is
 | body / caption | 6.21 | 4.32 | 5.06 | 1.06 | **10.0pt** | Arial | #808080 gray | left / top | line 110%; e.g. "Lorem ipsum dolor sit amet, consectetur " |
 ---
 
-## 11. Reporting chassis and blank canvases — 6 template masters, 23 named engine layouts
+## 11. Reporting chassis and blank canvases — 6 template masters, 24 named engine layouts
 
 **Read this before picking a layout in this section.** Only 6 real PowerPoint
 layout masters back slides 71-101 -- `Content Gray`, `Content Dark`,
@@ -1140,12 +1140,13 @@ This is almost certainly a stock layout that survived the Keynote export, not a 
 ### 11.4 Choosing a report-detail layout
 
 Slides 73-101 share the `Content Gray` / `Content Dark` chassis but the body
-below `y:1.80` is 16 distinct, purpose-built compositions plus 5 generic
+below `y:1.80` is 17 distinct, purpose-built compositions plus 5 generic
 "well" variants (chart / table / timeline dropped onto the bare chassis).
 Picking by silhouette rather than by name avoids the two most common
 mistakes: reaching for a generic well when a named layout already fits, and
 guessing at a `report*` layout's fields from the flat `items[]` pattern used
-elsewhere in the deck (12 of these 16 take structured objects instead).
+elsewhere in the deck (16 of these 17 take structured objects instead;
+`reportQuotePanel` is the one still flat).
 
 | If the slide needs to... | Use | Content shape |
 |---|---|---|
@@ -1156,14 +1157,15 @@ elsewhere in the deck (12 of these 16 take structured objects instead).
 | State a strategy with supporting proof points and next steps | `reportStrategyStack` | structured |
 | Introduce a new chapter/section with a clear before/after or old/new framing | `reportChapterOpener` | structured |
 | Show a funnel or matrix table with uneven row/column density | `reportMetricTable` | structured |
-| Show 2-4 pull quotes or testimonials | `reportQuotePanel` | flat items -- fragile, see 11.2.10 |
-| Show a numbered sequence of 6 steps in a 3x2 grid | `reportNumberedSteps` | flat items |
-| Show gate/status checks (pass/fail/at-risk style) | `reportGateStatus` | flat items -- fragile, see 11.2.11 |
+| Show 2-4 pull quotes or testimonials | `reportQuotePanel` | flat items -- fragile, see 11.5.11 |
+| Show a numbered sequence of 6 steps in a 3x2 grid, with a curved connector | `reportNumberedSteps` | structured |
+| Show gate/status checks (pass/fail/at-risk style) with chevron ribbons | `reportGateStatus` | structured |
 | Show 3 brand pillars with supporting metrics/pivot | `reportBrandPillars` | structured |
 | Show spend or budget allocation as horizontal bars | `reportSpendBarsLight` / `reportSpendBarsDark` | structured |
 | Show a labelled stat row across 3-5 columns with 3 bands of detail | `reportStatRow` / `reportStatRowLight` | structured |
+| Show a simple 2-column table (one heading + bullets per side) | `reportGrayTable` / `reportDarkTable` | structured |
+| Show a funnel/channel matrix with grouped rows, a subtotal and a grand total | `reportChannelMatrix` | structured |
 | Drop in a native chart with no other custom composition | `reportGrayChart` / `reportDarkChart` | generic well |
-| Drop in a native table with no other custom composition | `reportGrayTable` / `reportDarkTable` | generic well |
 | Show the campaign-progress flow art from slide 72 specifically | `reportGrayTimeline` | generic well |
 
 If nothing above fits, use the bare `Content Gray` / `Content Dark` chassis
@@ -1177,7 +1179,7 @@ hand-authored properly under the `report*` name. The retired names still
 resolve (to `reportStatRow`, `reportEcosystemTree`, `reportJourneyMap`,
 `reportPlatformMatrix`) but should not be selected for new decks.
 
-### 11.5 Report detail layouts -- 16 layouts, hand-authored structured content
+### 11.5 Report detail layouts -- 17 layouts, hand-authored structured content
 
 Unlike the raw-geometry tables elsewhere in this doc, these layouts manage
 their own internal positioning -- supply the structured content below and
@@ -1266,35 +1268,71 @@ sections[3]}`, each section `{label, items}` where an item is a plain string
 or `{text, bold, color}` for a bullet that needs to stand out).
 
 **11.5.15 `reportGateStatus`** (slide 100, bg `#FFFFFF`, template `Report Gate Status (slide 100)`)
-Three status-card columns, each with an irregular internal cell count (not a
-uniform grid -- some cards carry more sub-rows than others). **Flat
-`cfg.items[]`, 32 slots, fragile** -- do not hand-author content against this
-without cross-checking the function directly; a strong candidate for the
-same restructuring the other 11 report-detail layouts already got.
+Rebuilt with a structured API, replacing the old flat `cfg.items[]` version.
+Ribbons are PowerPoint's real "chevron" preset shape (`adj=0.2004`, read
+directly from the source XML): an inward notch on the left, an outward
+point on the right, both corners square where the notch/point doesn't
+touch them. `cfg.gates` (array of 6, `{number, title, subhead, bullets}` --
+`number` defaults to position 1-6; ribbon reads `N. TITLE`; `subhead` is
+the optional black caps box; `bullets` is an array of strings under it,
+centered in the column beneath the ribbon). `cfg.dividers` (array of up to
+5, `{label}`, one per gap between ribbons -- tan vertical markers, text
+rotated 90deg via `el.rotation`; pass fewer to show only some, omit
+entirely to hide all). `cfg.showConnector` (default true) -- a dotted-end
+line from the last ribbon of row 1 to the first ribbon of row 2, offset
+clear of both the ribbons and the tan dividers, drawn with `type:'ln'` and
+`markerStyle:'dot'`.
 
 **11.5.16 `reportNumberedSteps`** (slide 101, bg `#FFFFFF`, template `Report Numbered Steps (slide 101)`)
-Six numbered steps in a 3-column x 2-row grid; each step carries two short
-label lines above a tan header and grey body. `cfg.title` · `cfg.items[0]`
-(intro line) · `cfg.items[1..23]`, 4 slots per step in reading order
-(left-to-right, top row then bottom row) -- **flat and fragile**, same caution
-as 11.5.15.
+Rebuilt with a structured API, replacing the old flat `cfg.items[]` version.
+Six fixed steps in a 3-column x 2-row serpentine (row 2 is shifted right of
+row 1 by design -- matches the source, not a bug). `cfg.steps` (array of 6,
+`{number, label, subhead, intro, bullets}` -- `label` appears on both the
+tan pill above and the black pill below, matching the source; `intro` is an
+optional non-bulleted first line before `bullets`). `cfg.showConnector`
+(default true) -- a real bezier S-curve (`type:'path'`, straight along each
+row, curved at the row break), large dot start, arrow end pointing off-
+slide, drawn behind the pills so it passes seamlessly under them. The
+subhead/body block is anchored to each step's tan pill position plus a
+fixed diagonal offset, not to the black pill beneath it -- confirmed
+against the source that individual black-pill placements drift slightly
+off a clean diagonal in a few instances, and anchoring to the tan pill
+keeps all 6 steps' stairstep spacing uniform regardless.
 
-### 11.6 Report chart/table/timeline wells -- 5 layouts
+**11.5.17 `reportChannelMatrix`** (slide 78, bg `#EEEEEE`, template `Report Channel Matrix (slide 78)`)
+Previously conflated with `reportGrayTable` in this doc, since both cite
+"Content Gray" as their master -- confirmed via the real table objects in
+the source that slide 78 is a genuinely different, larger table (`Table 4`,
+14 rows x 6 cols with a 2-row header, merged group-label cells, a subtotal
+row, and a grand-total row), not a variant of slide 76's simple 2-column
+table. Every merge, fill and font size below is read from the real table's
+cell XML directly. `cfg.headerTotals` (`{basePlanOnly, basePlanIncremental}`,
+the two $ values shown in the header band's second row). `cfg.groups`
+(array, e.g. 2 for "Upper Funnel"/"Lower Funnel" -- `{label, rows: [{channel,
+base, incremental, baseValue, incValue}], subtotal}`; `subtotal` is
+`{baseValue, incValue}` and optional per group; the group's row count is
+read from `rows.length`, not fixed to the source's 8-and-2). `cfg.grandTotal`
+(`{baseValue, incValue}`, the dark bar spanning the first four columns at
+the bottom).
+
+### 11.6 Report chart/timeline wells -- 3 layouts
 
 Generic capability wells dropped onto the bare `Content Gray` / `Content
 Dark` chassis (eyebrow/title/intro unchanged from §11.1). Use these only
-when nothing in §11.5 already fits the content.
+when nothing in §11.5 already fits the content. (`reportGrayTable` /
+`reportDarkTable` used to be documented here as a generic `cfg.headers`/
+`cfg.rows`/`cfg.colW` table well -- they no longer are; both were rebuilt as
+bespoke structured layouts, see §11.5, and their old template attribution
+here of "slides 76/78" was itself wrong -- slide 78 is `reportChannelMatrix`,
+a different table object entirely, confirmed against the source directly.)
 
 - **`reportGrayChart`** / **`reportDarkChart`** (bg `#EEEEEE`/`#262626`,
   template slides 83/84/85/88 and 79/80/81/82/93/94): `cfg.chart` =
   `{type, data, opts}`, a native chart in a fixed well.
-- **`reportGrayTable`** / **`reportDarkTable`** (bg `#EEEEEE`/`#262626`,
-  template slides 76/78 and 77): `cfg.headers`, `cfg.rows`, `cfg.colW` --
-  a native table in a fixed well.
 - **`reportGrayTimeline`** (bg `#EEEEEE`, template slide 72 specifically):
   `cfg.milestones` (array, ≤8, plain strings placed at fixed marks along the
-  campaign-progress flow art) · `cfg.hereLabel` (`false` to hide the tan dot
-  marker).
+  campaign-progress flow art) · `cfg.hereLabel` (`false` to hide the gray
+  dot-with-white-outline marker).
 
 
 ## 12. Production planning — 11 layouts
@@ -2084,7 +2122,7 @@ Capacity is set by column width and point size, and it is tight in this template
 7. **Keep the divider tag Spark** on all eight variants, including the colour-mood ones. §7.
 8. **Keep the statement white** on all four headline variants, including `light`. Flag the contrast in speaker notes rather than "fixing" it. §8.
 9. **Don't select `Title & Bullets`, or the retired `blankDark`/`blankGrey`/`blankLight` engine names.** Use `reportPlatformMatrix`, `reportStatRow`, `reportEcosystemTree`, `reportJourneyMap` respectively — the retired names still resolve but log a warning. §11.4.
-10. **Fixed counts:** `Storyboard 02` = 6 panels, `Casting` = 4 talent, `Location Overview` = 5 locations, `Moodboard Wardrobe` = 4 outfits, `Moodboard ` = 8 wells, `Moodboard Props` = 10 caption slots, `reportMetricTable` = 7 columns, `reportStrategyStack` = 2 badges / 3 panels / 3 footers, `reportJourneyMap` = 4 panels x 3 sections, `reportPlatformMatrix` = 8 spokes max, `reportEcosystemTree` = 8 branches max, `reportSplitPanels` = 4 milestones max. None of these grids has a spare cell or an overflow rule.
+10. **Fixed counts:** `Storyboard 02` = 6 panels, `Casting` = 4 talent, `Location Overview` = 5 locations, `Moodboard Wardrobe` = 4 outfits, `Moodboard ` = 8 wells, `Moodboard Props` = 10 caption slots, `reportMetricTable` = 7 columns, `reportStrategyStack` = 2 badges / 3 panels / 3 footers, `reportJourneyMap` = 4 panels x 3 sections, `reportPlatformMatrix` = 8 spokes max, `reportEcosystemTree` = 8 branches max, `reportSplitPanels` = 4 milestones max, `reportGateStatus` = 6 gates / 5 dividers max, `reportNumberedSteps` = 6 steps (fixed, not a max -- the serpentine layout is hardcoded to 3x2). `reportChannelMatrix`'s group/row counts are the one exception in this family: read from `cfg.groups[].rows.length`, not fixed. None of the others has a spare cell or an overflow rule.
 11. **Horizontal bars get rounded (pill) ends; vertical bars stay square.** Confirmed against the source design (slides 86/87 — `Rounded Rectangle`, `adj=[0.5]`, full pill, on variable-width/fixed-height horizontal bars) and by explicit correction after an early draft of this rule wrongly rounded vertical bar tops. Applies to `reportSplitPanels` and `reportSpendBars(Light/Dark)` (`radius:'pill'` on `type:'s'`) and the native `type:'chart'` bar renderer (`renderBarChart` in `standard-deck.js`, canvas `fillRect`, intentionally square). Note as of the 7/30/26 template: the PPTX source itself doesn't yet show this rounding on every slide it should (e.g. slide 89's bars are plain `Rectangle`, no rounding at all) — that's a known gap for the template's owner to fix upstream, not something to chase per-slide in this engine. The rule above is the target state regardless of which individual source slides currently reflect it.
 
 ### 14.3 Pre-flight
