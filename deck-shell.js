@@ -24,6 +24,12 @@ function fontFor(el) { return (el && FONT_FACES[el.font]) || FONT; }
 var _D = []; var _config = {}; var _currentSlide = 0; var _totalSlides = 0;
 var _customLogo = null; var _noLogo = false; var _imageMode = false;
 var _imageCache = {};
+// Set by deckInit()'s prefetchDeckAssets(); exportPPTX() awaits it before
+// export. Declared here (module scope), not with `var` inside deckInit, so
+// exportPPTX -- a sibling top-level function, not a nested one -- can see it.
+// Defaults to a resolved promise so a hypothetical pre-deckInit export call
+// doesn't hang.
+var _prefetchPromise = Promise.resolve();
 // Photo masks pending injection into the exported XML, keyed by the objectName
 // stamped on the picture. Reset at the start of every export.
 var _maskJobs = {}, _maskSeq = 0;
@@ -35,23 +41,30 @@ var _gradJobs = {}, _gradSeq = 0;
 // ============================================================
 
 function prefetchImage(url) {
-if (_imageCache[url]) return;
-var img = new Image();
-img.crossOrigin = 'anonymous';
-img.onload = function () {
-  var canvas = document.createElement('canvas');
-  canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
-  var ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
-  try { _imageCache[url] = canvas.toDataURL('image/png'); }
-  catch (e) {
-    // Canvas is tainted. Under file:// every local image trips this, so the PPTX
-    // links images instead of embedding them. Serve the folder over http
-    // (python -m http.server) to get embedded assets.
-    console.warn('[deck-shell] Could not cache (canvas tainted; serve over http:// to embed): ' + url);
-  }
-};
-img.onerror = function () { console.warn('[deck-shell] Failed to prefetch: ' + url); };
-img.src = url;
+if (_imageCache[url]) return Promise.resolve();
+return new Promise(function (resolve) {
+  var img = new Image();
+  img.crossOrigin = 'anonymous';
+  img.onload = function () {
+    var canvas = document.createElement('canvas');
+    canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
+    var ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
+    try { _imageCache[url] = canvas.toDataURL('image/png'); }
+    catch (e) {
+      // Canvas is tainted. Under file:// every local image trips this, so the PPTX
+      // links images instead of embedding them. Serve the folder over http
+      // (python -m http.server) to get embedded assets.
+      console.warn('[deck-shell] Could not cache (canvas tainted; serve over http:// to embed): ' + url);
+    }
+    resolve();
+  };
+  // Resolve (not reject) on failure -- one bad URL should not hang every other
+  // slide's export. exportImage's opts.path fallback still applies for this
+  // one image, same as before; the fix here is only for the images that WOULD
+  // have succeeded if export had waited for them.
+  img.onerror = function () { console.warn('[deck-shell] Failed to prefetch: ' + url); resolve(); };
+  img.src = url;
+});
 }
 
 // ============================================================
@@ -388,7 +401,7 @@ function rerenderAll() {
 // PPTX EXPORT [v6.0.8: _pptxGradient support]
 // ============================================================
 
-function exportPPTX() {
+async function exportPPTX() {
 var downloadBtn = document.querySelector('.sd-download-btn');
 if (typeof PptxGenJS === 'undefined' && typeof pptxgen === 'undefined') {
   showToast('Export library did not load \u2014 see console.', 'bad');
@@ -398,12 +411,19 @@ if (typeof PptxGenJS === 'undefined' && typeof pptxgen === 'undefined') {
   return;
 }
 if (!_D || !_D.length) { showToast('No slide data.', 'bad'); return; }
+if (downloadBtn && downloadBtn.disabled) return;
+if (downloadBtn) { downloadBtn.disabled = true; downloadBtn.textContent = '\u23F3 Preparing images...'; }
+// Wait for every background/brand-mark/photo-well image to finish loading
+// into _imageCache before export touches a single slide. Without this,
+// exportImage() falls back to opts.path for anything not yet cached -- see
+// the comment on _prefetchPromise above for what that fallback can silently
+// embed instead of the real image.
+await _prefetchPromise;
 // Mask tags are per-export: exportPPTX can run more than once in a session and
 // stale entries would renumber against the wrong pictures.
 _maskJobs = {}; _maskSeq = 0;
 _gradJobs = {}; _gradSeq = 0;
-if (downloadBtn && downloadBtn.disabled) return;
-if (downloadBtn) { downloadBtn.disabled = true; downloadBtn.textContent = '\u23F3 Exporting...'; }
+if (downloadBtn) { downloadBtn.textContent = '\u23F3 Exporting...'; }
 
 try {
   var pptx = new PptxGenJS();
@@ -932,7 +952,16 @@ function exportImage(slide, el) {
   if (!src) { console.warn('[deck-shell] image element has no resolvable src/ref: ' + (el.ref || '?')); return; }
   var opts = { x: el.x, y: el.y, w: el.w, h: el.h };
   var data = (src.indexOf('data:') === 0) ? src : _imageCache[src];
-  if (data) opts.data = data; else opts.path = src;
+  if (data) opts.data = data;
+  else {
+    // Should not happen now that exportPPTX awaits _prefetchPromise before
+    // this ever runs -- if it does, the URL genuinely failed to load (see
+    // prefetchImage's onerror), not just "hadn't loaded yet". Logged loudly
+    // because this is exactly the fallback that let a wrong-content response
+    // get silently embedded as if it were the real image.
+    console.warn('[deck-shell] No cached data for ' + src + ' at export time -- passing raw path to PptxGenJS, which does not validate the response is actually an image.');
+    opts.path = src;
+  }
   // alphaModFix -> PptxGenJS transparency (0 = opaque, 100 = invisible).
   if (typeof el.transparency === 'number') opts.transparency = el.transparency;
   // A photo supplied into a well fills the frame; PptxGenJS crops to do that.
@@ -1031,7 +1060,20 @@ if (window.DeckLayouts && window.DeckLayouts.getPrefetchUrls) window.DeckLayouts
 // _prefetchUrls is empty in practice -- backgrounds and brand marks were never
 // cached and therefore never embedded on export. Collect them off the deck data
 // itself: every slide background, plus every image element the layouts emit.
-(function prefetchDeckAssets() {
+//
+// prefetchImage() is async (the actual cache write happens inside img.onload,
+// which fires later, not synchronously) but this IIFE fired every request and
+// returned immediately, with nothing gating export on completion. If the
+// export button was clicked before a given image finished loading,
+// exportImage()'s _imageCache lookup missed and fell back to opts.path = src
+// -- handing the raw URL to PptxGenJS's own internal fetch, a different code
+// path with no validation that what comes back is actually image data. On a
+// network where that path can return something other than the image (an
+// app's own HTML shell instead of a 404, for instance), the wrong content
+// gets silently embedded as if it were a real image. _prefetchPromise exists
+// so exportPPTX can await full cache warmth before ever reaching that
+// fallback, rather than depending on the user happening to wait long enough.
+_prefetchPromise = (function prefetchDeckAssets() {
   var urls = {};
   function want(u) { if (u && u.indexOf('data:') !== 0) urls[u] = 1; }
   _D.forEach(function (sd) {
@@ -1042,7 +1084,7 @@ if (window.DeckLayouts && window.DeckLayouts.getPrefetchUrls) window.DeckLayouts
       if (el && el.type === 'img') want(SD.resolveImgSrc ? SD.resolveImgSrc(el) : el.src);
     });
   });
-  Object.keys(urls).forEach(prefetchImage);
+  return Promise.all(Object.keys(urls).map(prefetchImage));
 })();
 
 // Pre-render icons for PPTX export
