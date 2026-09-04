@@ -1,0 +1,70 @@
+[
+ {
+  "file": "photos/cover_scenic_01.jpg",
+  "source_media": "image7.png",
+  "source_slide": 9,
+  "for_layout": "coverPhoto",
+  "px": [
+   1920,
+   1080
+  ],
+  "kb": 165
+ },
+ {
+  "file": "photos/cover_scenic_02.jpg",
+  "source_media": "image40.png",
+  "source_slide": 8,
+  "for_layout": "coverPhoto",
+  "px": [
+   1920,
+   1083
+  ],
+  "kb": 267
+ },
+ {
+  "file": "photos/cover_hero_01.jpg",
+  "source_media": "image.png (updated 7/30/26)",
+  "source_slide": 10,
+  "for_layout": "coverPhoto2",
+  "px": [
+   1920,
+   1281
+  ],
+  "kb": 462,
+  "note": "Replaces the prior cover_hero_01.jpg. The 7/24/26 template's slide 10 well was empty (no baked photo); 7/30/26 filled it with this real hero shot for the first time -- not a swap of prior content."
+ },
+ {
+  "file": "photos/cover_hero_02.jpg",
+  "source_media": "image.png (updated 7/30/26)",
+  "source_slide": 11,
+  "for_layout": "coverPhoto2",
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 97,
+  "note": "Replaces the prior cover_hero_02.jpg. The 7/24/26 template's slide 11 well was empty (no baked photo); 7/30/26 filled it with this real hero shot for the first time -- not a swap of prior content."
+ },
+ {
+  "file": "photos/statement_01.jpg",
+  "source_media": "image17.png",
+  "source_slide": 41,
+  "for_layout": "headlinePhotoWell",
+  "px": [
+   1920,
+   1080
+  ],
+  "kb": 210
+ },
+ {
+  "file": "photos/statement_02.jpg",
+  "source_media": "image48.jpeg",
+  "source_slide": 34,
+  "for_layout": "headlinePhotoWell",
+  "px": [
+   1536,
+   1024
+  ],
+  "kb": 189
+ }
+]

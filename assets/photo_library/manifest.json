@@ -1,0 +1,1043 @@
+[
+ {
+  "file": "003_CX90-PHEV_21-wheels_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "wheels"
+  ],
+  "variant": [
+   "PHEV"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1693
+ },
+ {
+  "file": "005_CX90-PHEV_Moonroof_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "moonroof"
+  ],
+  "variant": [
+   "PHEV"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1503
+ },
+ {
+  "file": "006_CX90-PHEV_Front-Grille_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "grille",
+   "front 3/4"
+  ],
+  "variant": [
+   "PHEV"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1597
+ },
+ {
+  "file": "006_CX90_Full-front_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "front 3/4",
+   "full front"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1457
+ },
+ {
+  "file": "008_CX90_Front-Grille-w-badge_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "grille",
+   "badging",
+   "front 3/4"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1303
+ },
+ {
+  "file": "009_CX90_New-Lamp-Design-Front_def2.png",
+  "model": "CX-90",
+  "subjects": [
+   "headlight/lamp",
+   "front 3/4"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1590
+ },
+ {
+  "file": "010_CX90_New-Lamp-Design_Rear_def1.jpg",
+  "model": "CX-90",
+  "subjects": [
+   "headlight/lamp",
+   "rear"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 393
+ },
+ {
+  "file": "011_CX90_Rear-Badging_def2.png",
+  "model": "CX-90",
+  "subjects": [
+   "badging",
+   "rear"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1121
+ },
+ {
+  "file": "012_CX90_Mazda-Badge_On-Cladding_def2.png",
+  "model": "CX-90",
+  "subjects": [
+   "badging"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1086
+ },
+ {
+  "file": "016_CX90_3-rows_V2_def2.png",
+  "model": "CX-90",
+  "subjects": [
+   "interior: 3-row seating"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1737
+ },
+ {
+  "file": "01_000_CX90_day01_misc-1_0808_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "misc/candid"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1343
+ },
+ {
+  "file": "021_000_CX90_day03_misc-1_0357_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "misc/candid"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   787
+  ],
+  "kb": 1046
+ },
+ {
+  "file": "026_000_CX90_day03_misc-1_0371_def1.jpg",
+  "model": "CX-90",
+  "subjects": [
+   "misc/candid"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   795
+  ],
+  "kb": 827
+ },
+ {
+  "file": "026_CX90_90-Cornering_def2.png",
+  "model": "CX-90",
+  "subjects": [
+   "driving/action"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   1770
+  ],
+  "kb": 2859
+ },
+ {
+  "file": "027_000_CX90_day03_misc-1_0598_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "misc/candid"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1381
+ },
+ {
+  "file": "027_CX90_Front-Running_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "driving/action",
+   "front 3/4"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1459
+ },
+ {
+  "file": "029_000_CX90_Day05_misc-1_0555_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "misc/candid"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1382
+ },
+ {
+  "file": "029_CX90-PHEV_Front74Running_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "driving/action",
+   "front 3/4"
+  ],
+  "variant": [
+   "PHEV"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1687
+ },
+ {
+  "file": "030_CX90-PHEV_Front78-Running_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "driving/action",
+   "front 3/4"
+  ],
+  "variant": [
+   "PHEV"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1368
+ },
+ {
+  "file": "031_CX90-PHEV_Rear78-Running_rgb_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "rear",
+   "driving/action"
+  ],
+  "variant": [
+   "PHEV"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1345
+ },
+ {
+  "file": "032_000_CX90_day01_misc-1_0715_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "misc/candid"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   805
+  ],
+  "kb": 896
+ },
+ {
+  "file": "032_CX90-PHEV_Front34_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "front 3/4"
+  ],
+  "variant": [
+   "PHEV"
+  ],
+  "px": [
+   1170,
+   785
+  ],
+  "kb": 1604
+ },
+ {
+  "file": "035_CX90-PHEV_Car-Driving-Forward_0347_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "driving/action"
+  ],
+  "variant": [
+   "PHEV"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1593
+ },
+ {
+  "file": "036_000_CX90_day08_Running-Ramp_1125_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "driving/action"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   798
+  ],
+  "kb": 1411
+ },
+ {
+  "file": "037_026_CX90_90-Cornering_Running_0049_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "driving/action"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   1741
+  ],
+  "kb": 3014
+ },
+ {
+  "file": "042_CX90_Access_Day04_Cargo_0402_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "cargo"
+  ],
+  "variant": [
+   "Access (accessories)"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1312
+ },
+ {
+  "file": "043_CX90_Access_Day04_CargoBlocks_0439_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "cargo"
+  ],
+  "variant": [
+   "Access (accessories)"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1261
+ },
+ {
+  "file": "052_CX90_PHEV-34-front_def2.png",
+  "model": "CX-90",
+  "subjects": [
+   "front 3/4"
+  ],
+  "variant": [
+   "PHEV"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1665
+ },
+ {
+  "file": "053_CX90_PHEV-78-rear-running_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "rear",
+   "driving/action"
+  ],
+  "variant": [
+   "PHEV"
+  ],
+  "px": [
+   1170,
+   799
+  ],
+  "kb": 1572
+ },
+ {
+  "file": "054X_CX90-PHEV_Crossbars_0274_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "accessory: crossbars"
+  ],
+  "variant": [
+   "PHEV"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1356
+ },
+ {
+  "file": "054_CX90_Access_Day02_misc1_0105_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "misc/candid"
+  ],
+  "variant": [
+   "Access (accessories)"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1639
+ },
+ {
+  "file": "2019_CX-5_US-LHD-_C7_until Aug 2022.png",
+  "model": "CX-5",
+  "subjects": [
+   "uncategorized -- review filename"
+  ],
+  "variant": [
+   "model year 2019"
+  ],
+  "px": [
+   3510,
+   2341
+  ],
+  "kb": 9987
+ },
+ {
+  "file": "2021_CX-5_IPM5_GER(LHD)_C06_INT_High+.png",
+  "model": "CX-5",
+  "subjects": [
+   "interior"
+  ],
+  "variant": [
+   "model year 2021"
+  ],
+  "px": [
+   3510,
+   2342
+  ],
+  "kb": 12607
+ },
+ {
+  "file": "2021_CX-5_IPM5_US-LHD-_C15_EXT_High-_until Sep 2024_extend.png",
+  "model": "CX-5",
+  "subjects": [
+   "exterior"
+  ],
+  "variant": [
+   "model year 2021"
+  ],
+  "px": [
+   3510,
+   2343
+  ],
+  "kb": 10896
+ },
+ {
+  "file": "2023_CX-5_23CY-SV_JPN-RHD_BRD_C06_EXT_FQ.jpg",
+  "model": "CX-5",
+  "subjects": [
+   "exterior"
+  ],
+  "variant": [
+   "model year 2023"
+  ],
+  "px": [
+   1920,
+   1299
+  ],
+  "kb": 2544
+ },
+ {
+  "file": "2023_CX-5_23CY-SV_US-LHD_BRD_C02_EXT_FQ_Extended.png",
+  "model": "CX-5",
+  "subjects": [
+   "exterior"
+  ],
+  "variant": [
+   "model year 2023"
+  ],
+  "px": [
+   3438,
+   2469
+  ],
+  "kb": 10554
+ },
+ {
+  "file": "CX-5_1_24_US_Misc_060.png",
+  "model": "CX-5",
+  "subjects": [
+   "misc/candid"
+  ],
+  "variant": [],
+  "px": [
+   3510,
+   2632
+  ],
+  "kb": 9497
+ },
+ {
+  "file": "GTMM0000009H_MY24_CX90_Hero Edit_Extend.png",
+  "model": "CX-90",
+  "subjects": [
+   "hero shot"
+  ],
+  "variant": [
+   "model year MY24"
+  ],
+  "px": [
+   2220,
+   1496
+  ],
+  "kb": 4405
+ },
+ {
+  "file": "MY22_CX5_Brand12_360 view monitor 1.png",
+  "model": "CX-5",
+  "subjects": [
+   "brand/performance",
+   "360 view monitor"
+  ],
+  "variant": [
+   "model year MY22"
+  ],
+  "px": [
+   3510,
+   2341
+  ],
+  "kb": 9471
+ },
+ {
+  "file": "MY23_CX5_008_Brand6_car2car_Turbo Signature_performance_0153-1_def2.png",
+  "model": "CX-5",
+  "subjects": [
+   "brand/performance"
+  ],
+  "variant": [
+   "model year MY23"
+  ],
+  "px": [
+   5760,
+   3841
+  ],
+  "kb": 20027
+ },
+ {
+  "file": "MY23_CX5_Brand6_Turbo Signature_performance_def2.png",
+  "model": "CX-5",
+  "subjects": [
+   "brand/performance"
+  ],
+  "variant": [
+   "model year MY23"
+  ],
+  "px": [
+   5760,
+   3765
+  ],
+  "kb": 16871
+ },
+ {
+  "file": "MY23_CX5_Brand6_Turbo-Signature_performance_def1_extended 1.png",
+  "model": "CX-5",
+  "subjects": [
+   "brand/performance"
+  ],
+  "variant": [
+   "model year MY23"
+  ],
+  "px": [
+   2800,
+   1576
+  ],
+  "kb": 3870
+ },
+ {
+  "file": "MY23_CX5_Day01_lifestyle_Misc_1501_def2.png",
+  "model": "CX-5",
+  "subjects": [
+   "lifestyle",
+   "misc/candid"
+  ],
+  "variant": [
+   "model year MY23"
+  ],
+  "px": [
+   5760,
+   3841
+  ],
+  "kb": 9188
+ },
+ {
+  "file": "MY23_CX5_Day02_lifestyle_Misc_0272-1_R3_ORIG_def2.png",
+  "model": "CX-5",
+  "subjects": [
+   "lifestyle",
+   "misc/candid"
+  ],
+  "variant": [
+   "model year MY23"
+  ],
+  "px": [
+   5760,
+   3872
+  ],
+  "kb": 17555
+ },
+ {
+  "file": "MY23_CX5_Day03_lifestyle_Misc_1042-1_def1.png",
+  "model": "CX-5",
+  "subjects": [
+   "lifestyle",
+   "misc/candid"
+  ],
+  "variant": [
+   "model year MY23"
+  ],
+  "px": [
+   5760,
+   3841
+  ],
+  "kb": 14974
+ },
+ {
+  "file": "MY23_CX5_Front-Grill-Signature-Wing_def1.png",
+  "model": "CX-5",
+  "subjects": [
+   "grille",
+   "front 3/4",
+   "grille detail"
+  ],
+  "variant": [
+   "model year MY23"
+  ],
+  "px": [
+   5760,
+   3841
+  ],
+  "kb": 11121
+ },
+ {
+  "file": "MY23_CX90_Access_009_Pet-FullWide-DIO_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "accessory: pet"
+  ],
+  "variant": [
+   "Access (accessories)",
+   "model year MY23"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1560
+ },
+ {
+  "file": "MY23_CX90_Access_013_Crossbars_FullVehicle_def2.png",
+  "model": "CX-90",
+  "subjects": [
+   "accessory: crossbars"
+  ],
+  "variant": [
+   "Access (accessories)",
+   "model year MY23"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1758
+ },
+ {
+  "file": "MY23_CX90_Access_016_Splash-Guard_def2.png",
+  "model": "CX-90",
+  "subjects": [
+   "accessory: splash guard"
+  ],
+  "variant": [
+   "Access (accessories)",
+   "model year MY23"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1255
+ },
+ {
+  "file": "MY23_CX90_Access_017_Illuminated-Doorsill-TrimPlate_def1.png",
+  "model": "CX-90",
+  "subjects": [
+   "accessory: doorsill trim"
+  ],
+  "variant": [
+   "Access (accessories)",
+   "model year MY23"
+  ],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1172
+ },
+ {
+  "file": "MY26_CX-50_CX-50 Hybrid_Packshot_Vehicle Only_V2_Extended 1.png",
+  "model": "CX-50",
+  "subjects": [
+   "studio packshot",
+   "hybrid variant"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   1178,
+   1008
+  ],
+  "kb": 2336
+ },
+ {
+  "file": "MY26_CX-50_Exterior 3_4 Profile 1.png",
+  "model": "CX-50",
+  "subjects": [
+   "side profile"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   1178,
+   663
+  ],
+  "kb": 1292
+ },
+ {
+  "file": "MY26_CX-50_Exterior Driving Action Shot 1.png",
+  "model": "CX-50",
+  "subjects": [
+   "driving/action"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   1178,
+   786
+  ],
+  "kb": 1445
+ },
+ {
+  "file": "MY26_CX-50_Exterior Rear Lifestyle Camping V1 1.png",
+  "model": "CX-50",
+  "subjects": [
+   "rear",
+   "lifestyle",
+   "lifestyle/camping"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   1178,
+   786
+  ],
+  "kb": 1768
+ },
+ {
+  "file": "MY26_CX-50_Exterior Rear Liftgate Detail 1.png",
+  "model": "CX-50",
+  "subjects": [
+   "rear",
+   "detail shot"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   1178,
+   786
+  ],
+  "kb": 1558
+ },
+ {
+  "file": "MY26_CX-50_Exterior Side Profile Lifestyle Camping Landscape V2 1.png",
+  "model": "CX-50",
+  "subjects": [
+   "lifestyle",
+   "side profile",
+   "lifestyle/camping"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   1178,
+   786
+  ],
+  "kb": 2093
+ },
+ {
+  "file": "MY26_CX-50_Front Badging Detail 1.png",
+  "model": "CX-50",
+  "subjects": [
+   "badging",
+   "detail shot",
+   "front 3/4"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   1178,
+   785
+  ],
+  "kb": 1283
+ },
+ {
+  "file": "MY26_CX-50_Front Headlight Closeup 1.png",
+  "model": "CX-50",
+  "subjects": [
+   "headlight/lamp",
+   "detail shot",
+   "front 3/4"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   1178,
+   785
+  ],
+  "kb": 1377
+ },
+ {
+  "file": "MY26_CX-50_Front View Lifestyle 1.png",
+  "model": "CX-50",
+  "subjects": [
+   "lifestyle",
+   "front 3/4"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   1178,
+   785
+  ],
+  "kb": 1857
+ },
+ {
+  "file": "MY26_CX-50_Lifestyle Cargo Space 1.png",
+  "model": "CX-50",
+  "subjects": [
+   "cargo",
+   "lifestyle"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   1178,
+   785
+  ],
+  "kb": 1608
+ },
+ {
+  "file": "MY26_CX-50_Wheel Detail 1.png",
+  "model": "CX-50",
+  "subjects": [
+   "wheels",
+   "detail shot"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   1178,
+   785
+  ],
+  "kb": 1417
+ },
+ {
+  "file": "MY26_Mazda_CX90_ArmCar_2855_V4 1.png",
+  "model": "CX-90",
+  "subjects": [
+   "ext. 3/4 (arm-car rig)"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   2880,
+   1920
+  ],
+  "kb": 7693
+ },
+ {
+  "file": "MY26_Mazda_CX90_ArmCar_2882_V4 1.png",
+  "model": "CX-90",
+  "subjects": [
+   "ext. 3/4 (arm-car rig)"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   2880,
+   1700
+  ],
+  "kb": 6427
+ },
+ {
+  "file": "MY26_Mazda_CX90_House_Driveway_7-8_Front_5069_final 1.png",
+  "model": "CX-90",
+  "subjects": [
+   "front 3/4",
+   "lifestyle: driveway"
+  ],
+  "variant": [
+   "model year MY26"
+  ],
+  "px": [
+   2880,
+   1912
+  ],
+  "kb": 10508
+ },
+ {
+  "file": "P814472_009_CX90_New-Lamp-Design-Front_def2_r6.png",
+  "model": "CX-90",
+  "subjects": [
+   "headlight/lamp",
+   "front 3/4"
+  ],
+  "variant": [],
+  "px": [
+   2154,
+   1437
+  ],
+  "kb": 4875
+ },
+ {
+  "file": "P814472_027_CX90_Front-Running_def1_r5.png",
+  "model": "CX-90",
+  "subjects": [
+   "driving/action",
+   "front 3/4"
+  ],
+  "variant": [],
+  "px": [
+   2154,
+   1437
+  ],
+  "kb": 4836
+ },
+ {
+  "file": "P814472_027_CX90_Front-Running_def1_r5_EXT 1.png",
+  "model": "CX-90",
+  "subjects": [
+   "driving/action",
+   "front 3/4"
+  ],
+  "variant": [],
+  "px": [
+   4078,
+   2464
+  ],
+  "kb": 10982
+ },
+ {
+  "file": "Property 1=Rhodium-White.png",
+  "model": "unknown -- review",
+  "subjects": [
+   "uncategorized -- review filename"
+  ],
+  "variant": [],
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 1464
+ },
+ {
+  "file": "image 1.png",
+  "model": "unknown -- review",
+  "subjects": [
+   "uncategorized -- review filename"
+  ],
+  "variant": [],
+  "px": [
+   3284,
+   2888
+  ],
+  "kb": 8773
+ },
+ {
+  "file": "image 2.png",
+  "model": "unknown -- review",
+  "subjects": [
+   "uncategorized -- review filename"
+  ],
+  "variant": [],
+  "px": [
+   4208,
+   2532
+  ],
+  "kb": 20220
+ }
+]
