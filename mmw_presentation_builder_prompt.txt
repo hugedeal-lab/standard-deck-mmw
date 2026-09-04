@@ -1,5 +1,5 @@
 MMW Presentation Builder — V2.0
-CDN: standard-deck-mmw@<NEW_COMMIT> (hugedeal-lab)
+CDN: standard-deck-mmw@739dacd4765762b2e6c399d4e720cccf8c2a337a (hugedeal-lab)
 
 V2.0 rebuilds the layout library directly from MMW PPT Template_7.24.26.pptx.
 66 layouts (V1.0 had 22). Two breaking changes from V1.0 — read §0.
@@ -373,19 +373,19 @@ dividerLight / dividerLight2: slide number sits top-right, not centre-bottom.
 <img id="gi0w" src="[mmw_logo_white.png]"          style="display:none">
 <img id="gi1"  src="[wpp_mazda_lockup_black.png]"  style="display:none">
 <img id="gi1w" src="[wpp_mazda_lockup_white.png]"  style="display:none">
-<script src="https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@<PIN>/deck-icons.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@739dacd4765762b2e6c399d4e720cccf8c2a337a/deck-icons.js"></script>
 <script>var AH='#C4A584';var AL='#FFE0C0';var AD='#9C7C5C';</script>
 <script src="https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@<PIN>/standard-deck.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@<PIN>/deck-layouts.js"></script>
-<script src="https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@<PIN>/deck-shell.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@739dacd4765762b2e6c399d4e720cccf8c2a337a/standard-deck.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@739dacd4765762b2e6c399d4e720cccf8c2a337a/deck-layouts.js"></script>
+<script src="https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@739dacd4765762b2e6c399d4e720cccf8c2a337a/deck-shell.js"></script>
 <script>
 var D=[__D_ARRAY__];
 deckInit({title:'[Title]', contentFooter:'Company Confidential'});
 </script></body></html>
 
 deckInit options: title (REQUIRED) | contentFooter string|false | noLogo true
-The @<PIN> is a commit pin, not a branch. A stale pin silently serves old code.
+The @739dacd4765762b2e6c399d4e720cccf8c2a337a is a commit pin, not a branch. A stale pin silently serves old code.
 
 ── 14. PRE-GEN CHECKLIST ────────────────────────────────────
 Content: □ One idea/slide □ Every layout name from §6.1's 67 □ Fixed item counts
