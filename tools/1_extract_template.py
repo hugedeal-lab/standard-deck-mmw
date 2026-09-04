@@ -50,6 +50,12 @@ for i in range(1,200):
     except KeyError: continue
     m=re.search(rb'<p:cSld[^>]*name="([^"]*)"',x)
     nm=m.group(1).decode('utf8') if m else f'layout{i}'
+    # XML entities in the name attribute (e.g. "Title &amp; Bullets") were
+    # never being unescaped here -- this is a regex-on-raw-bytes extraction,
+    # not a real XML parse, so &amp; stayed literal instead of becoming '&'.
+    # 2_build_layout_data.py's FAMS list expects the real unescaped name.
+    import html as _html
+    nm=_html.unescape(nm)
     layout_name[p]=nm; layout_part_by_name.setdefault(nm,p)
 
 slide_layout={}

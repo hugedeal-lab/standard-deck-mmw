@@ -1844,3 +1844,532 @@ function layout_reportChannelMatrix(cfg) {
 
   return els;
 }'''
+
+# ---------------------------------------------------------------------------
+# PROMOTED FROM AUTO-GENERATED TO HAND-AUTHORED (7/30/26 template review)
+#
+# All 18 below were previously auto-generated from mmw_layouts.json's raw
+# PPTX shape geometry. That data is now permanently insufficient for them:
+# their correct content (device chrome from real platform mockup exports --
+# TikTok, Meta, Reddit, Pinterest, YouTube UI screenshots -- positioned via
+# hole-fraction geometry solved against each mockup image, not extracted
+# PPTX shapes) doesn't exist anywhere in the source .pptx to begin with. A
+# fresh 1_extract_template.py run against the current template was tried and
+# confirmed insufficient -- all 18 still differ from these bodies after a
+# clean re-extraction, because the raw template slides only ever had plain
+# unframed placeholders. Promoting these to OVERRIDES makes them permanently
+# immune to auto-regeneration drift, which a data refresh alone cannot fix.
+#
+# coverPhoto2 also needed promotion for a second, unrelated reason: it now
+# takes cfg.variant (1 or 2) to pick between two genuinely different crop
+# shapes the source uses across its two instances (slides 10/11) -- a
+# per-instance content choice the auto-generator has no way to express.
+#
+# headlinePhotoWell was promoted because the 7/30/26 template removed its
+# full-bleed photo well entirely (confirmed against the source directly);
+# the auto-generator would keep re-adding a well that no longer exists.
+# ---------------------------------------------------------------------------
+OVERRIDES['coverPhoto2'] = \
+'''
+function layout_coverPhoto2(cfg) {
+  var els = [];
+  var VARIANTS = {
+    1: { x:1.99, y:-0.02, w:11.43, h:7.57,
+      points:[[0.99713,0],[1,1],[0.60968,1],[0.35847,0.62088],[0.35847,0.99653],[0,0.99653],[0,0.5681],[0.32366,0.5681],[0.1788,0.3488],[0.1788,0.00292],[0.66745,0.00523],[0.89463,0.34806],[0.89463,0]] },
+    2: { x:3.349, y:0, w:10.074, h:7.538,
+      points:[[1,0.50565],[0.99579,0.99866],[0.88431,1],[0.55148,1],[0.40519,0.80509],[0.40588,1],[0.00069,1],[0,0.75639],[0.36912,0.75639],[0.20389,0.53491],[0.20458,0.00056],[0.25773,0],[0.61806,0]] }
+  };
+  var v = VARIANTS[cfg.variant] || VARIANTS[1];
+  ph(els, cfg, v.x, v.y, v.w, v.h, 0, v.points);
+  els.push({ type:'img', ref:logoRef(cfg), x:0.41, y:0.37, w:1.12, h:0.31 }); // brand mark (placeholder slot in template)
+  els.push({ type:'t', text:cfg.title || "", x:0.39, y:4.37, w:6.48, h:1.12, font:'H', size:54.5, color:'asphalt', valign:'bottom', caps:true, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'img', ref:lockupRef(cfg), x:0.42, y:7.06, w:1.02, h:0.19 }); // brand mark (placeholder slot in template)
+  return els;
+}'''
+
+OVERRIDES['headlinePhotoWell'] = \
+'''
+function layout_headlinePhotoWell(cfg) {
+  var els = [];
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:2.92, y:2.42, w:7.49, h:0.42, font:'B', size:15.5, color:'accent', bold:true, align:'center', valign:'bottom', caps:true, lineSpacing:0.9, charSpacing:6.97, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:140, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:14, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  return els;
+}'''
+
+OVERRIDES['metaDivider'] = \
+'''
+function layout_metaDivider(cfg) {
+  var els = [];
+  ph(els, cfg, 0.52, 3, 3.52, 0.71, 0); // Meta logo well, unchanged
+  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 1); // "place your own image" corner well, new in 7/30/26
+  els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
+  return els;
+}'''
+
+OVERRIDES['metaCarousel1x1'] = \
+'''
+function layout_metaCarousel1x1(cfg) {
+  var els = [];
+  els.push({ type:'s', x:-0.01, y:-0.01, w:13.35, h:2.73, fill:'#E2E2E2' });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:8.9, y:0.52, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:4.74, y:0.55, w:2.67, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_wordmark.png']) || A+'social/meta_wordmark.png', x:0.56, y:0.7, w:0.97, h:0.2 });
+  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:8.9, y:1.13, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:8.9, y:1.54, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:cfg.text || '', x:0.6, y:1.56, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  // Fixed device chrome: the real "Facebook & Instagram Carousel MockUp"
+  // asset (mazdausa header, dots, "Start customizing now" / "Shop now"
+  // footer all baked in), positioned by matching its transparent
+  // content-hole fraction against the source's own placeholder geometry --
+  // not the old bezel-only overlay.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_carousel_frame.png']) || A+'social/meta_carousel_frame.png', x:0.68, y:1.781, w:2.142, h:4.977 });
+  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  ph(els, cfg, 0.68, 3.15, 2.14, 3.27, 0);
+  els.push({ type:'t', text:cfg.text2 || '', x:0.77, y:3.5, w:1.97, h:0.51, font:'B', size:6.5, color:'black', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:"1:1 Carousel", x:10.68, y:3.64, w:1.23, h:0.23, font:'B', size:11, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  ph(els, cfg, 2.97, 4.04, 2.14, 2.13, 1);
+  ph(els, cfg, 5.21, 4.04, 2.14, 2.13, 2);
+  ph(els, cfg, 7.44, 4.04, 2.14, 2.13, 3);
+  ph(els, cfg, 9.68, 4.04, 2.14, 2.13, 4);
+  return els;
+}'''
+
+OVERRIDES['metaCarousel4x5'] = \
+'''
+function layout_metaCarousel4x5(cfg) {
+  var els = [];
+  els.push({ type:'s', x:-0.01, y:-0.01, w:13.35, h:2.73, fill:'#E2E2E2' });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:8.9, y:0.52, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:4.74, y:0.55, w:2.67, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_wordmark.png']) || A+'social/meta_wordmark.png', x:0.56, y:0.7, w:0.97, h:0.2 });
+  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:8.9, y:1.13, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:8.9, y:1.54, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:cfg.text || '', x:0.6, y:1.56, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  // Fixed device chrome: same real Meta Carousel MockUp asset as the 1x1
+  // variant, repositioned for this format's own "main" content-well
+  // geometry (index5 below, not the filmstrip cards).
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_carousel_frame.png']) || A+'social/meta_carousel_frame.png', x:0.71, y:2.673, w:2.042, h:3.881 });
+  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  ph(els, cfg, 0.68, 2.99, 2.14, 0.32, 0);
+  els.push({ type:'t', text:"4:5 Carousel", x:10.78, y:3.21, w:1.23, h:0.23, font:'B', size:11, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:cfg.text2 || '', x:0.77, y:3.34, w:1.97, h:0.51, font:'B', size:6.5, color:'black', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  ph(els, cfg, 2.97, 3.6, 2.14, 2.67, 1);
+  ph(els, cfg, 5.24, 3.6, 2.14, 2.67, 2);
+  ph(els, cfg, 7.5, 3.6, 2.14, 2.67, 3);
+  ph(els, cfg, 9.77, 3.6, 2.14, 2.67, 4);
+  ph(els, cfg, 0.71, 3.74, 2.04, 2.55, 5);
+  ph(els, cfg, 0.68, 6.37, 2.1, 0.2, 6);
+  return els;
+}'''
+
+OVERRIDES['metaVideoStatic'] = \
+'''
+function layout_metaVideoStatic(cfg) {
+  var els = [];
+  els.push({ type:'s', x:0, y:-0, w:3.52, h:7.5, fill:'#E2E2E2' });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_wordmark.png']) || A+'social/meta_wordmark.png', x:0.56, y:0.7, w:0.97, h:0.2 });
+  // Fixed device chrome: the real "Facebook & Instagram Reel MockUp" asset
+  // (status bar, "Learn more" card, mazdausa caption, bottom nav all baked
+  // in), positioned by matching its transparent content-hole fraction
+  // against the source's own placeholder geometry -- not the generic
+  // bezel-only overlay used before.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_reel_frame.png']) || A+'social/meta_reel_frame.png', x:5.13, y:1.154, w:2.465, h:6.279 });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_reel_frame.png']) || A+'social/meta_reel_frame.png', x:8.73, y:1.154, w:2.465, h:6.279 });
+  els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"9:16 STATIC REEL", x:5.63, y:1.02, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:"9:16 STORY", x:9.44, y:1.02, w:0.97, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  ph(els, cfg, 5.13, 1.48, 2.46, 5.23, 0);
+  ph(els, cfg, 8.73, 1.48, 2.46, 5.23, 1);
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  return els;
+}'''
+
+OVERRIDES['redditDivider'] = \
+'''
+function layout_redditDivider(cfg) {
+  var els = [];
+  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // side photo, unchanged
+  ph(els, cfg, 1.01, 3.28, 3.28, 1.85, 1); // Reddit logo well, unchanged
+  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 2); // "place your own image" corner well, new in 7/30/26
+  els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
+  return els;
+}'''
+
+OVERRIDES['redditCarousel'] = \
+'''
+function layout_redditCarousel(cfg) {
+  var els = [];
+  els.push({ type:'s', x:-0.01, y:-0.01, w:13.35, h:2.73, fill:'#E2E2E2' });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  ph(els, cfg, 0.61, 0.44, 1.22, 0.68, 0);
+  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:8.9, y:0.52, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:4.74, y:0.55, w:2.67, h:1.17, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:true, lineSpacing:1.15, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:8.9, y:1.13, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:8.9, y:1.54, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:cfg.text || '', x:0.6, y:1.56, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', bold:true, caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  // Fixed device chrome around the first carousel card only (matches how
+  // Reddit's real carousel ads render -- first card carries full post
+  // context, the rest are plain swipeable thumbnails). Repositioned to the
+  // real Reddit UI mockup's content-hole fraction; the previous overlay
+  // pair didn't match this card's actual bounds.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:0.74, y:3.304, w:3.123, h:3.164 });
+  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"4:5 Carousel", x:11.45, y:3.3, w:0.83, h:0.16, font:'B', size:7, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  ph(els, cfg, 3.53, 3.56, 2.1, 2.62, 1);
+  ph(els, cfg, 1.26, 3.57, 2.08, 2.6, 2);
+  ph(els, cfg, 5.72, 3.57, 2.1, 2.62, 3);
+  ph(els, cfg, 7.9, 3.57, 2.1, 2.62, 4);
+  ph(els, cfg, 10.08, 3.57, 2.1, 2.62, 5);
+  return els;
+}'''
+
+OVERRIDES['redditVideoStatic1x1'] = \
+'''
+function layout_redditVideoStatic1x1(cfg) {
+  var els = [];
+  els.push({ type:'s', x:-0.01, y:-0.01, w:3.52, h:7.5, fill:'#E2E2E2' });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_brand_photo.png']) || A+'social/reddit_brand_photo.png', x:0.44, y:0.23, w:1.75, h:0.98 });
+  // Fixed device chrome: the real Reddit UI mockup (status bar, upvote/
+  // comment/share/award row, u/username caption, Home/Inbox/You nav all
+  // baked in), positioned by matching its checkerboard content-hole
+  // fraction against the source's own placeholder geometry.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:4.413, y:2.32, w:4.129, h:5.124 });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:7.813, y:2.32, w:4.129, h:5.124 });
+  ph(els, cfg, 0.61, 0.44, 1.22, 0.62, 0); // was demo photo image114.png
+  els.push({ type:'t', text:"1:1 STATIC", x:5.75, y:0.51, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:"1:1 VIDEO", x:9.37, y:0.56, w:0.63, h:0.17, font:'B', size:7.5, color:'captionGray', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  ph(els, cfg, 5.1, 2.75, 2.75, 4.21, 1);
+  ph(els, cfg, 8.5, 2.75, 2.75, 4.21, 2);
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  return els;
+}'''
+
+OVERRIDES['redditVideoStatic4x5'] = \
+'''
+function layout_redditVideoStatic4x5(cfg) {
+  var els = [];
+  els.push({ type:'s', x:0, y:0, w:3.52, h:7.5, fill:'#E2E2E2' });
+  ph(els, cfg, 0.61, 0.44, 1.22, 0.62, 0);
+  els.push({ type:'t', text:"1:1 STATIC", x:5.75, y:0.51, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:"9:16 VIDEO", x:9.55, y:0.51, w:0.97, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  // Fixed device chrome: the real Reddit UI mockup, positioned per column by
+  // matching its checkerboard content-hole fraction against each column's
+  // own placeholder geometry (the two columns aren't the same height).
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:4.405, y:1.475, w:4.174, h:5.184 });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:7.97, y:1.981, w:4.204, h:4.272 });
+  ph(els, cfg, 5.1, 1.91, 2.78, 4.26, 1);
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  ph(els, cfg, 8.67, 2.34, 2.8, 3.51, 2);
+  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  return els;
+}'''
+
+OVERRIDES['tiktokDivider'] = \
+'''
+function layout_tiktokDivider(cfg) {
+  var els = [];
+  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // side photo, unchanged
+  ph(els, cfg, 0.72, 2.99, 3.35, 0.99, 1); // TikTok logo well, unchanged
+  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 2); // "place your own image" corner well, new in 7/30/26
+  els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
+  return els;
+}'''
+
+OVERRIDES['tiktokCarousel'] = \
+'''
+function layout_tiktokCarousel(cfg) {
+  var els = [];
+  els.push({ type:'s', x:-0.01, y:-0.01, w:13.35, h:2.73, fill:'#E2E2E2' });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:8.9, y:0.52, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:4.74, y:0.55, w:2.67, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['tiktok_chrome.png']) || A+'social/tiktok_chrome.png', x:0.54, y:0.6, w:1.23, h:0.36 });
+  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:8.9, y:1.13, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:8.9, y:1.54, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:cfg.text || '', x:0.6, y:1.56, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  // The 5 filmstrip cards are plain, unframed image wells in the source --
+  // confirmed directly, no device chrome around any of them (matching the
+  // same pattern Meta's carousel filmstrip uses). Removed 5 oversized
+  // generic device_frame_9x16.png overlays that didn't match the source.
+  ph(els, cfg, 6.87, 3.35, 1.75, 3.73, 0);
+  ph(els, cfg, 8.97, 3.35, 1.75, 3.73, 1);
+  ph(els, cfg, 0.54, 3.36, 1.75, 3.73, 2);
+  ph(els, cfg, 2.65, 3.36, 1.75, 3.73, 3);
+  ph(els, cfg, 4.71, 3.36, 1.75, 3.73, 4);
+  els.push({ type:'t', text:"9:16 Carousel", x:10.99, y:3.55, w:0.94, h:0.17, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  return els;
+}'''
+
+OVERRIDES['tiktokVideoStatic'] = \
+'''
+function layout_tiktokVideoStatic(cfg) {
+  var els = [];
+  els.push({ type:'s', x:-0.01, y:-0.01, w:3.52, h:7.5, fill:'#E2E2E2' });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['tiktok_chrome.png']) || A+'social/tiktok_chrome.png', x:0.54, y:0.6, w:1.23, h:0.36 });
+  // Fixed device chrome: the real "TikTok MockUp" asset (status bar,
+  // Following/For You tabs, right-side icon rail, @Mazda USA caption, red
+  // "Learn more" CTA, bottom nav all baked in), positioned by matching its
+  // checkerboard content-hole fraction against the source's own placeholder
+  // geometry -- not the generic bezel-only overlay used before.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['tiktok_video_frame.png']) || A+'social/tiktok_video_frame.png', x:4.92, y:1.036, w:2.432, h:6.1 });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['tiktok_video_frame.png']) || A+'social/tiktok_video_frame.png', x:8.83, y:1.036, w:2.432, h:6.1 });
+  els.push({ type:'t', text:"9:16 STATIC", x:5.44, y:0.86, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:"9:16 VIDEO", x:9.35, y:0.86, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  ph(els, cfg, 4.92, 1.42, 2.43, 5.13, 0);
+  ph(els, cfg, 8.83, 1.42, 2.43, 5.13, 1);
+  els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  return els;
+}'''
+
+OVERRIDES['pinterestDivider'] = \
+'''
+function layout_pinterestDivider(cfg) {
+  var els = [];
+  ph(els, cfg, 0.98, 3.71, 3.23, 0.78, 0); // Pinterest logo well, unchanged
+  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 1); // "place your own image" corner well, new in 7/30/26
+  els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
+  return els;
+}'''
+
+OVERRIDES['pinterest2x3'] = \
+'''
+function layout_pinterest2x3(cfg) {
+  var els = [];
+  els.push({ type:'s', x:0, y:-0, w:3.52, h:7.5, fill:'#E2E2E2' });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_logo.png']) || A+'social/pinterest_logo.png', x:0.51, y:0.64, w:1.27, h:0.31 });
+  // Fixed device chrome: the real Pinterest in-feed mockup (other pins for
+  // authentic context, our ad in the right column with "Craft your perfect
+  // ride / Mazda CX-90" caption baked in). Unlike the other platforms, this
+  // asset's own aspect ratio (0.4614) matches the source's right-column
+  // placeholder (index0 below, 2.40 x 5.20 = 0.4615) almost exactly, so it
+  // places directly at that placeholder's bounds -- no hole-fraction scaling
+  // needed. That also confirms index2 (the actual swappable ad card, 5.92,
+  // 2.97, 1.17, 2.00) already lines up with the mockup's real content hole.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_2x3_frame.jpg']) || A+'social/pinterest_2x3_frame.jpg', x:4.71, y:1.36, w:2.4, h:5.2 });
+  els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  ph(els, cfg, 8.76, 1.88, 2.44, 4.18, 1);
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  ph(els, cfg, 5.92, 2.97, 1.17, 2, 2);
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_wordmark.png']) || A+'social/pinterest_wordmark.png', x:8.77, y:5.54, w:2.42, h:0.51 });
+  // Button background drawn BEFORE its label -- was pushed after, so the
+  // black button covered the white "Follow"-style text completely.
+  els.push({ type:'s', x:8.77, y:5.69, w:1.37, h:0.31, fill:'black' });
+  els.push({ type:'t', text:cfg.text2 || '', x:8.89, y:5.68, w:0.91, h:0.23, font:'B', size:11, color:'white', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  return els;
+}'''
+
+OVERRIDES['pinterest1x1'] = \
+'''
+function layout_pinterest1x1(cfg) {
+  var els = [];
+  els.push({ type:'s', x:0, y:-0, w:3.52, h:7.5, fill:'#E2E2E2' });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_logo.png']) || A+'social/pinterest_logo.png', x:0.51, y:0.64, w:1.27, h:0.31 });
+  // Fixed device chrome: the real Pinterest video-pin mockup (status bar,
+  // scrubber, "Learn more" arrow all baked in), positioned by matching its
+  // checkerboard content-hole fraction against the source's own placeholder.
+  // Replaces two overlapping overlays (a generic bezel + a partial Pinterest
+  // asset) with one correctly-positioned frame.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_1x1_frame.png']) || A+'social/pinterest_1x1_frame.png', x:6.566, y:0.752, w:2.902, h:6.198 });
+  els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  ph(els, cfg, 6.61, 2.74, 2.77, 2.84, 0);
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  return els;
+}'''
+
+OVERRIDES['youtubeDivider'] = \
+'''
+function layout_youtubeDivider(cfg) {
+  var els = [];
+  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // side photo, unchanged
+  ph(els, cfg, 0.92, 3.14, 3.14, 0.73, 1); // Youtube logo well, unchanged
+  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 2); // "place your own image" corner well, new in 7/30/26
+  els.push({ type:'s', x:11.78, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
+  return els;
+}'''
+
+OVERRIDES['youtubeVideoAd'] = \
+'''
+function layout_youtubeVideoAd(cfg) {
+  var els = [];
+  els.push({ type:'s', x:0, y:-0.01, w:3.52, h:7.5, fill:'#E2E2E2' });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['youtube_logo.png']) || A+'social/youtube_logo.png', x:0.52, y:0.66, w:1.27, h:0.3 });
+  // Fixed player chrome, drawn first so the video well sits on top of it.
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['youtube_video_frame.png']) || A+'social/youtube_video_frame.png', x:4.35, y:0.99, w:7.65, h:5.98 });
+  ph(els, cfg, 4.33, 0.96, 7.69, 4.33, 0);
+  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:cfg.title || "", x:5.49, y:5.56, w:4.45, h:0.7, font:'B', size:20.5, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  return els;
+}'''
+
+
+# ---------------------------------------------------------------------------
+# PROMOTED: auto-generation's asset-matching heuristic picks a plausible but
+# wrong bundled asset for these (e.g. pattern_light2.png instead of
+# headline_dark_mark.png, pattern_light.png instead of thankyou_texture.png)
+# -- confirmed by a real pipeline run, not assumed. The committed choice was
+# a prior hand-correction with no OVERRIDES entry to protect it, so a
+# regeneration silently reverted it. Promoting removes the dependency on
+# that heuristic guessing right.
+# ---------------------------------------------------------------------------
+OVERRIDES['headlineDark'] = \
+'''
+function layout_headlineDark(cfg) {
+  var els = [];
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['headline_dark_mark.png']) || A+'backgrounds/headline_dark_mark.png', x:6.29, y:-0.44, w:0.69, h:0.3 });
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:2.92, y:2.42, w:7.49, h:0.42, font:'B', size:15.5, color:'accent', bold:true, align:'center', valign:'bottom', caps:true, lineSpacing:0.9, charSpacing:6.97, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:140, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:14, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  return els;
+}'''
+
+OVERRIDES['moodboardToneManner'] = \
+'''
+function layout_moodboardToneManner(cfg) {
+  var els = [];
+  els.push({ type:'t', text:cfg.title || "TONE & MANNER", x:0.36, y:0.27, w:6.32, h:0.68, font:'HR', size:35, color:'title', bold:true, valign:'middle', caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:6.73, y:0.4, w:6.24, h:0.43, font:'B', size:14.5, color:'accentDim', align:'right', caps:true, lineSpacing:0.9, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  ph(els, cfg, -0.01, 1.17, 4.43, 4.5, 0); // was demo photo image98.png
+  ph(els, cfg, 4.41, 1.17, 2.55, 2.89, 1); // was demo photo image93.jpeg
+  ph(els, cfg, 6.47, 1.17, 3.01, 2.72, 2); // was demo photo image94.jpeg
+  ph(els, cfg, 9.48, 1.17, 3.85, 2.71, 3); // was demo photo image97.jpeg
+  ph(els, cfg, 7.28, 3.87, 6.08, 3.67, 4); // was demo photo image96.jpeg
+  ph(els, cfg, 4.41, 3.88, 2.92, 1.79, 5); // was demo photo image95.jpeg
+  ph(els, cfg, 3.92, 5.67, 3.36, 1.85, 6); // was demo photo image100.jpeg
+  ph(els, cfg, 0, 5.7, 3.95, 1.79, 7); // was demo photo image99.png
+  return els;
+}'''
+
+OVERRIDES['thankYouDark'] = \
+'''
+function layout_thankYouDark(cfg) {
+  var els = [];
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['thankyou_texture.png']) || A+'backgrounds/thankyou_texture.png', x:-0.01, y:0.02, w:13.34, h:7.5, transparency:90.2, crop:{"l": 0.1838, "t": 0.0904, "r": 0.0273, "b": 0.3536} });
+  els.push({ type:'t', text:cfg.title || "THANK YOU", x:0.61, y:3.29, w:12.12, h:0.98, font:'H', size:54.5, color:'accentDim', align:'right', caps:true, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['mmw_logo_white_lg.png']) || A+'logos/mmw_logo_white_lg.png', x:0.49, y:3.51, w:1.9, h:0.52 });
+  if (cfg.date) els.push({ type:'t', text:cfg.date || '', x:1.9, y:7, w:12.01, h:0.35, font:'B', size:12, color:'mutedGray', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.025,t:0,r:0.025,b:0} });
+  els.push({ type:'img', ref:lockupRef(cfg), x:0.42, y:7.06, w:1.02, h:0.19 }); // brand mark (placeholder slot in template)
+  return els;
+}'''
+
+OVERRIDES['thankYouLight'] = \
+'''
+function layout_thankYouLight(cfg) {
+  var els = [];
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['thankyou_texture.png']) || A+'backgrounds/thankyou_texture.png', x:-0.01, y:0.02, w:13.34, h:7.5, transparency:34.4, crop:{"l": 0.1838, "t": 0.0904, "r": 0.0273, "b": 0.3536} });
+  els.push({ type:'t', text:cfg.title || "THANK YOU", x:0.61, y:3.31, w:12.12, h:0.98, font:'H', size:54.5, color:'asphalt', align:'right', caps:true, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['mmw_logo_black.png']) || A+'logos/mmw_logo_black.png', x:0.49, y:3.51, w:1.9, h:0.52 });
+  if (cfg.date) els.push({ type:'t', text:cfg.date || '', x:1.9, y:7, w:12.01, h:0.35, font:'B', size:12, color:'mutedGray', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.025,t:0.025,r:0.025,b:0.025} });
+  els.push({ type:'img', ref:lockupRef(cfg), x:0.42, y:7.06, w:1.02, h:0.19 });
+  return els;
+}'''
+
+OVERRIDES['twoRowsLight'] = \
+'''
+function layout_twoRowsLight(cfg) {
+  var els = [];
+  els.push({ type:'s', x:5.13, y:1.96, w:0.01, h:4.01, fill:'ltGray' }); // rule
+  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:cfg.title || "", x:0.73, y:3.11, w:4.08, h:0.79, font:'H', size:35, color:'bodyGray', align:'right', valign:'bottom', caps:true, lineSpacing:0.8, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['thankyou_texture.png']) || A+'backgrounds/thankyou_texture.png', x:3.67, y:3.24, w:9.67, h:4.28, transparency:34.4, crop:{"r": 0.4283, "b": 0.6825} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'bodyGray', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:cfg.text || '', x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  return els;
+}'''
+
