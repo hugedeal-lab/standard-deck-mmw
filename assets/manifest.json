@@ -145,6 +145,12 @@
   "note": "Real Instagram/Facebook Reel chrome, replaces device_frame_9x16.png."
  },
  {
+  "file": "social/divider_platform_reddit_pinterest.png",
+  "bytes": 1415643,
+  "md5": "902346af9754",
+  "note": "Reddit/Pinterest platform-divider background photo, 1178x785. Replaces the stale device_frame_meta_carousel.png reference mmw_layouts.json carried for the Reddit_Divider/Pinterest_Divider masters (a mis-extraction) -- newly re-extracted under its own correct name."
+ },
+ {
   "file": "social/meta_carousel_frame.png",
   "note": "Real Meta carousel chrome (mazdausa header, dots, footer CTA), replaces device_frame_meta_carousel.png."
  },
