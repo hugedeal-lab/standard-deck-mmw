@@ -1003,6 +1003,25 @@ function exportImage(slide, el) {
 function deckInit(config) {
 config = config || {}; _config = config; _D = window.D || [];
 _totalSlides = _D.length; _noLogo = !!config.noLogo; _imageMode = !!config.imageMode;
+
+// Resolve bare bgImage filenames ('pattern_dark.png') against the asset base.
+// slideData.bgImage is consumed verbatim -- by the preview (standard-deck.js's
+// url(...) rule) and by the PPTX export (exportPPTX STEP 3's { path: ... }).
+// It never passes through deck-layouts.js's `A` prefix the way layout-emitted
+// <img> src values do, so a deck authored per the prompt (bare asset names)
+// would 404 every background. A name with no '/' is a bare reference and
+// belongs under backgrounds/; anything already carrying a path separator (the
+// build harness writes full 'assets/backgrounds/x.png' paths) or a data: URI
+// is left untouched.
+var _assetBase = (typeof window !== 'undefined' && window.MMW_ASSET_BASE) || 'assets/';
+if (_assetBase && _assetBase.slice(-1) !== '/') _assetBase += '/';
+_D.forEach(function (sd) {
+  if (sd && typeof sd.bgImage === 'string' &&
+      sd.bgImage.indexOf('/') === -1 && sd.bgImage.indexOf('data:') !== 0) {
+    sd.bgImage = _assetBase + 'backgrounds/' + sd.bgImage;
+  }
+});
+
 injectStyles();
 
 if (config.accent) SD.setAccent(config.accent);
