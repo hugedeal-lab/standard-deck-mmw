@@ -441,14 +441,19 @@ function renderText(el, isDark) {
     return div;
   }
 
-  if (el.text && el.text.indexOf('\n') > -1) {
-    el.text.split('\n').forEach(function (line, i) {
+  // A layout can hand us a non-string text -- a boolean flag passed straight
+  // through (cfg.hereLabel), a numeric cell value. Coerce before any string
+  // method runs: one stray value must not throw out of renderAll and take the
+  // whole deck (toolbar, nav, export) down with it.
+  var _t = (el.text == null) ? '' : (typeof el.text === 'string' ? el.text : String(el.text));
+  if (_t.indexOf('\n') > -1) {
+    _t.split('\n').forEach(function (line, i) {
       if (i > 0) div.appendChild(document.createElement('br'));
       div.appendChild(document.createTextNode(line));
     });
   } else {
     var span = document.createElement('span');
-    span.textContent = el.text || '';
+    span.textContent = _t;
     div.appendChild(span);
   }
   return div;

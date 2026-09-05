@@ -1386,7 +1386,7 @@ function layout_reportJourneyMap(cfg) {
 
   if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:0.61, y:0.54, w:12.12, h:0.29, font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   els.push({ type:'t', text:cfg.title || '', x:0.61, y:0.85, w:12.12, h:0.5, font:'H', size:24, color:'titleGray', caps:true, lineSpacing:1, charSpacing:2.64, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:cfg.hereLabel || 'WE ARE HERE', x:4.13, y:1.43, w:1.8, h:0.16, font:'B', size:10, color:'#8D7057', bold:true, align:'center', valign:'middle', caps:true, lineSpacing:1, charSpacing:1.7 });
+  els.push({ type:'t', text:(typeof cfg.hereLabel === 'string' ? cfg.hereLabel : 'WE ARE HERE'), x:4.13, y:1.43, w:1.8, h:0.16, font:'B', size:10, color:'#8D7057', bold:true, align:'center', valign:'middle', caps:true, lineSpacing:1, charSpacing:1.7 });
   // Connector: a real line (was a 0.01in filled rectangle, which can't carry
   // arrowheads), 3pt raw / 2.0005 = 1.5pt, both ends arrowed per source.
   els.push({ type:'ln', x:5.03, y:1.69, w:0, h:0.29, color:'ltGray', weight:1.5, arrows:'both' });
@@ -3041,7 +3041,8 @@ function layout_reportChannelMatrix(cfg) {
   var DARK = '#262626';
 
   function txt(x, w, y, h, text, opts) {
-    var o = Object.assign({ type:'t', text:text || '', x:x + 0.09, y:y, w:w - 0.18, h:h,
+    var _t = (text == null || text === '') ? '' : String(text); // baseValue/incValue arrive numeric
+    var o = Object.assign({ type:'t', text:_t, x:x + 0.09, y:y, w:w - 0.18, h:h,
       font:'B', size:6, valign:'middle', lineSpacing:1, caps:true }, opts || {});
     els.push(o);
   }

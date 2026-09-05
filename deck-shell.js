@@ -606,7 +606,10 @@ function insetMargin(el) {
 
 function exportText(slide, el, isDark) {
   var isCompact = el.w <= 0.80 && el.h <= 0.80;
-  var exportedText = el.text || '';
+  // Coerce a non-string text (boolean flag, numeric value) the same way the
+  // preview renderer does -- keep export and preview from diverging, and keep
+  // one bad value from throwing out of the export loop.
+  var exportedText = (el.text == null) ? '' : (typeof el.text === 'string' ? el.text : String(el.text));
   var cs, lsm, boldFlag;
 
   // EXPLICIT TYPOGRAPHY (v2.0) -- see the matching note in standard-deck.js.
@@ -930,7 +933,21 @@ function exportChart(slide, el, isDark, accent, pptx) {
     co.dataLabelColor=SD.colorForPptx(opts.dataLabelColor||'white',isDark);
     if (el.chartType==='doughnut') co.holeSize=opts.holeSize||70;
   }
-  slide.addChart(pt, el.data, co);
+  // pptxgenjs throws ("reading 'length'" on undefined labels) if a series has
+  // no category array. renderChart tolerates that; the export must not be the
+  // thing that dies on a sloppily-shaped chart. Drop empty series, and
+  // synthesise index labels ('1','2',...) for any series that omitted them.
+  var data = (Array.isArray(el.data) ? el.data : []).filter(function (s) {
+    return s && Array.isArray(s.values) && s.values.length;
+  });
+  if (!data.length) return;
+  var maxLen = data.reduce(function (m, s) { return Math.max(m, s.values.length); }, 0);
+  data = data.map(function (s) {
+    if (Array.isArray(s.labels) && s.labels.length) return s;
+    var lbls = []; for (var i = 0; i < maxLen; i++) lbls.push(String(i + 1));
+    return Object.assign({}, s, { labels: lbls });
+  });
+  slide.addChart(pt, data, co);
 }
 
 function exportTable(slide, el, isDark) {
