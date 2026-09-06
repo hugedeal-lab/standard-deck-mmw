@@ -384,9 +384,15 @@ function layout_reportSplitPanels(cfg) {
   var stages = cfg.stages || [];
   BARS.forEach(function (b, i) {
     els.push({ type:'s', x:b.x, y:4.09, w:b.w, h:0.71, fill:b.fill, radius:'pill' });
-    if (stages[i]) els.push({ type:'t', text:stages[i], x:b.lx, y:4.16, w:1.73, h:0.56,
-      font:'B', size:15.5, color:b.label, bold:true, valign:'middle', caps:true,
-      lineSpacing:1, charSpacing:6.97, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+    if (stages[i]) {
+      var _sv = String(stages[i]);
+      // 15.5pt suits the source's short stage words; step down + drop tracking
+      // for longer real labels so they don't wrap inside the pill.
+      var _ss = (_sv.length <= 6) ? 15.5 : (_sv.length <= 12 ? 11 : 9);
+      els.push({ type:'t', text:_sv, x:b.lx, y:4.16, w:1.95, h:0.56,
+        font:'B', size:_ss, color:b.label, bold:true, valign:'middle', caps:true,
+        lineSpacing:1, charSpacing:(_ss >= 15 ? 6.97 : 1.5), insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+    }
   });
 
   // Milestone callouts. Two sit above the bar and two below; each is a
@@ -447,11 +453,15 @@ function layout_reportStatRow(cfg) {
     font:'H', size:23.8, color:'white', caps:true, lineSpacing:1, charSpacing:-0.475,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
 
-  // Column headers. Numbers in the source; keep them short or the grid shears.
+  // Column headers. The source uses single digits at 28pt in a 0.86in box.
+  // Real column names (channel/metric words) shear that box, so the box now
+  // spans most of the column pitch and the size steps down for longer labels.
   var cols = (cfg.columns || []).slice(0, COLX.length);
   cols.forEach(function (c, i) {
-    els.push({ type:'t', text:String(c), x:COLX[i], y:1.21, w:0.86, h:0.65,
-      font:'H', size:28, color:'#CAA380', caps:true, lineSpacing:1,
+    var s = String(c);
+    var sz = (s.length <= 3) ? 28 : (s.length <= 8 ? 15 : 12);
+    els.push({ type:'t', text:s, x:COLX[i], y:1.21, w:2.2, h:0.65,
+      font:'H', size:sz, color:'#CAA380', caps:true, valign:'bottom', lineSpacing:1,
       insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   });
 
@@ -500,11 +510,15 @@ function layout_reportStatRowLight(cfg) {
     font:'H', size:23.8, color:'bodyGray', caps:true, lineSpacing:1, charSpacing:-0.475,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
 
-  // Column headers. Numbers in the source; keep them short or the grid shears.
+  // Column headers. The source uses single digits at 28pt in a 0.86in box.
+  // Real column names (channel/metric words) shear that box, so the box now
+  // spans most of the column pitch and the size steps down for longer labels.
   var cols = (cfg.columns || []).slice(0, COLX.length);
   cols.forEach(function (c, i) {
-    els.push({ type:'t', text:String(c), x:COLX[i], y:1.21, w:0.86, h:0.65,
-      font:'H', size:28, color:'#CAA380', caps:true, lineSpacing:1,
+    var s = String(c);
+    var sz = (s.length <= 3) ? 28 : (s.length <= 8 ? 15 : 12);
+    els.push({ type:'t', text:s, x:COLX[i], y:1.21, w:2.2, h:0.65,
+      font:'H', size:sz, color:'#CAA380', caps:true, valign:'bottom', lineSpacing:1,
       insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   });
 
@@ -558,8 +572,13 @@ function layout_reportSpendBarsLight(cfg) {
   // Six rows, no more: the track is a fixed grid with no overflow rule.
   (cfg.bars || []).slice(0, ROWY.length).forEach(function (bar, i) {
     var y = ROWY[i];
-    var pct = (typeof bar.pct === 'number') ? Math.max(0, Math.min(1, bar.pct)) : 1;
-    var w = Math.max(MIN_W, TRACK_W * pct);
+    // pct accepts a 0-1 fraction OR a 0-100 percentage (what callers usually pass).
+    var pct = (typeof bar.pct === 'number') ? bar.pct : 1;
+    if (pct > 1) pct = pct / 100;
+    pct = Math.max(0, Math.min(1, pct));
+    // Map pct across the MIN_W..TRACK_W range so every bar clears the label+disc
+    // minimum yet the set still tapers (a flat max() flattened small values).
+    var w = MIN_W + (TRACK_W - MIN_W) * pct;
     var fill = bar.color || PALETTE[i % PALETTE.length];
 
     els.push({ type:'s', x:TRACK_X, y:y, w:w, h:0.76, fill:fill, radius:'pill' });
@@ -622,8 +641,13 @@ function layout_reportSpendBarsDark(cfg) {
   // Six rows, no more: the track is a fixed grid with no overflow rule.
   (cfg.bars || []).slice(0, ROWY.length).forEach(function (bar, i) {
     var y = ROWY[i];
-    var pct = (typeof bar.pct === 'number') ? Math.max(0, Math.min(1, bar.pct)) : 1;
-    var w = Math.max(MIN_W, TRACK_W * pct);
+    // pct accepts a 0-1 fraction OR a 0-100 percentage (what callers usually pass).
+    var pct = (typeof bar.pct === 'number') ? bar.pct : 1;
+    if (pct > 1) pct = pct / 100;
+    pct = Math.max(0, Math.min(1, pct));
+    // Map pct across the MIN_W..TRACK_W range so every bar clears the label+disc
+    // minimum yet the set still tapers (a flat max() flattened small values).
+    var w = MIN_W + (TRACK_W - MIN_W) * pct;
     var fill = bar.color || PALETTE[i % PALETTE.length];
 
     els.push({ type:'s', x:TRACK_X, y:y, w:w, h:0.76, fill:fill, radius:'pill' });
@@ -1017,6 +1041,9 @@ function layout_reportEcosystemTree(cfg) {
     });
 
     branches.forEach(function (b, i) {
+      // A branch can be a plain label string or {label, icon, items}. Callers
+      // reach for the string form, so coerce it rather than render an empty disc.
+      if (typeof b === 'string') b = { label: b };
       var x = colX[i];
       els.push({ type:'o', x:x - SMALL_R, y:SMALL_CY - SMALL_R, w:SMALL_R * 2, h:SMALL_R * 2,
         gradient:DISC, stroke:'white', strokeWidth:1, shadow:{ offset:0.1 } });
@@ -1444,10 +1471,17 @@ function layout_reportJourneyMap(cfg) {
     // source -- already correct).
     els.push({ type:'s', x:x, y:2.09, w:COL_W, h:0.77, fill:headerFill });
 
-    // Icon: a real circle (was a filled rectangle) with room for one white
-    // character.
+    // Icon disc. p.icon is an icon NAME (compass, camera, ...) -> render the
+    // glyph; a single char or number -> render as text; empty -> the column
+    // index. Previously p.icon was always drawn as text, so an icon name
+    // rendered as a clipped word fragment inside the 0.32in disc.
     els.push({ type:'o', x:x+0.37, y:2.32, w:0.32, h:0.32, fill:'gray' });
-    els.push({ type:'t', text:p.icon || String(i+1), x:x+0.37, y:2.32, w:0.32, h:0.32, font:'B', size:12, color:'white', align:'center', valign:'middle', caps:false, lineSpacing:1 });
+    var _pi = p.icon || '';
+    if (/^[a-z][a-z0-9-]+$/.test(_pi)) {
+      els.push({ type:'i', icon:_pi, x:x+0.435, y:2.385, w:0.19, h:0.19, color:'white' });
+    } else {
+      els.push({ type:'t', text:_pi || String(i+1), x:x+0.37, y:2.32, w:0.32, h:0.32, font:'B', size:12, color:'white', align:'center', valign:'middle', caps:false, lineSpacing:1 });
+    }
 
     // Width widened from the source's literal 1.27in -- at 13pt with 3pt
     // tracking that fit "DEFINE" but wrapped "DEVELOP" into the icon above it.
