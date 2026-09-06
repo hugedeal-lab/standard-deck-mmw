@@ -698,15 +698,17 @@ function layout_reportModelCompare(cfg) {
   var COL_W = [2.21, 2.21, 2.23, 1.86, 1.68];
   var CHIP  = ['#A6A6A6', '#7F7F7F', '#595959', '#404045'];
 
-  if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.61, y:0.54, w:12.12, h:0.29,
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.25, y:0.3, w:12.4, h:0.26,
     font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  if (cfg.title) els.push({ type:'t', text:cfg.title, x:0.25, y:0.38, w:12.4, h:0.5,
+  if (cfg.title) els.push({ type:'t', text:cfg.title, x:0.25, y:0.62, w:12.4, h:0.44,
     font:'H', size:23.8, color:'white', caps:true, lineSpacing:1, charSpacing:-0.475,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
 
   // Four funnel stages: a darkening chip and a tan-outlined section label.
+  // A stage may be a plain label string or {label, code}.
   (cfg.stages || []).slice(0, 4).forEach(function (st, r) {
+    if (typeof st === 'string') st = { label: st };
     var top = ROW_T[r], bot = ROW_B[r], mid = (top + bot) / 2;
     els.push({ type:'s', x:1.53, y:top, w:0.6, h:bot - top, fill:CHIP[r] });
     if (st.code) els.push({ type:'t', text:st.code, x:1.58, y:mid - 0.13, w:0.5, h:0.26,
@@ -734,7 +736,8 @@ function layout_reportModelCompare(cfg) {
       stroke:'#808080', strokeWidth:0.25 });
 
     var paras = [];
-    if (e.label) paras.push({ runs:[{ text:e.label, size:16, bold:true, color:'white' }] });
+    var _eh = e.label || e.header;
+    if (_eh) paras.push({ runs:[{ text:_eh, size:16, bold:true, color:'white' }] });
     if (e.copy)  paras.push({ runs:[{ text:e.copy,  size:10, color:'bodyGray' }] });
     if (paras.length) els.push({ type:'t', x:x + 0.05, y:y + 0.19, w:w - 0.10, h:h - 0.28,
       font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
@@ -861,8 +864,12 @@ function layout_reportPlatformMatrix(cfg) {
   var SPOKE_R = 0.605, BOX_W = 2.22, BOX_H = 1.0, OVERLAP = 0.35;
   var MAX_SPOKES = 8;
 
-  if (cfg.title) els.push({ type:'t', text:cfg.title, x:3.81, y:0.23, w:5.71, h:0.64,
-    font:'H', size:35, color:'bodyGray', align:'center', caps:true, lineSpacing:0.8,
+  // Centered title over the diagram: 35pt suits the source's 2-word title;
+  // step down + widen for longer real ones so a 2-line wrap doesn't land on
+  // the top spoke node.
+  if (cfg.title) els.push({ type:'t', text:cfg.title, x:2.5, y:0.18, w:8.33,
+    h:0.72, font:'H', size:(cfg.title.length <= 22 ? 35 : (cfg.title.length <= 34 ? 24 : 19)),
+    color:'bodyGray', align:'center', caps:true, lineSpacing:0.85,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
 
   // Capacity. Boxes are 2.22 x 1.00 and stack on the outer side of their spoke;
@@ -974,8 +981,9 @@ function layout_reportEcosystemTree(cfg) {
   var SPAN_L = 1.66, SPAN_R = 11.665;
   var DISC = { from:'#EEEEEE', to:'#E8E8E8', angle:90 };
 
-  if (cfg.title) els.push({ type:'t', text:cfg.title, x:3.9, y:0.15, w:5.53, h:0.64,
-    font:'H', size:35, color:'bodyGray', align:'center', caps:true, lineSpacing:0.8,
+  if (cfg.title) els.push({ type:'t', text:cfg.title, x:2.5, y:0.12, w:8.33,
+    h:0.7, font:'H', size:(cfg.title.length <= 22 ? 35 : (cfg.title.length <= 34 ? 24 : 19)),
+    color:'bodyGray', align:'center', caps:true, lineSpacing:0.85,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
 
   // Corner blocks. The source flattens circle and icon into one 446-point path;
@@ -1274,11 +1282,15 @@ function layout_reportChapterOpener(cfg) {
   els.push({ type:'t', text:cfg.text2 || 'CHAPTER 1', x:1.16, y:2.78, w:4.84, h:0.17, font:'B', size:7.5, color:'bodyGray', bold:true, valign:'middle', caps:true, lineSpacing:1, charSpacing:1.87, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:cfg.text3 || 'CHAPTER 2 \u00b7 TODAY', x:7.52, y:2.81, w:4.84, h:0.11, font:'B', size:7.5, color:'accentDim', bold:true, valign:'middle', caps:true, lineSpacing:1, charSpacing:1.87 });
   // Headline pair, top-anchored so a wrap to a second line grows down into
-  // the empty space above the primary body copy rather than up into the
-  // eyebrow directly above it.
-  els.push({ type:'t', text:cfg.text4 || 'Lorem Ipsum', x:1.17, y:3.06, w:4.82, h:1.1, font:'B', size:33, color:'nearBlack', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:7.53, y:3.06, w:4.82, h:1.1, font:'B', size:33, color:'white', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  else els.push({ type:'t', text:'Lorem Ipsum', x:7.53, y:3.06, w:4.82, h:1.1, font:'B', size:33, color:'white', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  // the empty space above the primary body copy. 33pt suits the source's
+  // 1-2 word headline; step down for longer real ones so a 2-line wrap still
+  // clears the body copy at y4.43.
+  var _h4 = cfg.text4 || 'Lorem Ipsum';
+  var _hR = (cfg.subhead || cfg.subtitle || 'Lorem Ipsum');
+  var _hlen = Math.max(_h4.length, _hR.length);
+  var _hsz = (_hlen <= 14) ? 33 : (_hlen <= 26 ? 24 : 19);
+  els.push({ type:'t', text:_h4, x:1.17, y:3.06, w:4.82, h:1.1, font:'B', size:_hsz, color:'nearBlack', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:_hR, x:7.53, y:3.06, w:4.82, h:1.1, font:'B', size:_hsz, color:'white', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   // Fixed decorative arrow between the two boxes -- not a content slot.
   els.push({ type:'t', text:'\u2192', x:6.37, y:4.11, w:0.78, h:0.89, font:'B', size:60, color:'accentDim', bold:true, align:'center', valign:'middle', caps:false, lineSpacing:1 });
   // Primary body copy: source declares 40pt raw -> 40 / 2.0005 = 20pt engine.
@@ -1336,16 +1348,22 @@ function layout_reportStrategyStack(cfg) {
 
   // Wide divider box: point/point headline (white, tan) + gray body on the
   // left; caps tan insight header + gray body on the right.
-  els.push({ type:'s', x:0.54, y:2.01, w:11.89, h:1.14, fill:'#1F1F1F', stroke:STROKE, strokeWidth:0.75, radius:R+0.01, shadow:SHADOW });
-  els.push({ type:'t', x:0.8, y:2.18, w:6.02, h:0.44, font:'B', size:24, bold:true, valign:'bottom', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035},
+  // The source's insight bar carries a one-line proof point and a one-line
+  // insight header. Real copy wraps, so the bar is taller and the two headline
+  // texts step down + top-anchor so a 2-line wrap doesn't collide with the
+  // body copy beneath it.
+  var _psz = ((cfg.pointOne || '').length + (cfg.pointTwo || '').length <= 34) ? 24 : 17;
+  var _isz = ((cfg.insightHead || '').length <= 22) ? 11 : 9;
+  els.push({ type:'s', x:0.54, y:2.01, w:11.89, h:1.42, fill:'#1F1F1F', stroke:STROKE, strokeWidth:0.75, radius:R+0.01, shadow:SHADOW });
+  els.push({ type:'t', x:0.8, y:2.14, w:6.02, h:0.62, font:'B', size:_psz, bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035},
     paras:[{ runs:[
       { text:(cfg.pointOne || '') + ' ', color:'white' },
       { text:cfg.pointTwo || '', color:'#D2B08D' }
     ] }] });
-  els.push({ type:'s', x:7.05, y:2.22, w:0.01, h:0.71, fill:'ltGray' }); // divider rule
-  els.push({ type:'t', text:cfg.pointBody || '', x:0.8, y:2.59, w:6.02, h:0.43, font:'B', size:11, color:'ltGray', caps:false, lineSpacing:1.05, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:cfg.insightHead || '', x:7.23, y:2.18, w:4.95, h:0.24, font:'B', size:11, color:'#D2B08D', bold:true, valign:'top', caps:true, lineSpacing:1.05, charSpacing:2.44, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.insightBody || '', x:7.23, y:2.44, w:4.95, h:0.53, font:'B', size:11, color:'ltGray', caps:false, lineSpacing:1.05, insets:{l:0.104,t:0.035,r:0.104,b:0.104} });
+  els.push({ type:'s', x:7.05, y:2.18, w:0.01, h:1.08, fill:'ltGray' }); // divider rule
+  els.push({ type:'t', text:cfg.pointBody || '', x:0.8, y:2.82, w:6.02, h:0.5, font:'B', size:11, color:'ltGray', caps:false, lineSpacing:1.05, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:cfg.insightHead || '', x:7.23, y:2.14, w:4.95, h:0.4, font:'B', size:_isz, color:'#D2B08D', bold:true, valign:'top', caps:true, lineSpacing:1.05, charSpacing:2.44, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:cfg.insightBody || '', x:7.23, y:2.62, w:4.95, h:0.7, font:'B', size:10, color:'ltGray', caps:false, lineSpacing:1.05, insets:{l:0.104,t:0.035,r:0.104,b:0.104} });
 
   // Three-across panels. Each: tan "NEXT SECTION"-style tag, white caps
   // subhead, then either repeatable {head,body} sections or a bullet list
