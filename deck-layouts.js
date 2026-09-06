@@ -335,6 +335,9 @@ function layout_headlineDark(cfg) {
 // ==========================================================
 function layout_headlinePhotoWell(cfg) {
   var els = [];
+  // Full-bleed replaceable photo behind the statement (the template carries it
+  // as a master-level placeholder; deckInit pre-fills images[0] from the pool).
+  ph(els, cfg, -0.01, -0.01, 13.35, 7.52, 0);
   if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:2.92, y:2.42, w:7.49, h:0.42, font:'B', size:15.5, color:'accent', bold:true, align:'center', valign:'bottom', caps:true, lineSpacing:0.9, charSpacing:6.97, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:140, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:14, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   return els;
@@ -2300,8 +2303,12 @@ function layout_castingGrid(cfg) {
   var colX = [1.13, 3.93, 6.72, 9.52];
   for (var i = 0; i < 4; i++) {
     ph(els, cfg, colX[i], 2.15, 2.58, 2.72);
-    els.push({ type:'t', text: 'Name: ' + ((items[i] && items[i].name) || ''),
-      x:colX[i], y:4.98, w:1.70, h:0.59, font:'B', size:10, color:'captionGray' , caps:false, lineSpacing:1.2 , insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+    var _t = items[i] || {};
+    var _f = ['Name: ' + (_t.name || '')];
+    if (_t.height) _f.push('Height: ' + _t.height);
+    if (_t.weight) _f.push('Weight: ' + _t.weight);
+    els.push({ type:'t', text:_f.join('\n'),
+      x:colX[i], y:4.98, w:2.4, h:0.9, font:'B', size:10, color:'captionGray', caps:false, lineSpacing:1.25, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   }
   return els;
 }
@@ -2320,12 +2327,16 @@ function layout_castingTalent(cfg) {
   ph(els, cfg, 3.61, 2.08, 2.69, 4.2, 1);
   ph(els, cfg, 7.07, 2.08, 2.69, 2.81, 2);
   ph(els, cfg, 9.87, 2.08, 2.69, 4.2, 3);
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:4.18, y:3.18, w:1.52, h:0.27, font:'B', size:14, color:'ink', bold:true, align:'center', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:"Full body shot", x:10.44, y:3.18, w:1.52, h:0.27, font:'B', size:14, color:'ink', bold:true, align:'center', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:"Headshot", x:1.65, y:3.19, w:1.02, h:0.54, font:'B', size:14, color:'ink', bold:true, align:'center', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:"Headshot", x:7.91, y:3.19, w:1.02, h:0.54, font:'B', size:14, color:'ink', bold:true, align:'center', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:"Name:", x:0.81, y:4.94, w:2.69, h:0.59, font:'B', size:10, color:'captionGray', bold:true, valign:'middle', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:"Name:", x:7.06, y:5.01, w:2.69, h:0.59, font:'B', size:10, color:'captionGray', bold:true, caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  // Frame-type captions ride the top-left corner of their well rather than
+  // sitting centred over the (unfilled) placeholder text.
+  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:3.7, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:"Full body", x:9.96, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:"Headshot", x:0.9, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:"Headshot", x:7.16, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  var _t0 = (cfg.items && cfg.items[0]) || {}, _t1 = (cfg.items && cfg.items[2]) || {};
+  function _nm(t) { var s = 'Name: ' + (t.name || ''); if (t.height) s += '   Height: ' + t.height; if (t.weight) s += '   Weight: ' + t.weight; return s; }
+  els.push({ type:'t', text:_nm(_t0), x:0.81, y:6.4, w:5.4, h:0.35, font:'B', size:10, color:'captionGray', bold:true, valign:'middle', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:_nm(_t1), x:7.07, y:6.4, w:5.4, h:0.35, font:'B', size:10, color:'captionGray', bold:true, valign:'middle', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   return els;
 }
 
