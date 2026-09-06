@@ -879,7 +879,9 @@ function layout_reportPlatformMatrix(cfg) {
   // the ring spans 4.7in vertically, so about four boxes fit per side before
   // they collide. Eight is therefore the ceiling -- which is exactly what the
   // source uses. Extras are dropped rather than allowed to overlap.
-  var spokes = cfg.spokes || [];
+  var spokes = (cfg.spokes || []).map(function (s) {
+    return (typeof s === 'string') ? { label: s } : (s || {});
+  });
   if (spokes.length > MAX_SPOKES) {
     console.warn('[deck-layouts] reportPlatformMatrix takes at most ' + MAX_SPOKES +
       ' spokes; ' + (spokes.length - MAX_SPOKES) + ' dropped. More would overlap.');
@@ -943,15 +945,22 @@ function layout_reportPlatformMatrix(cfg) {
     fill:'#EEEEEE', stroke:'#7F7F7F', strokeWidth:1, shadow:true });
   els.push({ type:'o', x:HX - 0.705, y:HY - 0.7, w:1.41, h:1.4,
     fill:'#EEEEEE', stroke:'#BFA588', strokeWidth:0.5, shadow:true });
+  // Hub name sits in a 1.41in disc. 20.5pt only fits a very short source name
+  // ("Drive"); real names ("Brand platform") orphaned a letter onto its own
+  // line, so scale the name down by length.
+  var _hubName = (cfg.hub && cfg.hub.name) || '';
+  var _hubNameSize = _hubName.length <= 6 ? 20.5 : (_hubName.length <= 15 ? 13 : 10);
   if (cfg.hub) els.push({ type:'t', x:HX - 0.705, y:HY - 0.7, w:1.41, h:1.4,
     font:'B', size:10.5, color:'asphalt', align:'center', valign:'middle',
     caps:true, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02},
     paras:[{ runs:[{ text:cfg.hub.label || '', size:10.5 }] },
-           { runs:[{ text:cfg.hub.name || '', size:20.5 }] }] });
+           { runs:[{ text:_hubName, size:_hubNameSize }] }] });
 
   // Category chips: light-grey gradient disc, white outline, black label, with
   // #7F7F7F bullet text beside it.
-  (cfg.categories || []).slice(0, 6).forEach(function (c, i) {
+  (cfg.categories || []).slice(0, 6).map(function (c, i) {
+    return (typeof c === 'string') ? { code: String(i + 1).padStart(2, '0'), text: c } : c;
+  }).forEach(function (c, i) {
     var cy = 1.04 + i * 0.79;
     els.push({ type:'o', x:0.18, y:cy, w:0.54, h:0.54,
       gradient:{ from:'#EEEEEE', to:'#E8E8E8', angle:90 },
@@ -1885,7 +1894,11 @@ function layout_thankYouDark(cfg) {
 function layout_content01(cfg) {
   var els = [];
   ph(els, cfg, 6.62, 0.47, 6.71, 3.44, 0);
-  els.push({ type:'t', text:cfg.title || "", x:0.76, y:3.2, w:5.52, h:0.6, font:'HR', size:35, color:'bodyGray', bold:true, caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  // Step the 35pt source title down for longer real-deck titles so a 2-line
+  // wrap does not run into the photo well below.
+  var _c1t = String(cfg.title || '');
+  var _c1s = _c1t.length <= 16 ? 35 : (_c1t.length <= 26 ? 26 : 20);
+  els.push({ type:'t', text:cfg.title || "", x:0.76, y:3.2, w:5.52, h:0.78, font:'HR', size:_c1s, color:'bodyGray', bold:true, caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 0.81, 4.06, 6.73, 3.44, 1);
   els.push({ type:'t', text:cfg.text || '', x:7.83, y:4.1, w:4.16, h:1.44, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   return els;
@@ -1899,7 +1912,11 @@ function layout_content01(cfg) {
 // ==========================================================
 function layout_content02(cfg) {
   var els = [];
-  els.push({ type:'t', text:cfg.title || "", x:0.76, y:1.38, w:6.09, h:0.6, font:'HR', size:35, color:'bodyGray', bold:true, caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  // Title sits directly above the well strip (y:2.05) with room for one 35pt
+  // line only; shrink longer titles so a wrap does not overrun the strip.
+  var _c2t = String(cfg.title || '');
+  var _c2s = _c2t.length <= 16 ? 35 : (_c2t.length <= 27 ? 24 : 19);
+  els.push({ type:'t', text:cfg.title || "", x:0.76, y:1.38, w:6.09, h:0.6, font:'HR', size:_c2s, color:'bodyGray', bold:true, caps:true, lineSpacing:0.8, charSpacing:-0.7, valign:'bottom', insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:cfg.text || '', x:9.51, y:2.01, w:2.99, h:1.79, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 0.81, 2.05, 2.31, 1.75, 0);
   ph(els, cfg, 3.2, 2.05, 1.4, 1.75, 1);
@@ -1917,9 +1934,14 @@ function layout_content02(cfg) {
 // ==========================================================
 function layout_content03(cfg) {
   var els = [];
-  els.push({ type:'t', text:cfg.title || "", x:0.63, y:2.01, w:4.23, h:0.6, font:'HR', size:35, color:'bodyGray', bold:true, caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  // Source title is two words at 35pt. Real decks pass longer descriptive
+  // titles that wrapped to three lines and collided with the body copy, so
+  // step the size down by length and give the box room for a 2-3 line wrap.
+  var _c3t = String(cfg.title || '');
+  var _c3s = _c3t.length <= 14 ? 35 : (_c3t.length <= 26 ? 24 : 18);
+  els.push({ type:'t', text:cfg.title || "", x:0.63, y:2.01, w:4.30, h:1.10, font:'HR', size:_c3s, color:'bodyGray', bold:true, caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 5.06, 2.03, 8.01, 3.28, 0);
-  els.push({ type:'t', text:cfg.text || '', x:0.65, y:2.66, w:3.31, h:1.79, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:cfg.text || '', x:0.65, y:3.16, w:3.31, h:2.10, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 3.52, 5.42, 1.45, 1.75, 1);
   ph(els, cfg, 5.02, 5.42, 2.85, 1.74, 2);
   ph(els, cfg, 7.98, 5.42, 1.64, 1.75, 3);
