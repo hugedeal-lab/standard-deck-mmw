@@ -1,5 +1,5 @@
 MMW Presentation Builder — V2.0
-CDN: standard-deck-mmw@f206c73c46ddd69e421abf2942769ebadc649ce0 (hugedeal-lab)
+CDN: standard-deck-mmw@b6dd54b78ec2671cfd9ae0f39a62c7f9dc2909c1 (hugedeal-lab)
 
 V2.0 rebuilt the layout library directly from the real MMW template (originally
 MMW PPT Template_7.24.26.pptx; template revisions since then, plus a full
@@ -482,10 +482,10 @@ Four hidden brand-mark images, each a plain img element with
 style="display:none", in this order. src is the full pinned CDN URL -- these
 img tags are read from the DOM by id and their src does NOT pass through
 MMW_ASSET_BASE, so it must be absolute:
-  id=gi0  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@f206c73c46ddd69e421abf2942769ebadc649ce0/assets/logos/mmw_logo_black.png
-  id=gi0w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@f206c73c46ddd69e421abf2942769ebadc649ce0/assets/logos/mmw_logo_white.png
-  id=gi1  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@f206c73c46ddd69e421abf2942769ebadc649ce0/assets/logos/wpp_mazda_lockup_black.png
-  id=gi1w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@f206c73c46ddd69e421abf2942769ebadc649ce0/assets/logos/wpp_mazda_lockup_white.png
+  id=gi0  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@b6dd54b78ec2671cfd9ae0f39a62c7f9dc2909c1/assets/logos/mmw_logo_black.png
+  id=gi0w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@b6dd54b78ec2671cfd9ae0f39a62c7f9dc2909c1/assets/logos/mmw_logo_white.png
+  id=gi1  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@b6dd54b78ec2671cfd9ae0f39a62c7f9dc2909c1/assets/logos/wpp_mazda_lockup_black.png
+  id=gi1w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@b6dd54b78ec2671cfd9ae0f39a62c7f9dc2909c1/assets/logos/wpp_mazda_lockup_white.png
 
 Then seven script elements, in this exact order and this exact order only.
 Each is either EXTERNAL (a src attribute pointing at a URL, empty body) or
@@ -493,19 +493,19 @@ INLINE (no src attribute, a JS body). Emit each as a real script element:
 opening tag with the src attribute if external, the stated body if inline,
 then the closing tag immediately after.
 
-1. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@f206c73c46ddd69e421abf2942769ebadc649ce0/deck-icons.js
-2. INLINE    body: window.MMW_ASSET_BASE='https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@f206c73c46ddd69e421abf2942769ebadc649ce0/assets/';var AH='#C4A584';var AL='#FFE0C0';var AD='#9C7C5C';
+1. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@b6dd54b78ec2671cfd9ae0f39a62c7f9dc2909c1/deck-icons.js
+2. INLINE    body: window.MMW_ASSET_BASE='https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@b6dd54b78ec2671cfd9ae0f39a62c7f9dc2909c1/assets/';var AH='#C4A584';var AL='#FFE0C0';var AD='#9C7C5C';
 3. EXTERNAL  src = https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js
-4. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@f206c73c46ddd69e421abf2942769ebadc649ce0/standard-deck.js
-5. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@f206c73c46ddd69e421abf2942769ebadc649ce0/deck-layouts.js
-6. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@f206c73c46ddd69e421abf2942769ebadc649ce0/deck-shell.js
+4. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@b6dd54b78ec2671cfd9ae0f39a62c7f9dc2909c1/standard-deck.js
+5. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@b6dd54b78ec2671cfd9ae0f39a62c7f9dc2909c1/deck-layouts.js
+6. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@b6dd54b78ec2671cfd9ae0f39a62c7f9dc2909c1/deck-shell.js
 7. INLINE    body:
    var D=[__D_ARRAY__];
    deckInit({title:'[Title]', contentFooter:'Company Confidential'});
 
 Closing: </body></html>
 
-The commit ref (currently f206c73c46ddd69e421abf2942769ebadc649ce0) is a pin, not
+The commit ref (currently b6dd54b78ec2671cfd9ae0f39a62c7f9dc2909c1) is a pin, not
 a branch. It appears in script items 1, 4, 5 and 6, in script item 2's
 MMW_ASSET_BASE, and in all four brand-mark img src URLs above -- nine places.
 A stale pin silently serves old code and old assets, and the code pin and the
