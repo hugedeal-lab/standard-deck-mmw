@@ -610,6 +610,10 @@ function exportText(slide, el, isDark) {
   // preview renderer does -- keep export and preview from diverging, and keep
   // one bad value from throwing out of the export loop.
   var exportedText = (el.text == null) ? '' : (typeof el.text === 'string' ? el.text : String(el.text));
+  // A type:'t' element is nothing but its text. Layouts emit these for optional
+  // slots the deck left unfilled; PptxGenJS would still stamp a zero-size empty
+  // box per one. Drop them -- there is nothing to draw.
+  if (!exportedText && !(el.paras && el.paras.length)) return;
   var cs, lsm, boldFlag;
 
   // EXPLICIT TYPOGRAPHY (v2.0) -- see the matching note in standard-deck.js.
