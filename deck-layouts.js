@@ -3929,6 +3929,21 @@ function errorSlide(msg, detail) {
 }
 
 function dispatch(slideData) {
+  // Agents sometimes nest a layout's parameters under `cfg:` -- a misreading of
+  // this system's "cfg.foo" shorthand, which means "the slide object's foo",
+  // not a literal nested key. Every layout fn reads slideData.foo directly, so
+  // an un-hoisted cfg wrapper renders the slide almost empty (title only).
+  // Hoist cfg's keys onto the slide; a key already on the slide wins; then drop
+  // the wrapper so warnUnusedKeys doesn't flag it. Idempotent across the
+  // several dispatch() passes per slide.
+  if (slideData && slideData.cfg && typeof slideData.cfg === 'object' && !Array.isArray(slideData.cfg)) {
+    for (var _k in slideData.cfg) {
+      if (Object.prototype.hasOwnProperty.call(slideData.cfg, _k) && slideData[_k] === undefined) {
+        slideData[_k] = slideData.cfg[_k];
+      }
+    }
+    delete slideData.cfg;
+  }
   var fn = resolve(slideData.layout);
   if (fn) {
     var slug = slideData.layout;
