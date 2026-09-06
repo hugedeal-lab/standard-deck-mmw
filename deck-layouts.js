@@ -152,16 +152,20 @@ function layout_coverPhoto(cfg) {
 // ==========================================================
 function layout_coverPhoto2(cfg) {
   var els = [];
+  // The template ships two Cover Photo2 masters (source slides 10 and 11) that
+  // differ in the photo silhouette AND in where the title sits: variant 1 puts
+  // it at y3.21, variant 2 at y4.37. titleY was previously hard-coded to 4.37,
+  // so the default (variant 1) rendered its title ~1.16in too low.
   var VARIANTS = {
-    1: { x:1.99, y:-0.02, w:11.43, h:7.57,
+    1: { x:1.99, y:-0.02, w:11.43, h:7.57, titleY:3.21,
       points:[[0.99713,0],[1,1],[0.60968,1],[0.35847,0.62088],[0.35847,0.99653],[0,0.99653],[0,0.5681],[0.32366,0.5681],[0.1788,0.3488],[0.1788,0.00292],[0.66745,0.00523],[0.89463,0.34806],[0.89463,0]] },
-    2: { x:3.349, y:0, w:10.074, h:7.538,
+    2: { x:3.349, y:0, w:10.074, h:7.538, titleY:4.37,
       points:[[1,0.50565],[0.99579,0.99866],[0.88431,1],[0.55148,1],[0.40519,0.80509],[0.40588,1],[0.00069,1],[0,0.75639],[0.36912,0.75639],[0.20389,0.53491],[0.20458,0.00056],[0.25773,0],[0.61806,0]] }
   };
   var v = VARIANTS[cfg.variant] || VARIANTS[1];
   ph(els, cfg, v.x, v.y, v.w, v.h, 0, v.points);
   els.push({ type:'img', ref:logoRef(cfg), x:0.41, y:0.37, w:1.12, h:0.31 }); // brand mark (placeholder slot in template)
-  els.push({ type:'t', text:cfg.title || "", x:0.39, y:4.37, w:6.48, h:1.12, font:'H', size:54.5, color:'asphalt', valign:'bottom', caps:true, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:cfg.title || "", x:0.39, y:v.titleY, w:6.48, h:1.12, font:'H', size:54.5, color:'asphalt', valign:'bottom', caps:true, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   els.push({ type:'img', ref:lockupRef(cfg), x:0.42, y:7.06, w:1.02, h:0.19 }); // brand mark (placeholder slot in template)
   return els;
 }
