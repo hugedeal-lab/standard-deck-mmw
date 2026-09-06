@@ -2333,7 +2333,7 @@ function layout_castingTalent(cfg) {
   els.push({ type:'t', text:"Full body", x:9.96, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"Headshot", x:0.9, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"Headshot", x:7.16, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  var _t0 = (cfg.items && cfg.items[0]) || {}, _t1 = (cfg.items && cfg.items[2]) || {};
+  var _t0 = (cfg.items && cfg.items[0]) || {}, _t1 = (cfg.items && cfg.items[1]) || {};
   function _nm(t) { var s = 'Name: ' + (t.name || ''); if (t.height) s += '   Height: ' + t.height; if (t.weight) s += '   Weight: ' + t.weight; return s; }
   els.push({ type:'t', text:_nm(_t0), x:0.81, y:6.4, w:5.4, h:0.35, font:'B', size:10, color:'captionGray', bold:true, valign:'middle', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:_nm(_t1), x:7.07, y:6.4, w:5.4, h:0.35, font:'B', size:10, color:'captionGray', bold:true, valign:'middle', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
