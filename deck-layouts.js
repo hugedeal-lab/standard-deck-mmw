@@ -1125,11 +1125,20 @@ function layout_reportMetricTable(cfg) {
 
     // Body: independent stack of groups, each group's cells sharing its height.
     var y = COL_TOP;
+    // Callers that don't hand-tune band heights: split the body area evenly.
+    var BODY_BOTTOM = 7.06;
+    var autoGroupH = ((col.groups && col.groups.length) ? (BODY_BOTTOM - COL_TOP) / col.groups.length : 0);
     (col.groups || []).forEach(function (group) {
-      var cells = group.cells || [];
+      // `cells` is the code-level name; accept `items` (what callers reach for,
+      // consistent with every other list-bearing layout) and coerce bare
+      // strings to {text} so a plain array of labels renders.
+      var cells = (group.cells || group.items || []).map(function (c) {
+        return (typeof c === 'string') ? { text: c } : c;
+      });
+      var groupH = group.h || autoGroupH;
       var specified = cells.reduce(function (s, c) { return s + (c.h || 0); }, 0);
       var unspecified = cells.filter(function (c) { return !c.h; }).length;
-      var autoH = unspecified ? Math.max(0, (group.h - specified) / unspecified) : 0;
+      var autoH = unspecified ? Math.max(0, (groupH - specified) / unspecified) : 0;
 
       cells.forEach(function (cell) {
         var h = (cell.h || autoH) - gap;
@@ -1943,15 +1952,43 @@ function layout_content09(cfg) {
 // Source slide: 29   Background: solid #262626
 // Set slideData.bgColor = "#262626" (engine honours bgColor on export + preview).
 // ==========================================================
+// Three columns, each an optional header row over a body row. Callers reach
+// for text/text2/text3 as the three column bodies (this is what §6.1 documents),
+// so those are primary; items[] still works, either as three body strings or as
+// [{head,body},...]. Legacy subhead/subtitle seeds column 1's header.
+function threeColBody(cfg) {
+  var items = Array.isArray(cfg.items) ? cfg.items : [];
+  var bodies = [cfg.text, cfg.text2, cfg.text3];
+  return {
+    head: function (i) {
+      var it = items[i];
+      if (it && typeof it === 'object' && it.head) return it.head;
+      return (i === 0) ? (cfg.subhead || cfg.subtitle || '') : '';
+    },
+    body: function (i) {
+      var it = items[i];
+      if (it && typeof it === 'object') return it.body || '';
+      if (typeof it === 'string') return it;
+      return bodies[i] || '';
+    }
+  };
+}
+function threeColRows(els, cfg, headColor, bodyColor) {
+  var COLX = [0.9, 5.02, 9.08];
+  var m = threeColBody(cfg);
+  COLX.forEach(function (x, i) {
+    var h = m.head(i);
+    if (h) els.push({ type:'t', text:h, x:x, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:headColor, caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  });
+  COLX.forEach(function (x, i) {
+    els.push({ type:'t', text:m.body(i), x:x, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:bodyColor, caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  });
+}
+
 function layout_threeColDark(cfg) {
   var els = [];
   els.push({ type:'t', text:cfg.title || "", x:0.9, y:1.91, w:11.53, h:0.79, font:'HR', size:35, color:'white', valign:'bottom', caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:0.9, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:'lt2', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text || '', x:5.02, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:'lt2', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text2 || '', x:9.08, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:'lt2', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.9, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:5.02, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:9.08, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  threeColRows(els, cfg, 'lt2', 'bodyGray');
   return els;
 }
 
@@ -1964,12 +2001,7 @@ function layout_threeColDark(cfg) {
 function layout_threeColLight(cfg) {
   var els = [];
   els.push({ type:'t', text:cfg.title || "", x:0.9, y:1.91, w:11.53, h:0.79, font:'H', size:35, color:'bodyGray', valign:'bottom', caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:0.9, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:'asphalt', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text || '', x:5.02, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:'asphalt', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text2 || '', x:9.08, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:'asphalt', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.9, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:5.02, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:9.08, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  threeColRows(els, cfg, 'asphalt', 'bodyGray');
   return els;
 }
 
