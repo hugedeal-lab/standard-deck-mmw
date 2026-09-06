@@ -3992,25 +3992,6 @@ function errorSlide(msg, detail) {
   ];
 }
 
-// The social spec-sheet device frames (assets/social/*_frame.png|jpg) are
-// opaque phone mockups with the platform chrome and a sample post baked in --
-// not transparent bezels. Several of those layouts push the frame first and a
-// replaceable photo well after it, so the well paints over the mockup and the
-// phone reads as "not loaded". Lift every device-frame image to the end of the
-// element list so the mockup always renders on top and stays fully visible;
-// any well behind it is intentionally hidden (the spec-sheet phone screen is
-// not a drop zone). Order among the frames themselves is preserved.
-function liftDeviceFrames(els) {
-  if (!Array.isArray(els)) return els;
-  function isFrame(e) {
-    return e && e.type === 'img' && typeof e.src === 'string' &&
-      /_frame\.(png|jpg)(?:[?#]|$)/.test(e.src);
-  }
-  var frames = els.filter(isFrame);
-  if (!frames.length) return els;
-  return els.filter(function (e) { return !isFrame(e); }).concat(frames);
-}
-
 function dispatch(slideData) {
   // Agents sometimes nest a layout's parameters under `cfg:` -- a misreading of
   // this system's "cfg.foo" shorthand, which means "the slide object's foo",
@@ -4034,7 +4015,7 @@ function dispatch(slideData) {
       slug = RETIRED[slideData.layout] || LEGACY_ALIASES[slideData.layout] || TEMPLATE_NAMES[slideData.layout] || slug;
     }
     warnUnusedKeys(slideData, slug);
-    return liftDeviceFrames(fn(slideData));
+    return fn(slideData);
   }
   if (slideData.els) return slideData.els;
   console.error('[deck-layouts] Unknown layout: "' + slideData.layout + '". ' +
