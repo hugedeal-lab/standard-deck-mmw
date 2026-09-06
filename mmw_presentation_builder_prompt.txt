@@ -1,5 +1,5 @@
 MMW Presentation Builder — V2.0
-CDN: standard-deck-mmw@4e0a07a6203f58cb292e3a76e71c647fb145c06e (hugedeal-lab)
+CDN: standard-deck-mmw@e91c0000d374b3f342878ac31e7e98da0568e825 (hugedeal-lab)
 
 V2.0 rebuilt the layout library directly from the real MMW template (originally
 MMW PPT Template_7.24.26.pptx; template revisions since then, plus a full
@@ -177,8 +177,8 @@ content06	Content 06	#EEEEEE	2 stacked photos, text left. title, subhead, text.
 content07	Content 07	#EEEEEE	2 photos side by side, header across top.
 content08	Content 08	#EEEEEE	4-well mixed-ratio board, tall well centre.
 content09	Content 09	#EEEEEE	4-well mixed-ratio board, tall well far right.
-threeColDark	Content - 3 columns - Dark	#262626	3 text columns, dark. text, text2, text3.
-threeColLight	Content - 3 columns - Light	#EEEEEE	3 text columns, light.
+threeColDark	Content - 3 columns - Dark	#262626	3 text columns, dark. text / text2 / text3 are the three column bodies. For a header over each body, pass items:[{head,body},{head,body},{head,body}] instead.
+threeColLight	Content - 3 columns - Light	#EEEEEE	3 text columns, light. Same slots as threeColDark.
 twoRowsDark	Content 2 Rows - Dark	#262626	2 labelled rows + photo panel, dark.
 twoRowsLight	Content 2 Rows - Light	#FFFFFF	2 labelled rows + photo panel, light. Most-used content layout.
 twoRowsLightAlt	Content - 2 rows - Light	#EEEEEE	2-row variant, light.
@@ -216,7 +216,7 @@ reportModelCompare	Report Model Compare (slide 89)	#262626	Column/row grid with 
 reportBrandPillars	Report Brand Pillars (slide 90)	#262626	2 intro sections + 3 pillar boxes + 3-col stat block with optional pivot row. cfg.sections (≤2), cfg.pillars (≤3, {header,copy}), cfg.rowLabels (≤4), cfg.channels (≤3), cfg.targets/cfg.outcomes (≤3 each), cfg.pivot ({label,copy}).
 reportPlatformMatrix	Report Platform Matrix (slide 91)	#EFF0F3	Hub disc + up to 8 spoke boxes in a ring + up to 6 category chips. cfg.hub ({label,name}), cfg.spokes (≤8), cfg.categories (≤6, {code,text}).
 reportEcosystemTree	Report Ecosystem Tree (slide 92)	#EFF0F3	Root node + dotted fact panel + up to 8 branch cards. cfg.title, cfg.root ({facts≤6, {key,value}}), cfg.branches (≤8), cfg.cornerLeft/cornerRight (optional, {icon,label,text}).
-reportMetricTable	(slide 95)	#262626	Funnel matrix, 7 fixed columns. cfg.columns, each {header,tone,stroke,noStroke,groups}; a group is one of 3 funnel bands.
+reportMetricTable	(slide 95)	#262626	Funnel matrix, 7 fixed columns. cfg.columns, each {header, tone, stroke, noStroke, groups}. groups is the 3 funnel bands, each {label?, items:[cell,...]} where a cell is a string or {text,tone}. Band heights auto-split evenly when unset.
 reportQuotePanel	Report Quote Panel (slide 96)	#EFF0F3	4 quote cards, 2x2. FRAGILE flat-slot mapping — card1 eyebrow/headline are cfg.tag/cfg.subhead, everything else is cfg.items[0..9] in a fixed order. Check the code comment before writing content; getting the order wrong silently misplaces it.
 reportChapterOpener	(slide 97)	#EEEEEE	Before/after or old/new framing pair. cfg.text2/text3 (eyebrows), cfg.text4/cfg.subhead (headline pair — NOT cfg.title, that's the fixed decorative arrow), cfg.text5/text6 (body), cfg.items[1]/items[2] (STATUS / WHAT THIS UNLOCKS).
 reportStrategyStack	(slide 98)	#EEEEEE	Strategy with proof points and next steps. cfg.badges[2] ({sub,body}), cfg.pointOne/pointTwo/pointBody, cfg.insightHead/insightBody, cfg.panels[3] ({next,subhead,sections|bullets}), cfg.activationLabel/activationBody, cfg.footers[3] ({head,body}).
@@ -482,10 +482,10 @@ Four hidden brand-mark images, each a plain img element with
 style="display:none", in this order. src is the full pinned CDN URL -- these
 img tags are read from the DOM by id and their src does NOT pass through
 MMW_ASSET_BASE, so it must be absolute:
-  id=gi0  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@4e0a07a6203f58cb292e3a76e71c647fb145c06e/assets/logos/mmw_logo_black.png
-  id=gi0w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@4e0a07a6203f58cb292e3a76e71c647fb145c06e/assets/logos/mmw_logo_white.png
-  id=gi1  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@4e0a07a6203f58cb292e3a76e71c647fb145c06e/assets/logos/wpp_mazda_lockup_black.png
-  id=gi1w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@4e0a07a6203f58cb292e3a76e71c647fb145c06e/assets/logos/wpp_mazda_lockup_white.png
+  id=gi0  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@e91c0000d374b3f342878ac31e7e98da0568e825/assets/logos/mmw_logo_black.png
+  id=gi0w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@e91c0000d374b3f342878ac31e7e98da0568e825/assets/logos/mmw_logo_white.png
+  id=gi1  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@e91c0000d374b3f342878ac31e7e98da0568e825/assets/logos/wpp_mazda_lockup_black.png
+  id=gi1w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@e91c0000d374b3f342878ac31e7e98da0568e825/assets/logos/wpp_mazda_lockup_white.png
 
 Then seven script elements, in this exact order and this exact order only.
 Each is either EXTERNAL (a src attribute pointing at a URL, empty body) or
@@ -493,19 +493,19 @@ INLINE (no src attribute, a JS body). Emit each as a real script element:
 opening tag with the src attribute if external, the stated body if inline,
 then the closing tag immediately after.
 
-1. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@4e0a07a6203f58cb292e3a76e71c647fb145c06e/deck-icons.js
-2. INLINE    body: window.MMW_ASSET_BASE='https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@4e0a07a6203f58cb292e3a76e71c647fb145c06e/assets/';var AH='#C4A584';var AL='#FFE0C0';var AD='#9C7C5C';
+1. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@e91c0000d374b3f342878ac31e7e98da0568e825/deck-icons.js
+2. INLINE    body: window.MMW_ASSET_BASE='https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@e91c0000d374b3f342878ac31e7e98da0568e825/assets/';var AH='#C4A584';var AL='#FFE0C0';var AD='#9C7C5C';
 3. EXTERNAL  src = https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js
-4. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@4e0a07a6203f58cb292e3a76e71c647fb145c06e/standard-deck.js
-5. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@4e0a07a6203f58cb292e3a76e71c647fb145c06e/deck-layouts.js
-6. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@4e0a07a6203f58cb292e3a76e71c647fb145c06e/deck-shell.js
+4. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@e91c0000d374b3f342878ac31e7e98da0568e825/standard-deck.js
+5. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@e91c0000d374b3f342878ac31e7e98da0568e825/deck-layouts.js
+6. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@e91c0000d374b3f342878ac31e7e98da0568e825/deck-shell.js
 7. INLINE    body:
    var D=[__D_ARRAY__];
    deckInit({title:'[Title]', contentFooter:'Company Confidential'});
 
 Closing: </body></html>
 
-The commit ref (currently 4e0a07a6203f58cb292e3a76e71c647fb145c06e) is a pin, not
+The commit ref (currently e91c0000d374b3f342878ac31e7e98da0568e825) is a pin, not
 a branch. It appears in script items 1, 4, 5 and 6, in script item 2's
 MMW_ASSET_BASE, and in all four brand-mark img src URLs above -- nine places.
 A stale pin silently serves old code and old assets, and the code pin and the
