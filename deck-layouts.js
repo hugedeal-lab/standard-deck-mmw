@@ -2011,15 +2011,33 @@ function layout_threeColLight(cfg) {
 // Source slide: 26   Background: solid #262626
 // Set slideData.bgColor = "#262626" (engine honours bgColor on export + preview).
 // ==========================================================
+
+// Slot resolution shared by the three twoRows variants. Callers reach for
+// text / text2 as the two row bodies ("2 labelled rows"); when text2 is
+// present that reading wins and row-2's label comes from subhead2. Without
+// text2 the legacy shape holds: text is row-2's label and items[0..2] carry
+// the bodies. items[1] is always the small left-column caption.
+function twoRowSlots(cfg) {
+  var items = Array.isArray(cfg.items) ? cfg.items : [];
+  var pair = (cfg.text2 != null);
+  return {
+    r1label: cfg.subhead || cfg.subtitle || '',
+    r1body:  pair ? (cfg.text || '') : (items[0] || ''),
+    leftCap: items[1] || '',
+    r2label: pair ? (cfg.subhead2 || '') : (cfg.text || ''),
+    r2body:  pair ? (cfg.text2 || '') : (items[2] || '')
+  };
+}
 function layout_twoRowsDark(cfg) {
   var els = [];
+  var s = twoRowSlots(cfg);
   els.push({ type:'s', x:5.13, y:1.96, w:0.01, h:4.01, fill:'ltGray' }); // rule
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'lt2', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (s.r1label) els.push({ type:'t', text:s.r1label, x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'lt2', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.r1body, x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   els.push({ type:'t', text:cfg.title || "", x:0.73, y:3.11, w:4.08, h:0.79, font:'H', size:35, color:'paper', align:'right', valign:'bottom', caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'paper', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text || '', x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'lt2', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.leftCap, x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'paper', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (s.r2label) els.push({ type:'t', text:s.r2label, x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'lt2', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.r2body, x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   return els;
 }
 
@@ -2031,14 +2049,15 @@ function layout_twoRowsDark(cfg) {
 // ==========================================================
 function layout_twoRowsLight(cfg) {
   var els = [];
+  var s = twoRowSlots(cfg);
   els.push({ type:'s', x:5.13, y:1.96, w:0.01, h:4.01, fill:'ltGray' }); // rule
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (s.r1label) els.push({ type:'t', text:s.r1label, x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.r1body, x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   els.push({ type:'t', text:cfg.title || "", x:0.73, y:3.11, w:4.08, h:0.79, font:'H', size:35, color:'bodyGray', align:'right', valign:'bottom', caps:true, lineSpacing:0.8, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['thankyou_texture.png']) || A+'backgrounds/thankyou_texture.png', x:3.67, y:3.24, w:9.67, h:4.28, transparency:34.4, crop:{"r": 0.4283, "b": 0.6825} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'bodyGray', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text || '', x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.leftCap, x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'bodyGray', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (s.r2label) els.push({ type:'t', text:s.r2label, x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.r2body, x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   return els;
 }
 
@@ -2050,13 +2069,14 @@ function layout_twoRowsLight(cfg) {
 // ==========================================================
 function layout_twoRowsLightAlt(cfg) {
   var els = [];
+  var s = twoRowSlots(cfg);
   els.push({ type:'s', x:5.13, y:1.96, w:0.01, h:4.01, fill:'ltGray' }); // rule
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (s.r1label) els.push({ type:'t', text:s.r1label, x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.r1body, x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   els.push({ type:'t', text:cfg.title || "", x:0.73, y:3.11, w:4.08, h:0.79, font:'H', size:35, color:'bodyGray', align:'right', valign:'bottom', caps:true, lineSpacing:0.8, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'bodyGray', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text || '', x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.leftCap, x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'bodyGray', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (s.r2label) els.push({ type:'t', text:s.r2label, x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.r2body, x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   return els;
 }
 
@@ -3710,6 +3730,7 @@ var LAYOUT_KEYS = {
     "subtitle",
     "text",
     "text2",
+    "text3",
     "title"
   ],
   "threeColLight": [
@@ -3718,27 +3739,34 @@ var LAYOUT_KEYS = {
     "subtitle",
     "text",
     "text2",
+    "text3",
     "title"
   ],
   "twoRowsDark": [
     "items",
     "subhead",
+    "subhead2",
     "subtitle",
     "text",
+    "text2",
     "title"
   ],
   "twoRowsLight": [
     "items",
     "subhead",
+    "subhead2",
     "subtitle",
     "text",
+    "text2",
     "title"
   ],
   "twoRowsLightAlt": [
     "items",
     "subhead",
+    "subhead2",
     "subtitle",
     "text",
+    "text2",
     "title"
   ],
   "reportGray": [
