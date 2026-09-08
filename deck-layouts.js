@@ -53,6 +53,57 @@ var A = (typeof window !== 'undefined' && window.MMW_ASSET_BASE) || 'assets/';
 function logoRef(cfg)   { return cfg.dark === 1 ? 'gi0w' : 'gi0'; }
 function lockupRef(cfg) { return cfg.dark === 1 ? 'gi1w' : 'gi1'; }
 
+// ------------------------------------------------------------
+// STATEMENT AUTOSIZE. The headline layouts (headlineLight / headlineDark /
+// headlinePhotoWell) and statementSubhead are built for a SHORT statement that
+// sits on ONE line at the template's hero size. Real decks pass longer copy,
+// which wrapped and overran the box. fitStatement() keeps the hero size for a
+// genuinely brief line and otherwise steps the size DOWN until the longest
+// line fits the usable width -- a graceful shrink instead of a wrap. Below the
+// floor it stops shrinking and is allowed to wrap (the box has room for two).
+//
+// Char advances are a Helvetica-Bold-derived uppercase table (em fractions);
+// close enough for Mazda Type Bold at the fidelity this needs. Tracking scales
+// with size (the template's 140pt/14pt tracking is 0.1em) so the look holds at
+// any size. An explicit "\n" in the title is respected -- each line is measured
+// and the widest one drives the size.
+// ------------------------------------------------------------
+var _CAPW = { A:.72,B:.72,C:.72,D:.72,E:.67,F:.61,G:.78,H:.72,I:.28,J:.56,K:.72,
+  L:.61,M:.83,N:.72,O:.78,P:.67,Q:.78,R:.72,S:.67,T:.61,U:.72,V:.67,W:.94,X:.67,
+  Y:.67,Z:.61,' ':.28,'-':.33,'–':.56,'—':1,'.':.28,',':.28,"'":.28,
+  '’':.28,'"':.47,':':.33,';':.33,'!':.33,'?':.61,'&':.72,'/':.33,
+  '0':.56,'1':.56,'2':.56,'3':.56,'4':.56,'5':.56,'6':.56,'7':.56,'8':.56,'9':.56 };
+
+function _lineEm(s) {
+  s = String(s).toUpperCase();
+  var em = 0;
+  for (var i = 0; i < s.length; i++) em += (_CAPW[s[i]] != null ? _CAPW[s[i]] : 0.70);
+  return em;
+}
+
+// opts: { w (frame width in), inset (per-side in, default .035), max, min }
+// returns { size, charSpacing } -- charSpacing kept at size/10 (0.1em).
+function fitStatement(text, opts) {
+  opts = opts || {};
+  var maxPt = opts.max || 140,
+      minPt = opts.min || 80,
+      inset = (opts.inset != null) ? opts.inset : 0.035,
+      usable = ((opts.w || 13.09) - inset * 2);
+  var t = String(text == null ? '' : text);
+  var em = 0, n = 0;
+  t.split('\n').forEach(function (ln) {
+    var e = _lineEm(ln);
+    if (e > em) { em = e; n = ln.length; }
+  });
+  if (em <= 0) return { size: maxPt, charSpacing: +(maxPt / 10).toFixed(1) };
+  // width(size) = em*(size/72) + (n-1)*((size/10)/72)   [tracking = size/10 pt]
+  var perPt = em / 72 + (n > 1 ? (n - 1) * 0.1 / 72 : 0);
+  var fitPt = usable / perPt;
+  var size = Math.min(maxPt, Math.floor(fitPt / 2) * 2);   // snap to even pt
+  if (size < minPt) size = minPt;
+  return { size: size, charSpacing: +(size / 10).toFixed(1) };
+}
+
 // Photo well. Renders a replaceable placeholder by default; supply real
 // photography per well with cfg.images -- an array indexed by well order
 // (top-to-bottom, left-to-right within the layout), or an object keyed by index:
@@ -305,7 +356,8 @@ function layout_dividerTides(cfg) {
 function layout_headlineLight(cfg) {
   var els = [];
   if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:2.92, y:2.42, w:7.49, h:0.42, font:'B', size:15.5, color:'accent', bold:true, align:'center', valign:'bottom', caps:true, lineSpacing:0.9, charSpacing:6.97, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:140, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:14, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  var _stmt = fitStatement(cfg.title, { w:13.09, inset:0.035, max:140, min:64 });
+  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:_stmt.size, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:_stmt.charSpacing, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   return els;
 }
 
@@ -319,7 +371,8 @@ function layout_headlineDark(cfg) {
   var els = [];
   els.push({ type:'img', src:(cfg.assets && cfg.assets['headline_dark_mark.png']) || A+'backgrounds/headline_dark_mark.png', x:6.29, y:-0.44, w:0.69, h:0.3 });
   if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:2.92, y:2.42, w:7.49, h:0.42, font:'B', size:15.5, color:'accent', bold:true, align:'center', valign:'bottom', caps:true, lineSpacing:0.9, charSpacing:6.97, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:140, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:14, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  var _stmt = fitStatement(cfg.title, { w:13.09, inset:0.035, max:140, min:64 });
+  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:_stmt.size, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:_stmt.charSpacing, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   return els;
 }
 
@@ -339,7 +392,8 @@ function layout_headlinePhotoWell(cfg) {
   // as a master-level placeholder; deckInit pre-fills images[0] from the pool).
   ph(els, cfg, -0.01, -0.01, 13.35, 7.52, 0);
   if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:2.92, y:2.42, w:7.49, h:0.42, font:'B', size:15.5, color:'accent', bold:true, align:'center', valign:'bottom', caps:true, lineSpacing:0.9, charSpacing:6.97, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:140, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:14, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  var _stmt = fitStatement(cfg.title, { w:13.09, inset:0.035, max:140, min:64 });
+  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:_stmt.size, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:_stmt.charSpacing, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   return els;
 }
 
@@ -351,7 +405,8 @@ function layout_headlinePhotoWell(cfg) {
 // ==========================================================
 function layout_statementSubhead(cfg) {
   var els = [];
-  els.push({ type:'t', text:cfg.title || "", x:0.52, y:2.66, w:12.29, h:1.44, font:'H', size:74, color:'white', align:'center', valign:'bottom', caps:true, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  var _stmt = fitStatement(cfg.title, { w:12.29, inset:0.104, max:74, min:44 });
+  els.push({ type:'t', text:cfg.title || "", x:0.52, y:2.66, w:12.29, h:1.44, font:'H', size:_stmt.size, color:'white', align:'center', valign:'bottom', caps:true, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:0.52, y:4.05, w:12.29, h:1.57, font:'B', size:17.5, color:'accent', align:'center', caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   return els;
 }

@@ -370,7 +370,13 @@ Cover title (coverLight/Dark) 12.56in @54.5pt -> ~26 chars, 1 line
 Cover title (coverLight2)      9.65in @54.5pt -> ~20 chars, 2 lines
 Cover title (coverPhoto2)      6.48in @54.5pt -> ~15 chars, 1 line
 Divider title                 12.12in @54.5pt -> ~25 chars, 1 line
-Statement                     13.09in @140pt  -> ~10 chars, 2 lines MAX
+Statement (headline*/          13.09in. 140pt is the MAX and the look for a
+  statementSubhead)            terse line (~10 chars / one word). The engine now
+                              auto-steps the size down (to ~64pt floor, then a
+                              2-line wrap) as the line gets longer -- so a
+                              longer statement renders cleanly instead of
+                              oversetting, but it also renders SMALLER. Keep
+                              statements brief to hold the hero size.
 Report title                  12.12in @24pt   -> ~65 chars
 TOC entry                      7.58in @30pt   -> ~31 chars, 9 entries
 A title over its limit oversets — pick coverLight2 or shorten. Check FIRST.
