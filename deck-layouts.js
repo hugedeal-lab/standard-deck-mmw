@@ -2071,9 +2071,13 @@ function layout_content08(cfg) {
   els.push({ type:'t', text:cfg.text || '', x:0.85, y:2.53, w:2.74, h:2.47, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   ph(els, cfg, 10.12, 3.71, 2.86, 2.79, 2);
   ph(els, cfg, 4.42, 4.68, 2.51, 2.38, 3);
-  els.push({ type:'s', x:11.3, y:5.36, w:0.46, h:0.99, fill:'#040B13' });
-  els.push({ type:'s', x:11.3, y:6.43, w:0.46, h:0.9, fill:'#535B69' });
-  els.push({ type:'s', x:11.3, y:7.4, w:0.46, h:0.9, fill:'#8D7057' });
+  // Palette chips: a horizontal strip tucked under the bottom-right well,
+  // aligned to its left edge and stopping short of its right edge and the
+  // footer line. (Was a vertical stack that overhung the well and ran the
+  // third chip off the bottom of the slide.)
+  els.push({ type:'s', x:10.12, y:6.60, w:0.90, h:0.44, fill:'#040B13' });
+  els.push({ type:'s', x:11.08, y:6.60, w:0.90, h:0.44, fill:'#535B69' });
+  els.push({ type:'s', x:12.04, y:6.60, w:0.90, h:0.44, fill:'#8D7057' });
   return els;
 }
 
