@@ -962,6 +962,9 @@ function exportChart(slide, el, isDark, accent, pptx) {
     co.barGrouping=opts.barGrouping||'clustered'; co.barDir=opts.barDir||'bar'; co.valAxisHidden=opts.valAxisHidden||false;
     co.catAxisLabelColor=SD.colorForPptx('body',isDark); co.valAxisLabelColor=SD.colorForPptx('body',isDark);
     if (el.chartType==='bar') co.dataLabelPosition=opts.dataLabelPosition||'outEnd';
+    // Area fill defaults to opaque, which reads as a solid wedge and swamps the
+    // trend line. The preview draws it at 15% -- match that here.
+    if (el.chartType==='area') co.chartColorsOpacity = opts.chartColorsOpacity != null ? opts.chartColorsOpacity : 18;
   }
   if (el.chartType==='pie'||el.chartType==='doughnut') {
     co.showPercent=opts.showPercent!==false; co.showValue=opts.showValue||false;

@@ -3053,6 +3053,87 @@ function layout_youtubeVideoAd(cfg) {
 // Set slideData.bgColor = "#EEEEEE".
 // HAND-AUTHORED: the base layout is a bare chassis; this adds the well.
 // ==========================================================
+// Source ramp for hand-composed bar charts (matches standard-deck.js CHART_SERIES
+// and the template's own chart parts). Dark chassis lightens the last stop.
+var CHART_BARS_DARK  = ['#BFA588', '#808080', '#4A634D', '#7CA8C1', '#B3BDB6', '#E8E8E8'];
+var CHART_BARS_LIGHT = ['#BFA588', '#808080', '#4A634D', '#416986', '#B3BDB6', '#262626'];
+
+function _niceMax(v) {
+  if (!(v > 0)) return 1;
+  var mag = Math.pow(10, Math.floor(Math.log(v) / Math.LN10));
+  return Math.ceil(v / mag) * mag;
+}
+
+// Horizontal grouped bar chart built from primitives so the pill ends survive
+// export -- PowerPoint's chart renderer ignores series geometry, so a native
+// <c:barChart> can only ever draw flat bars. Axis line, 5 gridlines, category
+// labels, optional legend and tip value labels. Non-bar chart types still go
+// through the native chart element (see the callers).
+function chartBarEls(els, cfg, X, Y, W, H, dark) {
+  var ch = cfg.chart || {};
+  var data = (ch.data || []).filter(function (s) { return s && s.values && s.values.length; });
+  if (!data.length) return;
+  var opts = ch.opts || {};
+  var labels = data[0].labels || data[0].values.map(function (_, i) { return String(i + 1); });
+  var nG = labels.length, nS = data.length;
+  var PAL = dark ? CHART_BARS_DARK : CHART_BARS_LIGHT;
+  var axisCol = dark ? 'mutedGray' : 'bodyGray';
+  var gridCol = dark ? '#3C3C3C' : '#D8D8D8';
+
+  var rawMax = 0;
+  data.forEach(function (s) { s.values.forEach(function (v) { if (+v > rawMax) rawMax = +v; }); });
+  var step = _niceMax(rawMax / 5) || 1;
+  var axisMax = step * Math.max(1, Math.ceil(rawMax / step));
+  var nGrid = Math.max(1, Math.round(axisMax / step));
+
+  var GL = 1.15, GB = 0.36;
+  var showLeg = opts.showLegend && nS > 1;
+  var GT = showLeg ? 0.40 : 0.06;
+  var px = X + GL, py = Y + GT, pw = W - GL - 0.20, ph = H - GT - GB;
+
+  // Gridlines + value-axis labels at each nice step.
+  for (var g = 0; g <= nGrid; g++) {
+    var gx = px + (pw * g) / nGrid;
+    els.push({ type:'ln', x:gx, y:py, w:0, h:ph, color:gridCol, weight:0.75 });
+    els.push({ type:'t', text:String(step * g), x:gx - 0.5, y:py + ph + 0.05,
+      w:1.0, h:0.26, font:'B', size:8, color:axisCol, align:'center', valign:'top',
+      caps:false, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+  }
+  // Category axis (left rule).
+  els.push({ type:'ln', x:px, y:py, w:0, h:ph, color:axisCol, weight:1 });
+
+  var groupH = ph / nG, barH = (groupH * 0.74) / nS, pad = groupH * 0.13;
+  labels.forEach(function (lbl, gi) {
+    els.push({ type:'t', text:String(lbl), x:X, y:py + gi * groupH, w:GL - 0.14, h:groupH,
+      font:'B', size:9.5, color:axisCol, align:'right', valign:'middle',
+      caps:false, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+    data.forEach(function (s, si) {
+      var v = +s.values[gi] || 0;
+      var bw = Math.max((v / axisMax) * pw, barH);
+      var by = py + gi * groupH + pad + si * barH;
+      var fill = (nS === 1) ? PAL[gi % PAL.length] : PAL[si % PAL.length];
+      els.push({ type:'s', x:px, y:by, w:bw, h:barH - 0.03, fill:fill, radius:'pill' });
+      if (opts.showValue !== false) {
+        els.push({ type:'t', text:String(v), x:px + bw + 0.09, y:by - 0.02, w:0.9, h:barH,
+          font:'B', size:8, color:axisCol, align:'left', valign:'middle',
+          caps:false, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+      }
+    });
+  });
+
+  // Legend row.
+  if (showLeg) {
+    var lx = px;
+    data.forEach(function (s, si) {
+      els.push({ type:'s', x:lx, y:Y + 0.06, w:0.16, h:0.16, fill:PAL[si % PAL.length], radius:0.03 });
+      var name = String(s.name || ('Series ' + (si + 1)));
+      els.push({ type:'t', text:name, x:lx + 0.22, y:Y - 0.02, w:2.4, h:0.32, font:'B', size:8.5,
+        color:axisCol, align:'left', valign:'middle', caps:false, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+      lx += 0.22 + Math.min(2.4, 0.09 * name.length + 0.4) + 0.25;
+    });
+  }
+}
+
 function layout_reportGrayChart(cfg) {
   var els = [];
   if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.61, y:0.54, w:12.12, h:0.29,
@@ -3065,10 +3146,15 @@ function layout_reportGrayChart(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
-  els.push({ type:'chart', x:0.78, y:2.22, w:11.5, h:4.36,
-    chartType:(cfg.chart && cfg.chart.type) || 'bar',
-    data:(cfg.chart && cfg.chart.data) || [],
-    opts:(cfg.chart && cfg.chart.opts) || {} });
+  var _ct = (cfg.chart && cfg.chart.type) || 'bar';
+  if (_ct === 'bar') {
+    chartBarEls(els, cfg, 0.78, 2.22, 11.5, 4.36, false);
+  } else {
+    els.push({ type:'chart', x:0.78, y:2.22, w:11.5, h:4.36,
+      chartType:_ct,
+      data:(cfg.chart && cfg.chart.data) || [],
+      opts:(cfg.chart && cfg.chart.opts) || {} });
+  }
 
   return els;
 }
@@ -3093,10 +3179,15 @@ function layout_reportDarkChart(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
-  els.push({ type:'chart', x:0.78, y:2.22, w:11.5, h:4.36,
-    chartType:(cfg.chart && cfg.chart.type) || 'bar',
-    data:(cfg.chart && cfg.chart.data) || [],
-    opts:(cfg.chart && cfg.chart.opts) || {} });
+  var _ct = (cfg.chart && cfg.chart.type) || 'bar';
+  if (_ct === 'bar') {
+    chartBarEls(els, cfg, 0.78, 2.22, 11.5, 4.36, true);
+  } else {
+    els.push({ type:'chart', x:0.78, y:2.22, w:11.5, h:4.36,
+      chartType:_ct,
+      data:(cfg.chart && cfg.chart.data) || [],
+      opts:(cfg.chart && cfg.chart.opts) || {} });
+  }
 
   return els;
 }
