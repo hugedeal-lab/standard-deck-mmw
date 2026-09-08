@@ -98,8 +98,14 @@ var ACCENT_FAMILIES = {
 // Read off the template's own 10 chart parts, ordered brand-forward. v1.0's
 // values were transcribed by eye and every one was a near-miss: #C4A484 for
 // #C4A485, #7CACC1 for #7CA8C1, #43644B for #4A634D, #B3BCB5 for #B3BDB6.
-var CHART_SERIES = ['#BFA588', '#7CA8C1', '#4A634D', '#C4A485', '#808080'];
-var CHART_SERIES_LIGHT = ['#C4A485', '#B3BDB6', '#416986', '#EEEEEE', '#999999'];
+// Series ramps taken from the template's own charts: the 2-series bars
+// (chart2/chart6, the "native chart in a fixed well" pair) are tan + gray, the
+// 6-series bars (chart3/chart7) run tan, gray, green, blue, sage, dark. v1 led
+// with blue at position 2, so every 2-series chart came out tan + blue.
+// _DARK is the dark-chassis ramp (pos 6 lightened so a 6th series clears the
+// #262626 ground); _LIGHT swaps in the deeper blue the light charts use.
+var CHART_SERIES = ['#BFA588', '#808080', '#4A634D', '#7CA8C1', '#B3BDB6', '#E8E8E8'];
+var CHART_SERIES_LIGHT = ['#BFA588', '#808080', '#4A634D', '#416986', '#B3BDB6', '#262626'];
 
 var _accentLight = '#FFE0C0';
 var _accentMid   = '#C4A484';
@@ -819,10 +825,11 @@ function renderPieChart(ctx, data, opts, cw, ch, isDark, isDoughnut) {
 }
 
 function resolveChartColors(tokens, count, isDark) {
+  var ramp = isDark ? CHART_SERIES : CHART_SERIES_LIGHT;
   var colors = [];
   for (var i = 0; i < count; i++) {
     if (tokens && tokens[i % tokens.length]) colors.push(resolveColor(tokens[i % tokens.length], isDark));
-    else colors.push(CHART_SERIES[i % CHART_SERIES.length]);
+    else colors.push(ramp[i % ramp.length]);
   }
   return colors;
 }

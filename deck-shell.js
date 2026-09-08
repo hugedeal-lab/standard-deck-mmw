@@ -948,7 +948,8 @@ function exportChart(slide, el, isDark, accent, pptx) {
   var ctm = { bar:'BAR', line:'LINE', pie:'PIE', doughnut:'DOUGHNUT', area:'AREA' };
   var pt = pptx.charts[ctm[el.chartType]||'BAR']; var opts = el.opts||{};
   var rc; var ct = opts.chartColors||null;
-  if (ct) rc = ct.map(function(t){return SD.colorForPptx(t,isDark);}); else rc = SD.CHART_SERIES.map(function(h){return h.replace('#','');});
+  var ramp = isDark ? SD.CHART_SERIES : (SD.CHART_SERIES_LIGHT || SD.CHART_SERIES);
+  if (ct) rc = ct.map(function(t){return SD.colorForPptx(t,isDark);}); else rc = ramp.map(function(h){return h.replace('#','');});
   var co = { x:el.x, y:el.y, w:el.w, h:el.h, chartColors:rc, showValue:opts.showValue!==false, showTitle:!!opts.showTitle, title:opts.title||'',
     titleColor:SD.colorForPptx('title',isDark), titleFontSize:12, showLegend:opts.showLegend||false, legendPos:opts.legendPos||'b', legendColor:SD.colorForPptx('body',isDark),
     valGridLine:{color:isDark?'535B69':'E2E8F0',size:0.5}, catGridLine:{style:'none'} };

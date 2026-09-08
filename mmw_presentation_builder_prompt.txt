@@ -224,7 +224,7 @@ Name	Template layout	Background	Use + key fields
 reportSplitPanels	Report Split Panels (slide 73)	#FFFFFF	4 decreasing pill bars + up to 4 milestone callouts. cfg.stages (≤4), cfg.milestones (≤4, {header,copy}), cfg.hereLabel.
 reportStatRow	(slide 74)	#262626	5-col stat grid, 3 bands. cfg.title, cfg.columns (≤5), cfg.sections (≤3, {label,cells}).
 reportStatRowLight	(slide 75)	#EEEEEE	Same as reportStatRow, light.
-reportSpendBarsLight	(slide 86)	#EEEEEE	Up to 6 horizontal pill bars sized by pct. cfg.bars (≤6, {label,pct,color?}).
+reportSpendBarsLight	(slide 86)	#EEEEEE	Up to 6 horizontal pill bars sized by pct. cfg.bars (≤6, {label, pct, value?, points?, color?}). value is a short string shown INSIDE the disc at the bar tip (e.g. "32%" or "$4.2M"); points is ≤2 sub-bullets set inside the bar; color overrides that bar's fill. Leave color unset to get the template ramp.
 reportSpendBarsDark	(slide 87)	#262626	Same as reportSpendBarsLight, dark.
 reportModelCompare	Report Model Compare (slide 89)	#262626	Column/row grid with spans. cfg.entries ({col,row,colSpan,rowSpan,...}), cfg.stages.
 reportBrandPillars	Report Brand Pillars (slide 90)	#262626	2 intro sections + 3 pillar boxes + 3-col stat block with optional pivot row. cfg.sections (≤2), cfg.pillars (≤3, {header,copy}), cfg.rowLabels (≤4), cfg.channels (≤3), cfg.targets/cfg.outcomes (≤3 each), cfg.pivot ({label,copy}).
