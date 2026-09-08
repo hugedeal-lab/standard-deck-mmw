@@ -357,11 +357,11 @@ function renderText(el, isDark) {
   div.style.textAlign = el.align || (isCompact ? 'center' : 'left');
   // EXPLICIT TYPOGRAPHY (v2.0). MMW layout elements always carry `caps`, which
   // marks the element as fully specified: casing, tracking and line-height come
-  // from the template, not from getTextStyle()'s size/colour guesswork. That
+  // from the template, not from getTextStyle()'s size/color guesswork. That
   // heuristic uppercases anything <=10pt or coloured 'muted' -- which would have
   // wrongly capitalised 161 of the template's body/caption elements -- and
   // hardcodes 1.35 line-height where the template is mostly 1.0.
-  // Elements WITHOUT `caps` (legacy raw compositions) keep the old behaviour.
+  // Elements WITHOUT `caps` (legacy raw compositions) keep the old behavior.
   if (el.caps !== undefined) {
     div.style.textTransform = el.caps ? 'uppercase' : 'none';
     // charSpacing is in POINTS (PowerPoint's "Expanded by N pt"), so convert to
@@ -386,12 +386,12 @@ function renderText(el, isDark) {
   }
   // ---- RICH PARAGRAPHS ------------------------------------------------
   // Some template text boxes are not a flat string: the Table of Contents
-  // heading is a grey subtitle and a black title separated by <a:br/> inside one
-  // paragraph, and its list mixes a grey number run with a black topic run per
+  // heading is a gray subtitle and a black title separated by <a:br/> inside one
+  // paragraph, and its list mixes a gray number run with a black topic run per
   // line, plus indented sub-bullets at a smaller size. `paras` models that:
   //   paras:[{ runs:[{text,color,size,bold}], size, marL, indent,
   //            bullet, bulletSizePct, breakBefore }]
-  // Elements without `paras` keep the old flat-string behaviour untouched.
+  // Elements without `paras` keep the old flat-string behavior untouched.
   if (el.paras && el.paras.length) {
     el.paras.forEach(function (p) {
       var pdiv = document.createElement('div');

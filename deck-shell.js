@@ -801,7 +801,7 @@ function exportShape(slide, el, isDark, accent, pptx) {
   tagGradient(opts, el, isDark);
   if (el.transparency) opts.fill.transparency = el.transparency;
   if (!isDark && el.fill === 'cardBg' && !el.noShadow && !el._pptxGradient) opts.shadow = { type:'outer', color:'000000', blur:4, offset:2, angle:135, opacity:0.08 };
-  // Rotation (degrees clockwise about centre) -- matches renderShape's CSS
+  // Rotation (degrees clockwise about center) -- matches renderShape's CSS
   // transform:rotate(). Carried on all three addShape paths below.
   if (el.rotation) opts.rotate = el.rotation;
 

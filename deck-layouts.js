@@ -18,7 +18,7 @@ TWO BREAKING CHANGES vs v1.0 -- read before upgrading:
    built from the template's "Content 01"). LEGACY_ALIASES below
    keeps v1.0 deck data working; new decks should use the new keys.
 
-Geometry, type and colour are machine-generated from the template.
+Geometry, type and color are machine-generated from the template.
 See MMW_Layout_Spec.md for the full per-layout specification.
 ============================================================ */
 
@@ -435,7 +435,7 @@ function layout_reportSplitPanels(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
-  // staged pills, right-aligned and decreasing. Label colour is fixed by the
+  // staged pills, right-aligned and decreasing. Label color is fixed by the
   // bar it sits on, so a caller cannot accidentally put tan text on tan.
   var BARS = [
     { x:0.94, w:11.79, fill:'accentDim', lx:1.07, label:'paper'     },
@@ -527,7 +527,7 @@ function layout_reportStatRow(cfg) {
       insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   });
 
-  // Bands: section label on the left, then one cell per column. Cell colour is
+  // Bands: section label on the left, then one cell per column. Cell color is
   // set by the band so the horizontal reading alternates, which is what
   // separates the sections visually -- it is not a per-cell choice.
   (cfg.sections || []).slice(0, BANDS.length).forEach(function (sec, r) {
@@ -584,7 +584,7 @@ function layout_reportStatRowLight(cfg) {
       insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   });
 
-  // Bands: section label on the left, then one cell per column. Cell colour is
+  // Bands: section label on the left, then one cell per column. Cell color is
   // set by the band so the horizontal reading alternates, which is what
   // separates the sections visually -- it is not a per-cell choice.
   (cfg.sections || []).slice(0, BANDS.length).forEach(function (sec, r) {
@@ -1015,7 +1015,7 @@ function layout_reportPlatformMatrix(cfg) {
     paras:[{ runs:[{ text:cfg.hub.label || '', size:10.5 }] },
            { runs:[{ text:_hubName, size:_hubNameSize }] }] });
 
-  // Category chips: light-grey gradient disc, white outline, black label, with
+  // Category chips: light-gray gradient disc, white outline, black label, with
   // #7F7F7F bullet text beside it.
   (cfg.categories || []).slice(0, 6).map(function (c, i) {
     return (typeof c === 'string') ? { code: String(i + 1).padStart(2, '0'), text: c } : c;
@@ -1202,7 +1202,7 @@ function layout_reportMetricTable(cfg) {
         { h: 1.55, cells: [{ text: 'DCP', tone: 'dark' }] } ] },
     { header: 'Outcomes & KPI', shadow: SHADOW_DEFAULT, gap: GAP, size: 6,
       groups: [
-        { h: 2.11, cells: [{ text: 'Build New Demand Consideration amongst non-owners', tone: 'lt' }] },
+        { h: 2.11, cells: [{ text: 'Build New Demand Consideration among non-owners', tone: 'lt' }] },
         { h: 1.79, cells: [{ text: 'Capture Existing Demand', tone: 'mid' }] },
         { h: 1.55, cells: [{ text: 'Convert Intent to Sales', tone: 'dark' }] } ] },
     { header: 'Channel', stroke: STROKE_DEFAULT, gap: GAP,
@@ -1238,7 +1238,7 @@ function layout_reportMetricTable(cfg) {
   columns.slice(0, 7).forEach(function (col, ci) {
     var x = COL_X[ci], w = COL_W, gap = col.gap || 0;
 
-    // Header cell -- every column gets one, dark grey fill. Headings never
+    // Header cell -- every column gets one, dark gray fill. Headings never
     // take an outline or a shadow, regardless of the column's own treatment.
     els.push({ type: 's', x: x, y: HEADER_Y, w: w, h: HEADER_H, fill: '#55555C' });
     els.push({ type: 't', text: col.header || '', x: x, y: HEADER_Y, w: w, h: HEADER_H,
@@ -1515,7 +1515,7 @@ function layout_reportStrategyStack(cfg) {
 //
 // cfg.panels: array of 4 { tone:'dark'|'tan', icon, header, date, sections }
 //   sections: array of 3 { label, items } -- items is a list where each
-//   entry is a plain string (grey bullet) or { text, bold, color } for a
+//   entry is a plain string (gray bullet) or { text, bold, color } for a
 //   bullet that needs to stand out, e.g. an approval-deadline date.
 // tone controls which of the two source treatments a column gets: 'dark'
 // (asphalt header/icon, tan date text) or 'tan' (accentDim header/icon,
@@ -1578,7 +1578,7 @@ function layout_reportJourneyMap(cfg) {
     els.push({ type:'t', text:p.date || '', x:x+1.98, y:2.4, w:0.8, h:0.12, font:'B', size:8, color:dateColor, bold:true, align:'right', caps:true, lineSpacing:1 });
 
     // Three sections: caps underlined header + bulleted body. A bullet item
-    // can be a plain string (grey, standard weight) or { text, bold, color }
+    // can be a plain string (gray, standard weight) or { text, bold, color }
     // to call out something like an approval date in black/bold.
     var sections = p.sections || [];
     SECTIONS_Y.forEach(function (sy, si) {
@@ -1834,11 +1834,11 @@ function layout_reportNumberedSteps(cfg) {
 // Agenda. Faithful to template slide 22 -- four distinct pieces:
 //
 //  1. HEADING  one box, one paragraph, a <br/> between two runs:
-//     grey subtitle above black title. 17pt bold ALL CAPS, 90% line spacing.
-//  2. LIST     one box. Each item is a grey NUMBER run + a black TOPIC run at
+//     gray subtitle above black title. 17pt bold ALL CAPS, 90% line spacing.
+//  2. LIST     one box. Each item is a gray NUMBER run + a black TOPIC run at
 //     30pt bold, 110% line spacing. Sub-bullets sit under an item at 15pt bold
 //     black, hanging indent, bullet glyph at 80% of text size.
-//  3. COPY BLOCK  lower left, 10pt grey -- this layout has no footer.
+//  3. COPY BLOCK  lower left, 10pt gray -- this layout has no footer.
 //  4. BACKDROP  two crops of one image at 65.6% opacity behind the list.
 //
 // cfg.items accepts either a plain string or {number, topic, subs:[...]}:
@@ -1860,7 +1860,7 @@ function layout_tableOfContents(cfg) {
   els.push({ type:'img', src:backdrop, x:3.67, y:3.24, w:9.67, h:4.28,
     transparency:34.4, crop:{ r:0.4283, b:0.6825 } });
 
-  // 2 -- heading: grey subtitle over black title, one box, one paragraph
+  // 2 -- heading: gray subtitle over black title, one box, one paragraph
   els.push({ type:'t', x:0.29, y:0.43, w:2.81, h:0.72,
     font:'B', size:17, bold:true, caps:true, lineSpacing:0.9, charSpacing:0,
     color:'bodyGray', insets:{l:0.104,t:0.104,r:0.104,b:0.104},
@@ -2169,7 +2169,7 @@ function layout_threeColLight(cfg) {
 // ==========================================================
 
 // Slot resolution shared by the three twoRows variants. Callers reach for
-// text / text2 as the two row bodies ("2 labelled rows"); when text2 is
+// text / text2 as the two row bodies ("2 labeled rows"); when text2 is
 // present that reading wins and row-2's label comes from subhead2. Without
 // text2 the legacy shape holds: text is row-2's label and items[0..2] carry
 // the bodies. items[1] is always the small left-column caption.
@@ -2432,7 +2432,7 @@ function layout_castingTalent(cfg) {
 // Set slideData.bgColor = "#FFFFFF".
 // HAND-AUTHORED: structured item API (auto-generation flattens this grid).
 // ==========================================================
-// 5-across labelled location strip + 3 stacked extras beneath column 5.
+// 5-across labeled location strip + 3 stacked extras beneath column 5.
 // Wells pitch 2.70in, gutter 0.15in; column 1 bleeds off the left edge.
 // Labels sit ABOVE their wells and are the only centred captions in the deck.
 // cfg.items: [{ label:'WEEKEND GETAWAY' }, ...] x5
@@ -3367,7 +3367,7 @@ function layout_reportGrayTimeline(cfg) {
 // ------------------------------------------------------------
 // DEFAULT PHOTOGRAPHY POOLS
 // Image-led layouts pre-populate with real photography from the template deck
-// so a fresh deck never opens on empty grey boxes. Every one is still a normal
+// so a fresh deck never opens on empty gray boxes. Every one is still a normal
 // picture in the exported PPTX, so right-click -> Change Picture works as usual.
 //
 // Rotation is applied ONCE by deckInit (see assignDefaultPhotos in
