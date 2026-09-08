@@ -88,11 +88,15 @@ function fitStatement(text, opts) {
   var maxPt = opts.max || 140,
       minPt = opts.min || 80,
       inset = (opts.inset != null) ? opts.inset : 0.035,
-      usable = ((opts.w || 13.09) - inset * 2);
+      // 0.95 keeps a real margin off the frame edge; the Helvetica-derived
+      // table under-measures the wider Mazda Type Bold, so scale em up 8% too.
+      // Tuned so an 8-wide-char word (MOMENTUM) drops from 140 rather than
+      // overrunning and wrapping mid-word in the real face.
+      usable = ((opts.w || 13.09) - inset * 2) * 0.95;
   var t = String(text == null ? '' : text);
   var em = 0, n = 0;
   t.split('\n').forEach(function (ln) {
-    var e = _lineEm(ln);
+    var e = _lineEm(ln) * 1.08;
     if (e > em) { em = e; n = ln.length; }
   });
   if (em <= 0) return { size: maxPt, charSpacing: +(maxPt / 10).toFixed(1) };

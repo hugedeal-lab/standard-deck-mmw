@@ -24,6 +24,9 @@ function fontFor(el) { return (el && FONT_FACES[el.font]) || FONT; }
 var _D = []; var _config = {}; var _currentSlide = 0; var _totalSlides = 0;
 var _customLogo = null; var _noLogo = false; var _imageMode = false;
 var _imageCache = {};
+// Natural pixel dims per resolved image src, filled by prefetchImage()'s onload.
+// Used only for fit:'cover' center-crop math in exportImage().
+var _imageDims = {};
 // Set by deckInit()'s prefetchDeckAssets(); exportPPTX() awaits it before
 // export. Declared here (module scope), not with `var` inside deckInit, so
 // exportPPTX -- a sibling top-level function, not a nested one -- can see it.
@@ -46,6 +49,11 @@ return new Promise(function (resolve) {
   var img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = function () {
+    // Record natural pixel dims -- exportImage() needs the true aspect ratio to
+    // center-crop a fit:'cover' photo (PptxGenJS 3.12's own cover sizing can't).
+    if (img.naturalWidth && img.naturalHeight) {
+      _imageDims[url] = { w: img.naturalWidth, h: img.naturalHeight };
+    }
     var canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
     var ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
@@ -985,8 +993,29 @@ function exportImage(slide, el) {
   }
   // alphaModFix -> PptxGenJS transparency (0 = opaque, 100 = invisible).
   if (typeof el.transparency === 'number') opts.transparency = el.transparency;
-  // A photo supplied into a well fills the frame; PptxGenJS crops to do that.
-  if (el.fit === 'cover' && !el.crop) opts.sizing = { type: 'cover', w: el.w, h: el.h };
+  // A photo supplied into a well fills the frame. PptxGenJS 3.12's
+  // sizing:{type:'cover'} cannot do this: it uses the BOX dims as the image
+  // size, so imgRatio === boxRatio and it emits a zero srcRect -- a plain
+  // stretch that distorts any photo whose aspect ratio isn't the frame's
+  // (e.g. a 3:2 shot in a 16:9 well renders 18% too wide). Derive the
+  // center-crop here from the image's real pixel dims and run it through the
+  // crop path below; fall back to best-effort cover sizing only when the dims
+  // are unknown (a raw data: URI that never went through prefetch).
+  var coverCrop = null;
+  if (el.fit === 'cover' && !el.crop) {
+    var _d = _imageDims[src];
+    if (_d && _d.w > 0 && _d.h > 0 && el.w > 0 && el.h > 0) {
+      var _ia = _d.w / _d.h, _ba = el.w / el.h;
+      if (_ia > _ba) {                       // image wider than frame -> trim sides
+        var _kw = _ba / _ia;
+        coverCrop = { l: (1 - _kw) / 2, r: (1 - _kw) / 2, t: 0, b: 0 };
+      } else if (_ia < _ba) {                // image taller than frame -> trim top/bottom
+        var _kh = _ia / _ba;
+        coverCrop = { l: 0, r: 0, t: (1 - _kh) / 2, b: (1 - _kh) / 2 };
+      }
+    }
+    if (!coverCrop) opts.sizing = { type: 'cover', w: el.w, h: el.h };
+  }
   // srcRect -> PptxGenJS crop sizing.
   //
   // Its crop model is "place the image at w/h, then keep the box at x/y/w/h",
@@ -996,9 +1025,10 @@ function exportImage(slide, el) {
   // wrongly-scaled box. It also resizes the picture to the crop box, so the
   // image option additionally has to be pre-divided by the kept fraction for
   // the picture to land at the size the layout asked for.
-  if (el.crop) {
-    var cl = el.crop.l || 0, ct = el.crop.t || 0,
-        cr = el.crop.r || 0, cb = el.crop.b || 0;
+  var _crop = el.crop || coverCrop;
+  if (_crop) {
+    var cl = _crop.l || 0, ct = _crop.t || 0,
+        cr = _crop.r || 0, cb = _crop.b || 0;
     var kw = Math.max(1 - cl - cr, 0.001), kh = Math.max(1 - ct - cb, 0.001);
     opts.w = el.w / kw; opts.h = el.h / kh;
     opts.sizing = { type: 'crop',
