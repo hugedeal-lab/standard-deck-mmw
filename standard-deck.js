@@ -686,34 +686,68 @@ function renderChart(el, isDark) {
   return container;
 }
 
+// Filled rounded-rectangle path. r is clamped so a short bar collapses to a
+// lozenge rather than inverting.
+function barRoundPath(ctx, x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
 function renderBarChart(ctx, data, opts, cw, ch, isDark) {
   if (!data.length || !data[0].values) return;
   var series = data; var labels = series[0].labels || [];
   var nGroups = labels.length; var nSeries = series.length; var maxVal = 0;
   series.forEach(function (s) { s.values.forEach(function (v) { if (v > maxVal) maxVal = v; }); });
   if (maxVal === 0) maxVal = 1;
-  var padding = { top: 60, right: 40, bottom: 50, left: 60 };
-  var plotW = cw - padding.left - padding.right; var plotH = ch - padding.top - padding.bottom;
-  var groupW = plotW / nGroups; var barW = (groupW * 0.7) / nSeries; var gap = groupW * 0.3;
+  // barDir 'bar' (the export default) is HORIZONTAL; 'col' is vertical. Both
+  // draw with full pill ends -- the source template's square bars are a defect
+  // vs the Keynote original (see roundChartBars in deck-shell.js for the PPTX).
+  var horiz = (opts.barDir || 'bar') === 'bar';
   var colors = resolveChartColors(opts.chartColors || null, nSeries, isDark);
-  series.forEach(function (s, si) {
-    s.values.forEach(function (val, vi) {
-      var bx = padding.left + vi * groupW + gap / 2 + si * barW;
-      var bh = (val / maxVal) * plotH; var by = padding.top + plotH - bh;
-      // Square corners -- confirmed against source: vertical (column) bars
-      // do not get rounded ends in this deck. Only horizontal bars do (see
-      // reportSplitPanels / reportSpendBars(Light/Dark), radius:'pill').
-      ctx.fillStyle = colors[si]; ctx.fillRect(bx, by, barW - 2, bh);
-      if (opts.showValue) {
-        ctx.font = '500 ' + ptToPx(8) + 'px Mazda Type, Arial, sans-serif';
-        ctx.fillStyle = resolveColor('title', isDark); ctx.textAlign = 'center';
-        ctx.fillText(formatVal(val), bx + barW / 2, by - 6);
-      }
-    });
-  });
+  var padding = { top: 60, right: 40, bottom: 50, left: horiz ? 92 : 60 };
+  var plotW = cw - padding.left - padding.right; var plotH = ch - padding.top - padding.bottom;
   ctx.font = ptToPx(8) + 'px Mazda Type, Arial, sans-serif';
-  ctx.fillStyle = resolveColor('muted', isDark); ctx.textAlign = 'center';
-  labels.forEach(function (lbl, i) { ctx.fillText(lbl, padding.left + i * groupW + groupW / 2, ch - padding.bottom + 20); });
+
+  if (horiz) {
+    var groupH = plotH / nGroups; var barH = (groupH * 0.72) / nSeries; var gapH = groupH * 0.28;
+    series.forEach(function (s, si) {
+      s.values.forEach(function (val, vi) {
+        var by = padding.top + vi * groupH + gapH / 2 + si * barH;
+        var r = (barH - 2) / 2;
+        var bw = Math.max((val / maxVal) * plotW, r * 2);
+        ctx.fillStyle = colors[si];
+        barRoundPath(ctx, padding.left, by, bw, barH - 2, r); ctx.fill();
+      });
+    });
+    ctx.fillStyle = resolveColor('muted', isDark); ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    labels.forEach(function (lbl, i) { ctx.fillText(lbl, padding.left - 14, padding.top + i * groupH + groupH / 2); });
+    ctx.textBaseline = 'alphabetic';
+  } else {
+    var groupW = plotW / nGroups; var barW = (groupW * 0.7) / nSeries; var gap = groupW * 0.3;
+    series.forEach(function (s, si) {
+      s.values.forEach(function (val, vi) {
+        var bx = padding.left + vi * groupW + gap / 2 + si * barW;
+        var r = (barW - 2) / 2;
+        var bh = Math.max((val / maxVal) * plotH, r * 2); var by = padding.top + plotH - bh;
+        ctx.fillStyle = colors[si];
+        barRoundPath(ctx, bx, by, barW - 2, bh, r); ctx.fill();
+        if (opts.showValue) {
+          ctx.font = '500 ' + ptToPx(8) + 'px Mazda Type, Arial, sans-serif';
+          ctx.fillStyle = resolveColor('title', isDark); ctx.textAlign = 'center';
+          ctx.fillText(formatVal(val), bx + barW / 2, by - 6);
+          ctx.font = ptToPx(8) + 'px Mazda Type, Arial, sans-serif';
+        }
+      });
+    });
+    ctx.fillStyle = resolveColor('muted', isDark); ctx.textAlign = 'center';
+    labels.forEach(function (lbl, i) { ctx.fillText(lbl, padding.left + i * groupW + groupW / 2, ch - padding.bottom + 20); });
+  }
 }
 
 function renderLineChart(ctx, data, opts, cw, ch, isDark, isArea) {

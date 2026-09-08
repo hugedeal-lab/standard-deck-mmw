@@ -567,13 +567,18 @@ try {
   }).then(function (zip) {
     var jobs = [];
     zip.forEach(function (path, entry) {
-      if (!/^ppt\/slides\/slide\d+\.xml$/.test(path)) return;
-      jobs.push(entry.async('string').then(function (xml) {
-        xml = xml.replace(/(<a:rPr\b[^>]*?)\skern="0"/g, '$1 kern="100"');
-        xml = applyPhotoMasks(xml);
-        xml = applyGradients(xml);
-        zip.file(path, xml);
-      }));
+      if (/^ppt\/slides\/slide\d+\.xml$/.test(path)) {
+        jobs.push(entry.async('string').then(function (xml) {
+          xml = xml.replace(/(<a:rPr\b[^>]*?)\skern="0"/g, '$1 kern="100"');
+          xml = applyPhotoMasks(xml);
+          xml = applyGradients(xml);
+          zip.file(path, xml);
+        }));
+      } else if (/^ppt\/charts\/chart\d+\.xml$/.test(path)) {
+        jobs.push(entry.async('string').then(function (xml) {
+          zip.file(path, roundChartBars(xml));
+        }));
+      }
     });
     return Promise.all(jobs).then(function () {
       return zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
@@ -687,6 +692,23 @@ function exportText(slide, el, isDark) {
     wrap: !isCompact, margin: insetMargin(el), shrinkText: isCompact,
     rotate: el.rotation || undefined
   });
+}
+
+// PptxGenJS has no option for rounded bars, and the source template's chart
+// bars are square -- but the Keynote original they derive from has full pill
+// ends. Inject a roundRect geometry into every bar series' <c:spPr> (before
+// the fill; that is the CT_ShapeProperties child order). adj 50000 puts the
+// corner radius at half the bar's short side -> a full pill. PowerPoint and
+// Keynote honour series geometry; LibreOffice's chart renderer ignores it, so
+// a LibreOffice render still shows square bars even though the .pptx is round.
+function roundChartBars(xml) {
+  if (xml.indexOf('<c:barChart>') === -1 && xml.indexOf('<c:bar3DChart>') === -1) return xml;
+  if (xml.indexOf('prst="roundRect"') !== -1) return xml;   // already processed
+  var GEOM = '<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 50000"/></a:avLst></a:prstGeom>';
+  // The first <c:spPr> inside each <c:ser> is that series' bar shape. The
+  // tempered [(?!</c:ser>)] guard keeps the match from ever crossing into the
+  // next series or the axis <c:spPr> if a series happens to omit its own.
+  return xml.replace(/(<c:ser>(?:(?!<\/c:ser>)[\s\S])*?<c:spPr>)/g, '$1' + GEOM);
 }
 
 // Swap the rect geometry of a tagged picture for its real outline. PptxGenJS
