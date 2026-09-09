@@ -772,9 +772,12 @@ function layout_reportModelCompare(cfg) {
   (cfg.stages || []).slice(0, 4).forEach(function (st, r) {
     if (typeof st === 'string') st = { label: st };
     var top = ROW_T[r], bot = ROW_B[r], mid = (top + bot) / 2;
-    els.push({ type:'s', x:1.53, y:top, w:0.6, h:bot - top, fill:CHIP[r] });
-    if (st.code) els.push({ type:'t', text:st.code, x:1.58, y:mid - 0.13, w:0.5, h:0.26,
-      font:'B', size:10, color:'white', align:'center', valign:'middle',
+    // Chip sits in the gap between the tan label box (ends x 1.59) and the
+    // first entry column (starts x 2.27) -- it used to start at 1.53 and cut
+    // into the label box.
+    els.push({ type:'s', x:1.68, y:top, w:0.5, h:bot - top, fill:CHIP[r] });
+    if (st.code) els.push({ type:'t', text:st.code, x:1.68, y:mid - 0.13, w:0.5, h:0.26,
+      font:'B', size:9, color:'white', align:'center', valign:'middle',
       caps:false, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
     els.push({ type:'s', x:0.25, y:mid - 0.5, w:1.34, h:1, fill:'none',
       stroke:'#BFA588', strokeWidth:0.5 });
