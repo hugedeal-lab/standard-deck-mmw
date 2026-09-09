@@ -846,13 +846,24 @@ function layout_reportBrandPillars(cfg) {
     font:'H', size:23.8, color:'white', caps:true, lineSpacing:1, charSpacing:-0.475,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
 
-  // Channel chips, top right. Rounded corners: adj=16667 is 16.667% of the
-  // short side, which on a 0.32in chip is a 0.053in radius -- not a full pill.
+  // Channel chips, top right. The source holds one short word per chip
+  // ("Paid" / "Owned" / "Earned") in a fixed 0.98in badge; a longer label
+  // overran it. The chip now sizes to its text -- staying at 0.98in for a
+  // short word, widening to a 1.95in cap, then shrinking the type (floor 8pt)
+  // -- while its right edge stays pinned at 12.90.
+  var CHIP_RIGHT = 12.90;
   (cfg.channels || []).slice(0, 3).forEach(function (ch, i) {
-    els.push({ type:'s', x:11.92, y:PILL_Y[i], w:0.98, h:0.32,
+    var _ct = String(ch || '');
+    var _cs = 11;
+    var _cpad = 0.22;
+    var _cest = _ct.length * (_cs * 0.0079) + _cpad;
+    var _cw = Math.max(0.98, Math.min(1.95, _cest));
+    if (_cest > _cw) _cs = Math.max(8, Math.round(_cs * (_cw - _cpad) / (_cest - _cpad)));
+    var _cx = CHIP_RIGHT - _cw;
+    els.push({ type:'s', x:_cx, y:PILL_Y[i], w:_cw, h:0.32,
       fill:PILL_FILL[i], radius:0.32 * 0.16667 });
-    els.push({ type:'t', text:ch, x:11.92, y:PILL_Y[i] + 0.02, w:0.98, h:0.28,
-      font:'B', size:11, color:'white', align:'center', valign:'middle',
+    els.push({ type:'t', text:_ct, x:_cx, y:PILL_Y[i] + 0.02, w:_cw, h:0.28,
+      font:'B', size:_cs, color:'white', align:'center', valign:'middle',
       caps:false, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
   });
 
