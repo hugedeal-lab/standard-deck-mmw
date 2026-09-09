@@ -1026,17 +1026,30 @@ function layout_reportPlatformMatrix(cfg) {
 
   pos.forEach(function (p, i) {
     var s = spokes[i];
-    if (s.header || s.copy) {
+    // Circle shows the label (fall back to header so it is never an empty
+    // ring). Card carries the copy, with a bold header line ONLY when it is
+    // distinct from the circle label.
+    var _circ = s.label || s.header || '';
+    var _cHead = (s.label && s.header && s.header !== s.label) ? s.header : '';
+    var _cBody = s.copy || '';
+    if (_cHead || _cBody) {
       var bx = p.left ? (p.x - SPOKE_R + OVERLAP - BOX_W) : (p.x + SPOKE_R - OVERLAP);
       bx = Math.max(0.1, Math.min(13.33 - BOX_W - 0.1, bx));
       els.push({ type:'s', x:bx, y:p.by, w:BOX_W, h:BOX_H, fill:'none',
         stroke:'#9B9B9B', strokeWidth:1, dash:'dot', radius:0.118 });
+      // Fit the card text: 6pt is the source size; shrink toward a 4.5pt
+      // floor if the copy would wrap past the 1.0in box.
+      var _tw = BOX_W - 0.5 - (p.left ? 0.08 : 0.42) + 0.08;
+      var _tcnt = (_cHead ? _cHead.length + 2 : 0) + _cBody.length;
+      var _tsz = 6;
+      var _lpi = function (pt) { return Math.max(6, _tw / (pt * 0.0104)); };
+      while (_tsz > 4.5 && Math.ceil(_tcnt / _lpi(_tsz)) * (_tsz * 1.18 / 72) > (BOX_H - 0.18)) _tsz -= 0.5;
       var paras = [];
-      if (s.header) paras.push({ runs:[{ text:s.header, size:6, bold:true }] });
-      if (s.copy)   paras.push({ runs:[{ text:s.copy,   size:6 }] });
-      els.push({ type:'t', x:bx + (p.left ? 0.08 : 0.42), y:p.by + 0.1,
-        w:BOX_W - 0.5, h:BOX_H - 0.2,
-        font:'B', size:6, color:'#7F7F7F', caps:false, lineSpacing:1.15,
+      if (_cHead) paras.push({ runs:[{ text:_cHead, size:_tsz, bold:true }] });
+      if (_cBody) paras.push({ runs:[{ text:_cBody, size:_tsz }] });
+      els.push({ type:'t', x:bx + (p.left ? 0.08 : 0.42), y:p.by + 0.09,
+        w:BOX_W - 0.5, h:BOX_H - 0.16,
+        font:'B', size:_tsz, color:'#7F7F7F', caps:false, lineSpacing:1.16,
         insets:{l:0.028,t:0.028,r:0.028,b:0.028}, paras:paras });
     }
 
@@ -1045,9 +1058,12 @@ function layout_reportPlatformMatrix(cfg) {
       fill:'#EFF0F3', stroke:'#BFA588', strokeWidth:0.5, dash:'dash' });
     els.push({ type:'o', x:p.x - 0.44, y:p.y - 0.44, w:0.88, h:0.88,
       fill:'#EEEEEE', stroke:'#90A291', strokeWidth:2.5, shadow:true });
-    if (s.label) els.push({ type:'t', text:s.label, x:p.x - 0.44, y:p.y - 0.44, w:0.88, h:0.88,
-      font:'B', size:7, color:'asphalt', align:'center', valign:'middle',
-      caps:true, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+    if (_circ) {
+      var _cz = _circ.length <= 10 ? 7 : (_circ.length <= 18 ? 6 : 5);
+      els.push({ type:'t', text:_circ, x:p.x - 0.44, y:p.y - 0.44, w:0.88, h:0.88,
+        font:'B', size:_cz, color:'asphalt', align:'center', valign:'middle',
+        caps:true, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+    }
   });
 
   // Hub, last, so it wins every overlap. Both discs are solid and shadowed.
@@ -1068,18 +1084,22 @@ function layout_reportPlatformMatrix(cfg) {
 
   // Category chips: light-gray gradient disc, white outline, black label, with
   // #7F7F7F bullet text beside it.
-  (cfg.categories || []).slice(0, 6).map(function (c, i) {
+  var _cats = (cfg.categories || []).slice(0, 6).map(function (c, i) {
     return (typeof c === 'string') ? { code: String(i + 1).padStart(2, '0'), text: c } : c;
-  }).forEach(function (c, i) {
-    var cy = 1.04 + i * 0.79;
+  });
+  // Spread the rows over the available height so a 2-line description never
+  // crowds the next chip.
+  var _cgap = _cats.length > 1 ? Math.min(0.98, (5.9 - 1.04) / (_cats.length - 1)) : 0.98;
+  _cats.forEach(function (c, i) {
+    var cy = 1.04 + i * _cgap;
     els.push({ type:'o', x:0.18, y:cy, w:0.54, h:0.54,
       gradient:{ from:'#EEEEEE', to:'#E8E8E8', angle:90 },
       stroke:'white', strokeWidth:1, shadow:{ offset:0.125 } });
     if (c.code) els.push({ type:'t', text:c.code, x:0.18, y:cy, w:0.54, h:0.54,
       font:'B', size:7, color:'asphalt', align:'center', valign:'middle',
       caps:true, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
-    if (c.text) els.push({ type:'t', x:0.82, y:cy - 0.01, w:1.6, h:0.56,
-      font:'B', size:7, color:'#7F7F7F', caps:false, lineSpacing:1.15,
+    if (c.text) els.push({ type:'t', x:0.82, y:cy - 0.12, w:1.68, h:0.78,
+      font:'B', size:7, color:'#7F7F7F', valign:'middle', caps:false, lineSpacing:1.15,
       insets:{l:0.028,t:0.028,r:0.028,b:0.028},
       paras:[{ runs:[{ text:c.text }], bullet:true, marL:0.1, indent:-0.1 }] });
   });
