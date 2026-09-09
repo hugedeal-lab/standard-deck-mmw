@@ -3272,31 +3272,36 @@ function tableBody(cfg, theme) {
 
   var headers = cfg.headers || [];
   els.push({ type:'s', x:TBL_X, y:TBL_Y, w:COL1_W + COL2_W, h:HEADER_H, fill:theme.headerFill });
+  // Header band + row headings + bullets are all Mazda Type Bold (+mj-lt) in
+  // the source table, not Arial. Sizes/tracking/colors read from the cell XML:
+  // header sz3400 b1, heading sz4000 b0 spc440 #CFB496, bullet sz1600 spc176
+  // #919292 -- all halved into engine space.
   els.push({ type:'t', text:headers[0] || '', x:TBL_X + 0.13, y:TBL_Y, w:COL1_W - 0.26, h:HEADER_H,
-    font:'B', size:17, color:theme.headerText, bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
+    font:'H', size:17, color:theme.headerText, bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
   els.push({ type:'t', text:headers[1] || '', x:COL2_X + 0.13, y:TBL_Y, w:COL2_W - 0.26, h:HEADER_H,
-    font:'B', size:17, color:theme.headerText, bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
+    font:'H', size:17, color:theme.headerText, bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
 
   var rows = cfg.rows || [];
   function cell(x, w, y, h, content) {
     if (!content) return;
     var ty = y + 0.2;
     if (content.heading) {
-      // Box tall enough for two lines so a wrap (narrower right column,
-      // or this sandbox's Arial fallback running wider than Mazda Type)
-      // doesn't get clipped -- but the bullets below only shift down a
-      // little, not a full second line's worth, or they end up cramped
-      // against the row boundary instead. In the normal single-line case
-      // this leaves a small gap; in the wrap case the bullets sit close
-      // under the wrapped second line rather than fully clear of it --
-      // the lesser of the two failure modes.
-      els.push({ type:'t', text:content.heading, x:x + 0.13, y:ty, w:w - 0.26, h:0.48,
-        font:'B', size:20, color:'#CFB496', caps:true, charSpacing:2.2, lineSpacing:1 });
-      ty += 0.44;
+      // Fit the heading to one line: the narrow right column wrapped
+      // "LOREM IPSUM DOLOR" at 20pt and the second line ran into the bullets.
+      // Step the size down (floor 12) so it fits the column width, then
+      // advance past its ACTUAL height so the bullets clear it.
+      var _hw = w - 0.26;
+      var _hl = String(content.heading).length || 1;
+      var _hs = Math.max(12, Math.min(20, Math.floor((_hw * 0.92) / (_hl * 0.01073))));
+      var _lineH = _hs / 72 * 1.16;
+      var _wraps = (_hl * _hs * 0.01073) > _hw ? 2 : 1;   // only at the 12pt floor
+      els.push({ type:'t', text:content.heading, x:x + 0.13, y:ty, w:_hw, h:_lineH * _wraps + 0.05,
+        font:'H', size:_hs, color:'#CFB496', caps:true, charSpacing:_hs / 20 * 2.2, lineSpacing:1 });
+      ty += _lineH * _wraps + 0.08;
     }
     if (content.bullets && content.bullets.length) {
-      els.push({ type:'t', x:x + 0.13, y:ty, w:w - 0.26, h:(y + h) - ty - 0.1,
-        font:'B', size:8, color:'#919292', valign:'top', caps:true, lineSpacing:1.2,
+      els.push({ type:'t', x:x + 0.13, y:ty, w:w - 0.26, h:(y + h) - ty - 0.08,
+        font:'H', size:8, color:'#919292', valign:'top', caps:true, lineSpacing:1.2, charSpacing:0.88,
         insets:{l:0,t:0,r:0,b:0},
         paras:content.bullets.map(function (b) { return { runs:[{ text:b }], bullet:true, marL:0.21, indent:-0.14 }; }) });
     }
