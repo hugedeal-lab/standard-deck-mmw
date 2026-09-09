@@ -999,61 +999,76 @@ function layout_reportPlatformMatrix(cfg) {
   }
   var n = spokes.length;
 
-  // Connectors first, so every disc paints over them.
+  // Ring positions. Offset by half a step (PI/n) so no spoke lands on a pure
+  // axis -- a top/bottom spoke's card would otherwise reach sideways straight
+  // into the next spoke's circle. At n=8 this is the source's 4-per-side ring.
+  var A0 = -Math.PI / 2 + Math.PI / (n || 1);
   var pos = spokes.map(function (s, i) {
-    var a = -Math.PI / 2 + (2 * Math.PI * i) / (n || 1);
+    var a = A0 + (2 * Math.PI * i) / (n || 1);
     return { a:a, x:HX + RX * Math.cos(a), y:HY + RY * Math.sin(a), left:Math.cos(a) < 0 };
   });
+
+  // Connectors first, so every disc paints over them.
   pos.forEach(function (p) {
     els.push({ type:'ln', x:HX, y:HY, w:p.x - HX, h:p.y - HY,
       color:'#7F7F7F', weight:0.38 });
   });
 
-  // Box slots, de-collided per side. Two spokes on the same side can land
-  // closer together than a box is tall, so each side is walked top-down and any
-  // box that would touch its predecessor is pushed clear.
-  var used = { left:[], right:[] };
-  pos.forEach(function (p, i) {
-    var side = p.left ? 'left' : 'right';
-    var by = p.y - SPOKE_R + 0.47;
+  // Card vertical slots. Walk each side top-down: push a card clear of the
+  // previous card AND clear of any same-side neighbour circle it would sit
+  // behind. CIRC_KEEP is the dashed-ring radius plus a small margin.
+  var CIRC_KEEP = 0.68;
+  var byIdx = pos.map(function (_, i) { return i; })
+                 .sort(function (a, b) { return pos[a].y - pos[b].y; });
+  var used = { left: [], right: [] };
+  byIdx.forEach(function (i) {
+    var p = pos[i], side = p.left ? 'left' : 'right';
+    var by = p.y - BOX_H / 2;
     used[side].forEach(function (prev) {
-      if (Math.abs(by - prev) < BOX_H + 0.06) by = prev + BOX_H + 0.06;
+      if (by < prev + BOX_H + 0.08) by = prev + BOX_H + 0.08;
     });
-    by = Math.max(0.95, Math.min(7.5 - BOX_H - 0.1, by));
+    // clear same-side circles that sit below this card's own spoke
+    pos.forEach(function (q, j) {
+      if (j === i || (q.left ? 'left' : 'right') !== side || q.y <= p.y + 0.01) return;
+      if (by + BOX_H > q.y - CIRC_KEEP && by < q.y + CIRC_KEEP) by = q.y - CIRC_KEEP - BOX_H;
+    });
+    by = Math.max(0.9, Math.min(7.5 - BOX_H - 0.1, by));
     used[side].push(by);
     p.by = by;
   });
 
+  // PASS 1 -- all dotted cards + their text (drawn UNDER every circle).
   pos.forEach(function (p, i) {
     var s = spokes[i];
-    // Circle shows the label (fall back to header so it is never an empty
-    // ring). Card carries the copy, with a bold header line ONLY when it is
-    // distinct from the circle label.
-    var _circ = s.label || s.header || '';
     var _cHead = (s.label && s.header && s.header !== s.label) ? s.header : '';
     var _cBody = s.copy || '';
-    if (_cHead || _cBody) {
-      var bx = p.left ? (p.x - SPOKE_R + OVERLAP - BOX_W) : (p.x + SPOKE_R - OVERLAP);
-      bx = Math.max(0.1, Math.min(13.33 - BOX_W - 0.1, bx));
-      els.push({ type:'s', x:bx, y:p.by, w:BOX_W, h:BOX_H, fill:'none',
-        stroke:'#9B9B9B', strokeWidth:1, dash:'dot', radius:0.118 });
-      // Fit the card text: 6pt is the source size; shrink toward a 4.5pt
-      // floor if the copy would wrap past the 1.0in box.
-      var _tw = BOX_W - 0.5 - (p.left ? 0.08 : 0.42) + 0.08;
-      var _tcnt = (_cHead ? _cHead.length + 2 : 0) + _cBody.length;
-      var _tsz = 6;
-      var _lpi = function (pt) { return Math.max(6, _tw / (pt * 0.0104)); };
-      while (_tsz > 4.5 && Math.ceil(_tcnt / _lpi(_tsz)) * (_tsz * 1.18 / 72) > (BOX_H - 0.18)) _tsz -= 0.5;
-      var paras = [];
-      if (_cHead) paras.push({ runs:[{ text:_cHead, size:_tsz, bold:true }] });
-      if (_cBody) paras.push({ runs:[{ text:_cBody, size:_tsz }] });
-      els.push({ type:'t', x:bx + (p.left ? 0.08 : 0.42), y:p.by + 0.09,
-        w:BOX_W - 0.5, h:BOX_H - 0.16,
-        font:'B', size:_tsz, color:'#7F7F7F', caps:false, lineSpacing:1.16,
-        insets:{l:0.028,t:0.028,r:0.028,b:0.028}, paras:paras });
-    }
+    if (!(_cHead || _cBody)) return;
+    // Left cards are floored at x 1.95 so they never reach into the category
+    // column (which ends ~2.1); right cards clamp to the slide edge.
+    var bx = p.left ? Math.max(1.95, p.x - SPOKE_R + OVERLAP - BOX_W)
+                    : Math.min(13.33 - BOX_W - 0.1, p.x + SPOKE_R - OVERLAP);
+    els.push({ type:'s', x:bx, y:p.by, w:BOX_W, h:BOX_H, fill:'none',
+      stroke:'#9B9B9B', strokeWidth:1, dash:'dot', radius:0.118 });
+    // Text sits on the FAR side of the card from the spoke and stops short of
+    // the spoke's inner disc; shrink toward 4.5pt if the copy would overrun.
+    var _tx = p.left ? (bx + 0.10) : (bx + 0.55);
+    var _tw = p.left ? Math.max(0.9, (p.x - 0.52) - _tx) : (BOX_W - 0.67);
+    var _tcnt = (_cHead ? _cHead.length + 2 : 0) + _cBody.length;
+    var _tsz = 6;
+    var _lpi = function (pt) { return Math.max(6, _tw / (pt * 0.0104)); };
+    while (_tsz > 4.5 && Math.ceil(_tcnt / _lpi(_tsz)) * (_tsz * 1.18 / 72) > (BOX_H - 0.18)) _tsz -= 0.5;
+    var paras = [];
+    if (_cHead) paras.push({ runs:[{ text:_cHead, size:_tsz, bold:true }] });
+    if (_cBody) paras.push({ runs:[{ text:_cBody, size:_tsz }] });
+    els.push({ type:'t', x:_tx, y:p.by + 0.09, w:_tw, h:BOX_H - 0.16,
+      font:'B', size:_tsz, color:'#7F7F7F', caps:false, lineSpacing:1.16,
+      insets:{l:0.028,t:0.028,r:0.028,b:0.028}, paras:paras });
+  });
 
-    // Outer ring is DASHED; the inner disc is solid and carries the shadow.
+  // PASS 2 -- all spoke circles + labels, so a circle always paints cleanly
+  // over any card corner tucked behind it.
+  pos.forEach(function (p, i) {
+    var _circ = spokes[i].label || spokes[i].header || '';
     els.push({ type:'o', x:p.x - 0.605, y:p.y - 0.605, w:1.21, h:1.21,
       fill:'#EFF0F3', stroke:'#BFA588', strokeWidth:0.5, dash:'dash' });
     els.push({ type:'o', x:p.x - 0.44, y:p.y - 0.44, w:0.88, h:0.88,
@@ -1092,16 +1107,17 @@ function layout_reportPlatformMatrix(cfg) {
   var _cgap = _cats.length > 1 ? Math.min(0.98, (5.9 - 1.04) / (_cats.length - 1)) : 0.98;
   _cats.forEach(function (c, i) {
     var cy = 1.04 + i * _cgap;
-    els.push({ type:'o', x:0.18, y:cy, w:0.54, h:0.54,
+    els.push({ type:'o', x:0.16, y:cy, w:0.5, h:0.5,
       gradient:{ from:'#EEEEEE', to:'#E8E8E8', angle:90 },
       stroke:'white', strokeWidth:1, shadow:{ offset:0.125 } });
-    if (c.code) els.push({ type:'t', text:c.code, x:0.18, y:cy, w:0.54, h:0.54,
-      font:'B', size:7, color:'asphalt', align:'center', valign:'middle',
+    if (c.code) els.push({ type:'t', text:c.code, x:0.16, y:cy, w:0.5, h:0.5,
+      font:'B', size:6.5, color:'asphalt', align:'center', valign:'middle',
       caps:true, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
-    if (c.text) els.push({ type:'t', x:0.82, y:cy - 0.12, w:1.68, h:0.78,
-      font:'B', size:7, color:'#7F7F7F', valign:'middle', caps:false, lineSpacing:1.15,
+    // Description column ends by x~2.0 so it never meets a left spoke card.
+    if (c.text) els.push({ type:'t', x:0.74, y:cy - 0.13, w:1.28, h:0.76,
+      font:'B', size:6.5, color:'#7F7F7F', valign:'middle', caps:false, lineSpacing:1.15,
       insets:{l:0.028,t:0.028,r:0.028,b:0.028},
-      paras:[{ runs:[{ text:c.text }], bullet:true, marL:0.1, indent:-0.1 }] });
+      paras:[{ runs:[{ text:c.text }], bullet:true, marL:0.09, indent:-0.09 }] });
   });
   return els;
 }
