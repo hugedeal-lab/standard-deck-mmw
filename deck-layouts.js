@@ -799,28 +799,29 @@ function layout_reportModelCompare(cfg) {
     var y = ROW_T[r0], h = ROW_B[r1] - ROW_T[r0];
 
     els.push({ type:'s', x:x, y:y, w:w, h:h, fill:'none',
-      stroke:'#808080', strokeWidth:0.25 });
+      stroke:'#808080', strokeWidth:0.5 });
 
     var paras = [];
     var _eh = e.label || e.header || '';
     var _cp = e.copy || '';
     // Auto-fit: a single-cell entry with long copy overruns its border. Estimate
     // the height the 16pt head + 10pt body would wrap to at this width and scale
-    // both down (never up) if it exceeds the card. Entries that span rows -- the
-    // intended way to carry long copy -- keep the full size.
-    var _iw = Math.max(0.6, w - 0.14), _ih = Math.max(0.5, h - 0.30);
+    // both down (never up) if it exceeds the card. Conservative on purpose --
+    // ~13 chars/in per 10pt so it shrinks a step early rather than a step late.
+    var _pad = 0.14;
+    var _iw = Math.max(0.6, w - _pad * 2), _ih = Math.max(0.5, h - 0.34);
     var _linesFor = function (t, pt) {
-      var per = Math.max(4, _iw / (pt * 0.0093));
+      var per = Math.max(3, _iw / (pt * 0.0116));
       return t ? Math.ceil(t.length / per) : 0;
     };
-    var _need = _linesFor(_eh, 16) * (16 * 1.16 / 72) +
-                (_cp ? 0.06 + _linesFor(_cp, 10) * (10 * 1.16 / 72) : 0);
-    var _sc = _need > _ih ? Math.max(0.6, _ih / _need) : 1;
+    var _need = _linesFor(_eh, 16) * (16 * 1.2 / 72) +
+                (_cp ? 0.08 + _linesFor(_cp, 10) * (10 * 1.2 / 72) : 0);
+    var _sc = _need > _ih ? Math.max(0.58, _ih / _need) : 1;
     var _hS = Math.round(16 * _sc * 10) / 10;
     var _bS = Math.max(7, Math.round(10 * _sc * 10) / 10);
     if (_eh) paras.push({ runs:[{ text:_eh, size:_hS, bold:true, color:'white' }] });
     if (_cp) paras.push({ runs:[{ text:_cp, size:_bS, color:'bodyGray' }] });
-    if (paras.length) els.push({ type:'t', x:x + 0.05, y:y + 0.16, w:w - 0.10, h:h - 0.24,
+    if (paras.length) els.push({ type:'t', x:x + _pad, y:y + 0.15, w:w - _pad * 2, h:h - 0.28,
       font:'B', size:_bS, color:'bodyGray', caps:false, lineSpacing:1.1,
       insets:{l:0.028,t:0.028,r:0.028,b:0.028}, paras:paras });
   });
