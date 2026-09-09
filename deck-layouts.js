@@ -893,16 +893,36 @@ function layout_reportBrandPillars(cfg) {
   if ((cfg.sections || []).length > 1)
     els.push({ type:'s', x:6.82, y:1.9, w:0.008, h:0.91, fill:'#CAA380' });
 
-  // Three outlined pillars.
+  // Three outlined pillars. Source: header 20pt Mazda Type Bold #CFB496,
+  // copy 10pt Arial #808080, in a 1.36in box. Header and copy are separate
+  // elements (different fonts) and both fit-to-box: the header shrinks to
+  // one line, then the copy shrinks (floor 7pt) so it clears the bottom rule.
+  var PB_Y = 3.07, PB_H = 1.36;
   (cfg.pillars || []).slice(0, 3).forEach(function (p, i) {
-    els.push({ type:'s', x:COL_X[i], y:3.07, w:COL_W[i], h:1.36, fill:'none',
+    var bx = COL_X[i], bw = COL_W[i];
+    els.push({ type:'s', x:bx, y:PB_Y, w:bw, h:PB_H, fill:'none',
       stroke:'#CAA380', strokeWidth:0.5 });
-    var paras = [];
-    if (p.header) paras.push({ runs:[{ text:p.header, size:20, color:'#CFB496' }] });
-    if (p.copy)   paras.push({ runs:[{ text:p.copy,   size:10, color:'bodyGray' }] });
-    if (paras.length) els.push({ type:'t', x:COL_X[i] + 0.03, y:3.19, w:COL_W[i] - 0.08, h:1.12,
-      font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
-      insets:{l:0.028,t:0.028,r:0.028,b:0.028}, paras:paras });
+    var _ph = String(p.header || ''), _pc = String(p.copy || '');
+    var _tw = bw - 0.20;
+    var _ty = PB_Y + 0.12;
+    var _hH = 0;
+    if (_ph) {
+      var _hS = Math.max(11, Math.min(20, Math.floor(_tw / (_ph.length * 0.0116 + 0.001))));
+      _hH = _hS / 72 * 1.2 + 0.05;
+      els.push({ type:'t', text:_ph, x:bx + 0.10, y:_ty, w:_tw, h:_hH,
+        font:'H', size:_hS, color:'#CFB496', caps:false, lineSpacing:1,
+        insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+      _ty += _hH;
+    }
+    if (_pc) {
+      var _cAvail = (PB_Y + PB_H) - _ty - 0.08;
+      var _cS = 10;
+      var _cl = function (pt) { return Math.ceil(_pc.length / Math.max(3, _tw / (pt * 0.0113))); };
+      while (_cS > 7 && _cl(_cS) * (_cS / 72 * 1.18) > _cAvail) _cS -= 0.5;
+      els.push({ type:'t', text:_pc, x:bx + 0.10, y:_ty, w:_tw, h:_cAvail + 0.06,
+        font:'B', size:_cS, color:'bodyGray', caps:false, lineSpacing:1.1,
+        insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+    }
   });
 
   // Target row -- no outline. The middle entry is italic in the source; the
