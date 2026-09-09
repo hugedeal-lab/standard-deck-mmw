@@ -779,10 +779,11 @@ function layout_reportModelCompare(cfg) {
     if (st.code) els.push({ type:'t', text:st.code, x:1.68, y:mid - 0.13, w:0.5, h:0.26,
       font:'B', size:9, color:'white', align:'center', valign:'middle',
       caps:false, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
-    els.push({ type:'s', x:0.25, y:mid - 0.5, w:1.34, h:1, fill:'none',
+    // Label box matches the chip's full row height; the caption is centred in it.
+    els.push({ type:'s', x:0.25, y:top, w:1.34, h:bot - top, fill:'none',
       stroke:'#BFA588', strokeWidth:0.5 });
-    if (st.label) els.push({ type:'t', text:st.label, x:0.43, y:mid - 0.42, w:1.12, h:0.84,
-      font:'B', size:11, color:'#BFA588', caps:false, lineSpacing:1,
+    if (st.label) els.push({ type:'t', text:st.label, x:0.43, y:top, w:1.12, h:bot - top,
+      font:'B', size:11, color:'#BFA588', valign:'middle', caps:false, lineSpacing:1,
       insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   });
 
