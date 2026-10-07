@@ -521,7 +521,18 @@ function renderShape(el, isDark) {
   // percent reproduces the outline at any scale. Without this the shape renders
   // as its bounding rectangle -- on the divider layouts that is a solid block
   // across half the slide instead of the angular MMW mark.
-  if (el.points && el.points.length > 2) {
+  // With an outline, clip-path would cut the CSS border off at the box edge
+  // instead of tracing the polygon -- draw it as SVG instead, which strokes
+  // the actual outline (map state borders need this; PPTX export already
+  // strokes the freeform correctly).
+  if (el.points && el.points.length > 2 && el.stroke) {
+    div.style.border = 'none'; div.style.background = 'none';
+    var sw = ptToPx(el.strokeWidth || 1);
+    div.innerHTML = '<svg width="100%" height="100%" viewBox="0 0 1000 1000" preserveAspectRatio="none" style="overflow:visible;display:block">' +
+      '<polygon points="' + el.points.map(function (p) { return (p[0] * 1000).toFixed(1) + ',' + (p[1] * 1000).toFixed(1); }).join(' ') + '" ' +
+      'fill="' + (el.fill === 'none' ? 'none' : resolveColor(el.fill || 'cardBg', isDark)) + '" ' +
+      'stroke="' + resolveColor(el.stroke, isDark) + '" stroke-width="' + sw + '" vector-effect="non-scaling-stroke" stroke-linejoin="round"/></svg>';
+  } else if (el.points && el.points.length > 2) {
     div.style.clipPath = 'polygon(' + el.points.map(function (p) {
       return (p[0] * 100).toFixed(3) + '% ' + (p[1] * 100).toFixed(3) + '%';
     }).join(',') + ')';
