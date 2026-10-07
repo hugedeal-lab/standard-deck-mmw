@@ -115,6 +115,8 @@ const document = {
   body, head: makeEl('head'), documentElement: makeEl('html'),
   createElement: makeEl,
   createElementNS: (_, t) => makeEl(t),
+  // Multi-line text ('\n' in el.text) renders as text nodes + <br>s.
+  createTextNode: (t) => ({ nodeType: 3, textContent: String(t) }),
   getElementById(id) {
     if (REFS[id]) { const im = makeEl('img'); im.setAttribute('src', REFS[id]); return im; }
     return null;

@@ -968,6 +968,9 @@ function exportChart(slide, el, isDark, accent, pptx) {
   }
   if (el.chartType==='pie'||el.chartType==='doughnut') {
     co.showPercent=opts.showPercent!==false; co.showValue=opts.showValue||false;
+    // Category name on the slice (the MMW doughnut labels 'April / 35%').
+    if (opts.showLabel) co.showLabel=true;
+    if (opts.dataLabelFontSize) co.dataLabelFontSize=opts.dataLabelFontSize;
     co.dataLabelColor=SD.colorForPptx(opts.dataLabelColor||'white',isDark);
     if (el.chartType==='doughnut') co.holeSize=opts.holeSize||70;
   }

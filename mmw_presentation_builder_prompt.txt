@@ -206,8 +206,8 @@ families. Do not put both a top-level and a cfg-nested copy of the same key.
 Name	Template layout	Background	Use
 reportGray	Content Gray	#EEEEEE	Report chassis on #EEEEEE + open canvas y1.80-7.10. Use only when nothing below already fits.
 reportDark	Content Dark	#262626	Report chassis on #262626 + open canvas. Use only when nothing below already fits.
-reportGrayChart	Content Gray	#EEEEEE	Native chart in a fixed well. cfg.chart = {type, data, opts}.
-reportDarkChart	Content Dark	#262626	Native chart in a fixed well, dark.
+reportGrayChart	Content Gray	#EEEEEE	Chart in a fixed well. cfg.chart = {type, data, opts, title?, subtitle?, note?}. type: 'bar' (horizontal) | 'column' | 'line' | 'area' | 'pie' | 'doughnut'. data: [{name, labels, values}] per series. title/subtitle = small centred heading above the plot (doughnut: title goes in the ring's centre); note = centred summary under it, '\n' for 2 lines. Bars/columns show no gridlines or values by default -- opts.showLegend / showValue / gridlines opt in.
+reportDarkChart	Content Dark	#262626	Same as reportGrayChart, dark.
 reportGrayTable	Content Gray	#EEEEEE	Simple 2-column table: one heading + optional bullets per side. cfg.headers[2], cfg.rows (≤4, each {left:{heading,bullets}, right:{heading,bullets}}).
 reportDarkTable	Content Dark	#262626	Same as reportGrayTable, dark.
 reportGrayTimeline	Content Gray	#EEEEEE	Campaign-progress flow art (template slide 72 specifically — do not use for a generic timeline). cfg.milestones (≤8 strings) · cfg.hereLabel (false to hide the marker).
@@ -430,7 +430,7 @@ Social spec sheets: copy must respect the platform limits printed on the layout
 ── 9. SPEAKER NOTES ─ On by default. 2-4 sentences. Never repeat slide text.
 Flag the headlineLight contrast exception here when you use it (§12).
 
-── 10. CHARTS & DATA ─ bar|line|pie|doughnut|area. Max 1/slide, 8 segments,
+── 10. CHARTS & DATA ─ bar|column|line|pie|doughnut|area. Max 1/slide, 8 segments,
 4 series, 8 rows, 5 cols. cfg.chart = {type, data, opts}. data is an array of
 series, one object per series, EACH carrying its own category array:
   data:[{ name:'Spend', labels:['Q1','Q2','Q3','Q4'], values:[42,58,35,64] }]

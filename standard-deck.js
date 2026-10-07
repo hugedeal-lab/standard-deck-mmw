@@ -794,7 +794,9 @@ function renderPieChart(ctx, data, opts, cw, ch, isDark, isDoughnut) {
   var values = data[0].values; var labels = data[0].labels || [];
   var total = values.reduce(function (a, b) { return a + b; }, 0);
   if (total === 0) return;
-  var cx = cw / 2; var cy = ch / 2; var radius = Math.min(cw, ch) * 0.35;
+  // opts.pieScale: radius as a fraction of the frame's short side. 0.35 leaves
+  // room for a legend below; the MMW doughnut well (no legend) uses ~0.49.
+  var cx = cw / 2; var cy = ch / 2; var radius = Math.min(cw, ch) * (opts.pieScale || 0.35);
   var hole = isDoughnut ? radius * ((opts.holeSize || 70) / 100) : 0;
   var colors = resolveChartColors(opts.chartColors || null, values.length, isDark);
   var startAngle = -Math.PI / 2;
@@ -803,13 +805,20 @@ function renderPieChart(ctx, data, opts, cw, ch, isDark, isDoughnut) {
     ctx.beginPath(); ctx.arc(cx, cy, radius, startAngle, endAngle);
     if (isDoughnut) ctx.arc(cx, cy, hole, endAngle, startAngle, true); else ctx.lineTo(cx, cy);
     ctx.closePath(); ctx.fillStyle = colors[i % colors.length]; ctx.fill();
-    if (opts.showPercent !== false) {
+    if (opts.showPercent !== false || opts.showLabel) {
       var midAngle = startAngle + sliceAngle / 2;
       var labelR = isDoughnut ? (radius + hole) / 2 : radius * 0.65;
       var lx = cx + Math.cos(midAngle) * labelR; var ly = cy + Math.sin(midAngle) * labelR;
-      ctx.font = '500 ' + ptToPx(9) + 'px Mazda Type, Arial, sans-serif';
-      ctx.fillStyle = '#FFFFFF'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText(Math.round((val / total) * 100) + '%', lx, ly);
+      var fpx = ptToPx(opts.dataLabelFontSize || 9);
+      ctx.font = '500 ' + fpx + 'px Mazda Type, Arial, sans-serif';
+      ctx.fillStyle = opts.dataLabelColor ? resolveColor(opts.dataLabelColor, isDark) : '#FFFFFF';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      // Category name over percent, as the source doughnut labels its slices.
+      var pct = Math.round((val / total) * 100) + '%';
+      if (opts.showLabel && labels[i] != null) {
+        ctx.fillText(String(labels[i]), lx, ly - fpx * 0.55);
+        if (opts.showPercent !== false) ctx.fillText(pct, lx, ly + fpx * 0.55);
+      } else ctx.fillText(pct, lx, ly);
     }
     startAngle = endAngle;
   });
