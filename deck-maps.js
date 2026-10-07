@@ -330,7 +330,69 @@ function layout_mapUS(cfg) {
   return els;
 }
 
+// ============================================================
+// LAYOUT: mapWorld -- decorative world map / globes (no data)
+// The template's own map graphics (7/30/26 slide 114) on the report
+// chassis, for "global reach / markets / footprint" framing. These carry
+// no country boundaries -- for highlighting specific places use mapUS.
+//   style:'solid' (default)  grey continents
+//   style:'dots'             Spark dot-matrix world
+//   style:'globes'           a row of globes; cfg.globes picks which, from
+//                            'americas','atlantic','europe-africa','asia-pacific'
+//                            (default all four, west to east); cfg.captions
+//                            labels each one.
+// Defaults to the dark chassis (the template's map slide is dark); dark:0
+// with a light bgColor switches to the light-slide asset variants.
+// ============================================================
+var A = (typeof window !== 'undefined' && window.MMW_ASSET_BASE) || 'assets/';
+if (A.slice(-1) !== '/') A += '/';
+var WORLD = { solid: { file: 'world_solid', aspect: 2400 / 1237, variants: true },
+              dots:  { file: 'world_dots',  aspect: 2400 / 1183, variants: false } };
+var GLOBES = ['americas', 'atlantic', 'europe-africa', 'asia-pacific'];
+
+function layout_mapWorld(cfg) {
+  if (!cfg.bgColor && !cfg.bgImage && cfg.dark === undefined) { cfg.bgColor = '#262626'; cfg.dark = 1; }
+  var dark = cfg.dark === 1, els = [];
+  var SUB = dark ? '#868686' : '#808080', INK = dark ? '#EEEEEE' : '#262626';
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.61, y:0.54, w:12.12, h:0.29,
+    font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9,
+    insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:cfg.title || '', x:0.61, y:0.85, w:12.12, h:0.5,
+    font:'H', size:24, color:'titleGray', caps:true, lineSpacing:1, charSpacing:2.64,
+    insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  if (cfg.intro || cfg.text) els.push({ type:'t', text:cfg.intro || cfg.text, x:0.61, y:1.33, w:12.12, h:0.39,
+    font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
+    insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  var shade = dark ? '_dark' : '_light';
+
+  if (cfg.style === 'globes') {
+    var pick = (cfg.globes && cfg.globes.length ? cfg.globes : GLOBES).filter(function (g) {
+      var ok = GLOBES.indexOf(g) > -1;
+      if (!ok) console.warn('[deck-maps] mapWorld: unknown globe "' + g + '" -- use ' + GLOBES.join(', ') + '.');
+      return ok;
+    }).slice(0, 4);
+    var caps = cfg.captions || [];
+    var D = 2.45, gap = 0.55, total = pick.length * D + (pick.length - 1) * gap;
+    var x0 = 0.61 + (12.12 - total) / 2, y0 = caps.length ? 2.55 : 2.85;
+    pick.forEach(function (g, i) {
+      var x = x0 + i * (D + gap);
+      els.push({ type:'img', src: A + 'maps/globe_' + g.replace('-', '_') + shade + '.png', x:x, y:y0, w:D, h:D * 782 / 800 });
+      if (caps[i]) els.push({ type:'t', text:caps[i], x:x - 0.3, y:y0 + D + 0.2, w:D + 0.6, h:0.3, font:'B', size:9,
+        color:INK, bold:true, caps:true, charSpacing:0.6, align:'center', valign:'top', lineSpacing:1,
+        insets:{l:0,t:0,r:0,b:0} });
+    });
+    return els;
+  }
+  var W = WORLD[cfg.style] || WORLD.solid;
+  var areaW = 12.12, areaH = 5.05, h = Math.min(areaH, areaW / W.aspect), w = h * W.aspect;
+  els.push({ type:'img', src: A + 'maps/' + W.file + (W.variants ? shade : '') + '.png',
+    x: 0.61 + (areaW - w) / 2, y: 1.95 + (areaH - h) / 2, w: w, h: h });
+  return els;
+}
+
 DL.LAYOUT_MAP.mapUS = layout_mapUS;
+DL.LAYOUT_MAP.mapWorld = layout_mapWorld;
+DL.LAYOUT_KEYS.mapWorld = ['tag', 'title', 'intro', 'text', 'style', 'globes', 'captions'];
 DL.LAYOUT_KEYS.mapUS = ['tag', 'title', 'intro', 'text', 'style', 'highlight', 'cities', 'legend', 'marker'];
 DL.MAPS = { project: project, findState: findState, resolveCity: resolveCity };
 })();
