@@ -102,6 +102,11 @@ var BBOX = (function () {
   return { x0: x0, y0: y0, x1: x1, y1: y1 };
 })();
 
+// Template pin (Google Shape 3337 on slide 114), bezier outline flattened to
+// box fractions. Aspect 0.68 (452852 x 666401 EMU); tip at x=0.482, y=1.
+var PIN_PTS = [[0.498,0],[0.418,0.004],[0.341,0.017],[0.27,0.038],[0.204,0.066],[0.146,0.099],[0.096,0.139],[0.056,0.183],[0.025,0.232],[0.007,0.284],[0,0.339],[0.004,0.369],[0.014,0.403],[0.03,0.438],[0.048,0.473],[0.069,0.507],[0.089,0.538],[0.108,0.565],[0.123,0.586],[0.133,0.6],[0.137,0.605],[0.482,1],[0.839,0.609],[0.844,0.604],[0.856,0.591],[0.874,0.571],[0.896,0.545],[0.92,0.514],[0.943,0.48],[0.965,0.444],[0.983,0.408],[0.996,0.372],[1,0.339],[0.993,0.284],[0.974,0.232],[0.944,0.183],[0.903,0.139],[0.853,0.099],[0.795,0.066],[0.729,0.038],[0.657,0.017],[0.58,0.004]];
+var PIN_H = 0.21, PIN_W = PIN_H * 0.68, PIN_TIP = 0.482;
+
 // Map area below the report chassis (same chassis as reportGray/reportDark).
 var AREA = { x: 0.61, y: 1.92, w: 12.12, h: 5.13 };
 
@@ -128,16 +133,17 @@ function inside(r) { return r.x >= BOUNDS.x && r.y >= BOUNDS.y && r.x + r.w <= B
 function placeLabels(pts) {
   // pts: [{px,py,lw,lh}] in inches. Greedy, in the order given -- the deck
   // author's order is the priority order.
-  var obstacles = pts.map(function (p) { var r = 0.07; return { x: p.px - r, y: p.py - r, w: 2 * r, h: 2 * r }; });
+  // Each point carries its marker footprint (box), the spot labels hang off
+  // (ax, ay -- the pin's head, or the dot's centre) and its half-width.
+  var obstacles = pts.map(function (p) { return p.box; });
   var placed = [];
-  var G = 0.09;
   pts.forEach(function (p, self) {
-    var w = p.lw, h = p.lh, done = null;
+    var w = p.lw, h = p.lh, done = null, G = p.half + 0.035, ax = p.ax, ay = p.ay;
     var near = [
-      [p.px + G, p.py - h / 2, 'l'], [p.px - G - w, p.py - h / 2, 'r'],
-      [p.px + G * 0.6, p.py - h - G * 0.4, 'l'], [p.px + G * 0.6, p.py + G * 0.4, 'l'],
-      [p.px - G * 0.6 - w, p.py - h - G * 0.4, 'r'], [p.px - G * 0.6 - w, p.py + G * 0.4, 'r'],
-      [p.px - w / 2, p.py - h - G, 'c'], [p.px - w / 2, p.py + G, 'c']
+      [ax + G, ay - h / 2, 'l'], [ax - G - w, ay - h / 2, 'r'],
+      [ax + G * 0.6, ay - h - G * 0.4, 'l'], [ax + G * 0.6, ay + G * 0.4, 'l'],
+      [ax - G * 0.6 - w, ay - h - G * 0.4, 'r'], [ax - G * 0.6 - w, ay + G * 0.4, 'r'],
+      [ax - w / 2, p.box.y - h - 0.03, 'c'], [ax - w / 2, p.box.y + p.box.h + 0.03, 'c']
     ];
     function free(r) {
       if (!inside(r)) return false;
@@ -153,7 +159,7 @@ function placeLabels(pts) {
     for (var d = 0.35; d <= 1.6 && !done; d += 0.2) {
       for (var a = 0; a < 16 && !done; a++) {
         var ang = (a / 16) * 2 * Math.PI;
-        var cx = p.px + Math.cos(ang) * d, cy = p.py + Math.sin(ang) * d;
+        var cx = ax + Math.cos(ang) * d, cy = ay + Math.sin(ang) * d;
         var right = Math.cos(ang) >= 0;
         var r2 = { x: right ? cx : cx - w, y: cy - h / 2, w: w, h: h };
         if (free(r2)) done = { r: r2, align: right ? 'l' : 'r', leader: true, ax: right ? r2.x : r2.x + w, ay: cy };
@@ -161,7 +167,7 @@ function placeLabels(pts) {
     }
     if (!done) {
       console.warn('[deck-maps] mapUS: no clear spot for a label; it may overlap.');
-      done = { r: { x: p.px + G, y: p.py - h / 2, w: w, h: h }, align: 'l', leader: false };
+      done = { r: { x: ax + G, y: ay - h / 2, w: w, h: h }, align: 'l', leader: false };
     }
     placed.push(done.r);
     p.place = done;
@@ -227,12 +233,48 @@ function layout_mapUS(cfg) {
 
   // Cities: marker + label.
   var NAME_PT = 8, NOTE_PT = 7, TRACK = 0.6;
-  var pts = [];
-  (cfg.cities || []).forEach(function (c) {
-    var r = resolveCity(c); if (!r) return;
+  var pts = [], raw = [];
+  (cfg.cities || []).forEach(function (c) { var r = resolveCity(c); if (r) raw.push(r); });
+  // Pins read well on a sparse map; where two cities sit closer than a pin is
+  // wide, overlapping teardrops are worse than dots. Switch the WHOLE map, so
+  // markers stay consistent. cfg.marker forces either.
+  var marker = cfg.marker;
+  if (marker !== 'pin' && marker !== 'dot') {
+    marker = 'pin';
+    for (var a = 0; a < raw.length && marker === 'pin'; a++) for (var b = a + 1; b < raw.length; b++) {
+      if (Math.hypot(F.X(raw[a].x) - F.X(raw[b].x), F.Y(raw[a].y) - F.Y(raw[b].y)) < PIN_W * 1.15) { marker = 'dot'; break; }
+    }
+  }
+  // Dots that would overlap get pushed apart until they just touch (a few
+  // hundredths of an inch -- single-digit miles at this scale), so close pairs
+  // like Los Angeles / Irvine read as two places instead of one blob.
+  var pos = raw.map(function (r) { return [F.X(r.x), F.Y(r.y)]; });
+  if (marker === 'dot') {
+    var MIN = 0.125;
+    for (var it = 0; it < 30; it++) {
+      var moved = false;
+      for (var i1 = 0; i1 < pos.length; i1++) for (var i2 = i1 + 1; i2 < pos.length; i2++) {
+        var ddx = pos[i2][0] - pos[i1][0], ddy = pos[i2][1] - pos[i1][1], dd = Math.hypot(ddx, ddy);
+        if (dd >= MIN) continue;
+        if (dd < 1e-6) { ddx = 1; ddy = 0; dd = 1; }
+        var push = (MIN - dd) / 2;
+        pos[i1][0] -= ddx / dd * push; pos[i1][1] -= ddy / dd * push;
+        pos[i2][0] += ddx / dd * push; pos[i2][1] += ddy / dd * push; moved = true;
+      }
+      if (!moved) break;
+    }
+  }
+  raw.forEach(function (r, ri) {
     var lw = Math.max(textW(r.label, NAME_PT, TRACK), r.note ? String(r.note).length * (NOTE_PT / 72) * 0.56 : 0) + 0.08;
     var lh = r.note ? 0.32 : 0.17;
-    pts.push({ px: F.X(r.x), py: F.Y(r.y), lw: lw, lh: lh, label: r.label, note: r.note });
+    var px = pos[ri][0], py = pos[ri][1], q = { px: px, py: py, lw: lw, lh: lh, label: r.label, note: r.note };
+    if (marker === 'pin') {
+      q.box = { x: px - PIN_TIP * PIN_W, y: py - PIN_H, w: PIN_W, h: PIN_H };
+      q.ax = q.box.x + PIN_W * 0.5; q.ay = q.box.y + PIN_H * 0.339; q.half = PIN_W / 2;
+    } else {
+      q.box = { x: px - 0.07, y: py - 0.07, w: 0.14, h: 0.14 }; q.ax = px; q.ay = py; q.half = 0.055;
+    }
+    pts.push(q);
   });
   placeLabels(pts);
   // Draw order: leaders, then label plates, then markers, then text -- so a
@@ -240,7 +282,7 @@ function layout_mapUS(cfg) {
   var dots = cfg.style === 'dots';
   pts.forEach(function (p) {
     var pl = p.place;
-    if (pl.leader) els.push({ type:'ln', x:p.px, y:p.py, w:pl.ax - p.px, h:pl.ay - p.py, color: SUB, weight: 0.5 });
+    if (pl.leader) els.push({ type:'ln', x:p.ax, y:p.ay, w:pl.ax - p.ax, h:pl.ay - p.ay, color: SUB, weight: 0.5 });
   });
   // On the dot grid a name sitting on dots is hard to read; a plate in the
   // slide colour clears the dots behind it. Solid land reads fine without one.
@@ -249,8 +291,16 @@ function layout_mapUS(cfg) {
     els.push({ type:'s', x:r.x - 0.03, y:r.y - 0.01, w:r.w + 0.06, h:r.h + 0.02, fill: BG });
   });
   pts.forEach(function (p) {
-    var M = 0.11;
-    els.push({ type:'o', x:p.px - M / 2, y:p.py - M / 2, w:M, h:M, fill: INK, stroke: BG, strokeWidth: 1.25 });
+    if (marker === 'pin') {
+      // The template's own location pin (7/30/26 slide 114): a teardrop with an
+      // oval hole, tip on the exact point. The hole is drawn in the slide
+      // colour -- the engine's polygons can't carry a real cut-out.
+      els.push({ type:'s', x:p.box.x, y:p.box.y, w:PIN_W, h:PIN_H, points:PIN_PTS, fill: INK, stroke: BG, strokeWidth: 0.75 });
+      els.push({ type:'o', x:p.box.x + PIN_W * 0.209, y:p.box.y + PIN_H * 0.134, w:PIN_W * 0.572, h:PIN_H * 0.389, fill: BG });
+    } else {
+      var M = 0.11;
+      els.push({ type:'o', x:p.px - M / 2, y:p.py - M / 2, w:M, h:M, fill: INK, stroke: BG, strokeWidth: 1.25 });
+    }
   });
   // Text boxes are drawn wider than the collision estimate, growing AWAY from
   // the marker: a name that runs a little wider than estimated then has room
@@ -281,6 +331,6 @@ function layout_mapUS(cfg) {
 }
 
 DL.LAYOUT_MAP.mapUS = layout_mapUS;
-DL.LAYOUT_KEYS.mapUS = ['tag', 'title', 'intro', 'text', 'style', 'highlight', 'cities', 'legend'];
+DL.LAYOUT_KEYS.mapUS = ['tag', 'title', 'intro', 'text', 'style', 'highlight', 'cities', 'legend', 'marker'];
 DL.MAPS = { project: project, findState: findState, resolveCity: resolveCity };
 })();
