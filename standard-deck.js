@@ -255,7 +255,11 @@ function validatePosition(el, slideIndex) {
 
 function validateSlide(slide, index) {
   var warn = function (msg) { console.warn('[standard-deck] Slide ' + index + ': ' + msg); };
-  if (slide.layout && slide.els) { warn('has both layout and els -- layout takes precedence'); delete slide.els; }
+  // A layout can opt in to raw elements by listing 'els' in its LAYOUT_KEYS
+  // (the canvas* blanks and the reportGray/reportDark chassis do -- their whole
+  // point is hand-placed content). For every other layout, layout wins.
+  var _lk = window.DeckLayouts && window.DeckLayouts.LAYOUT_KEYS && window.DeckLayouts.LAYOUT_KEYS[slide.layout];
+  if (slide.layout && slide.els && !(_lk && _lk.indexOf('els') > -1)) { warn('has both layout and els -- layout takes precedence'); delete slide.els; }
   var maxTitle = (slide.layout === 'cover' || slide.layout === 'closing') ? LIMITS.coverTitleChars : LIMITS.titleChars;
   if (slide.title && slide.title.length > maxTitle) {
     warn('title exceeds ' + maxTitle + ' chars -- truncating');

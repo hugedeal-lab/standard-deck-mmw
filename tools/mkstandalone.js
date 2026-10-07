@@ -43,6 +43,12 @@ ${read('standard-deck.js')}
 <script>/* ---- deck-layouts.js ---- */
 ${read('deck-layouts.js')}
 </script>
+<script>/* ---- map-data.js ---- */
+${read('map-data.js')}
+</script>
+<script>/* ---- deck-maps.js ---- */
+${read('deck-maps.js')}
+</script>
 <script>/* ---- deck-shell.js ---- */
 ${read('deck-shell.js')}
 </script>

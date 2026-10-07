@@ -2,6 +2,8 @@ global.window={StandardDeck:{SD_CONST:{SLIDE_W:13.33,SLIDE_H:7.5,SAFE_X_MIN:.5,S
 // The QA deck is built from the real, hand-maintained ../deck-layouts.js (the
 // source of truth), not from a regenerated copy.
 require(process.env.MMW_LAYOUTS || '../deck-layouts.js');
+// Maps live in their own files and register into DeckLayouts at load.
+require('../map-data.js'); require('../deck-maps.js');
 const DL=global.window.DeckLayouts, fs=require('fs');
 const spec=JSON.parse(fs.readFileSync(fs.existsSync('build/mmw_layouts.json') ? 'build/mmw_layouts.json' : '../mmw_layouts.json','utf8'));
 fs.mkdirSync('build', { recursive: true });
@@ -201,13 +203,47 @@ for (const [slug,row] of Object.entries(DERIVED_ROWS)) {
     {notes:slug+' \u2014 derived variant of the report canvas chassis.'}));
 }
 
+// Layouts (and chart types) with no template slide of their own -- one demo
+// row each, so the QA deck exercises every capability, not just every name.
+const MODELS = ['CX-90','CX-70','CX-50','CX-5','CX-30','Mazda 3','MX-5'];
+const EXTRA_ROWS = [
+  {layout:'reportGrayChart', bgColor:'#EEEEEE', dark:0, tag:'SALES', title:'Model performance',
+   intro:'Column chart, template slides 93/94.',
+   chart:{type:'column', title:'QoQ GVS by Model', subtitle:'(m953)', note:'Q1 GVS:  98,144\nQ2 GVS:  99,039 (+1% vs. Q1)',
+          opts:{showLegend:true},
+          data:[{name:'Q1', labels:MODELS, values:[11204,3423,26297,32364,11789,10301,2766]},
+                {name:'Q2', labels:MODELS, values:[12881,3770,26339,33917,10055,9891,2186]}]}},
+  {layout:'reportDarkChart', bgColor:'#262626', dark:1, tag:'MEDIA MIX', title:'Spend by month',
+   intro:'Doughnut, template slides 82/88.',
+   chart:{type:'doughnut', title:'Q2', data:[{name:'Spend', labels:['April','May','June','July','August','September'],
+          values:[91,76,28,26,21,18]}]}},
+  {layout:'canvasDark',  els:[{type:'t', text:'canvasDark -- blank, cfg.els only', x:0.61, y:3.5, w:8, h:0.4, font:'B', size:14, color:'mutedGray', caps:false}]},
+  {layout:'canvasGrey',  els:[{type:'t', text:'canvasGrey -- blank, cfg.els only', x:0.61, y:3.5, w:8, h:0.4, font:'B', size:14, color:'bodyGray', caps:false}]},
+  {layout:'canvasLight', els:[{type:'t', text:'canvasLight -- blank, cfg.els only', x:0.61, y:3.5, w:8, h:0.4, font:'B', size:14, color:'bodyGray', caps:false}]},
+  {layout:'mapUS', style:'solid', bgColor:'#EEEEEE', dark:0, tag:'DEALER EVENTS', title:'Fall test-drive tour',
+   highlight:['CA','WA','CO','TX','IL','GA','FL','NY','MA'], legend:'Tour states',
+   cities:['Irvine','Seattle','Denver','Dallas','Chicago','Atlanta','Miami','New York','Boston']},
+  {layout:'mapUS', style:'dots', bgColor:'#262626', dark:1, tag:'MARKET FOOTPRINT', title:'Where we are launching',
+   highlight:['CA','TX','FL','NY'], legend:'Launch states',
+   cities:[{name:'Irvine', note:'Mazda North American Ops'},'Los Angeles','Dallas','Miami','New York','Boston','Providence','Hartford','Newark','Philadelphia','Chicago']},
+  {layout:'mapWorld', tag:'GLOBAL', title:'One brand, every market'},
+  {layout:'mapWorld', style:'dots', tag:'GLOBAL', title:'Worldwide footprint'},
+  {layout:'mapWorld', style:'globes', tag:'REGIONS', title:'Four regional hubs',
+   captions:['North America','Atlantic','Europe & Africa','Asia-Pacific']}
+];
+for (const r of EXTRA_ROWS) {
+  if (!DL.LAYOUT_MAP[r.layout]) continue;
+  rows.push(Object.assign({}, r, {notes:r.layout + (r.chart ? ' (' + r.chart.type + ')' : r.style ? ' (' + r.style + ')' : '') +
+    ' \u2014 capability demo, no template slide of its own.'}));
+}
+
 for (const r of rows) {
   if (SAMPLE_OVERRIDE[r.layout]) Object.assign(r, SAMPLE_OVERRIDE[r.layout]);
 }
 
 const H=['<!DOCTYPE html>',
 '<html data-type="html" data-title="MMW Layout Test Harness" width="1920" height="1200">',
-'<head><meta charset="utf-8"><title>MMW Layout Test Harness \u2014 all 84 layouts</title></head>',
+'<head><meta charset="utf-8"><title>MMW Layout Test Harness \u2014 all ' + Object.keys(DL.LAYOUT_MAP).length + ' layouts</title></head>',
 '<!--',
 '  SERVE OVER http, NOT file://',
 '      python -m http.server 8000   ->   http://localhost:8000/test-deck.html',
@@ -235,6 +271,8 @@ const H=['<!DOCTYPE html>',
 "<script>var AH='#C4A584';var AL='#FFE0C0';var AD='#9C7C5C';</script>",
 '<script src="standard-deck.js"></script>',
 '<script src="deck-layouts.js"></script>',
+'<script src="map-data.js"></script>',
+'<script src="deck-maps.js"></script>',
 '<script src="deck-shell.js"></script>',
 '<script>','var D=[',
 rows.map(r=>JSON.stringify(r)).join(',\n'),

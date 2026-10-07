@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html data-type="html" data-title="MMW Layout Test Harness" width="1920" height="1200">
-<head><meta charset="utf-8"><title>MMW Layout Test Harness — all 84 layouts</title></head>
+<head><meta charset="utf-8"><title>MMW Layout Test Harness — all 89 layouts</title></head>
 <!--
   SERVE OVER http, NOT file://
       python -m http.server 8000   ->   http://localhost:8000/test-deck.html
@@ -26,6 +26,8 @@
 <script>var AH='#C4A584';var AL='#FFE0C0';var AD='#9C7C5C';</script>
 <script src="standard-deck.js"></script>
 <script src="deck-layouts.js"></script>
+<script src="map-data.js"></script>
+<script src="deck-maps.js"></script>
 <script src="deck-shell.js"></script>
 <script>
 var D=[
@@ -113,7 +115,17 @@ var D=[
 {"layout":"reportDarkChart","bgColor":"#262626","dark":1,"tag":"PERFORMANCE","title":"Media spend by quarter","intro":"Chart well, template slides 79/80/81/82/93/94.","chart":{"type":"line","data":[{"name":"Spend ($k)","labels":["Q1","Q2","Q3","Q4"],"values":[42,58,35,64]}]},"notes":"reportDarkChart — derived variant of the report canvas chassis."},
 {"layout":"reportGrayTable","bgColor":"#EEEEEE","dark":0,"tag":"PLANNING","title":"Channel plan","intro":"Table well, template slides 76/78.","headers":["Channel","Format","Flight","Spend"],"rows":[["Meta","Video + static","Jul – Sep","$120k"],["TikTok","Carousel","Aug – Sep","$80k"],["Pinterest","2:3 static","Jul – Oct","$45k"],["YouTube","Bumper","Sep","$60k"]],"notes":"reportGrayTable — derived variant of the report canvas chassis."},
 {"layout":"reportDarkTable","bgColor":"#262626","dark":1,"tag":"PLANNING","title":"Channel plan","intro":"Table well, template slide 77.","headers":["Channel","Format","Flight","Spend"],"rows":[["Meta","Video + static","Jul – Sep","$120k"],["TikTok","Carousel","Aug – Sep","$80k"],["Pinterest","2:3 static","Jul – Oct","$45k"]],"notes":"reportDarkTable — derived variant of the report canvas chassis."},
-{"layout":"reportGrayTimeline","bgColor":"#EEEEEE","dark":0,"tag":"STATUS","title":"Campaign progress","intro":"Timeline variant, template slide 72.","milestones":["Share ideas","Get smart and explore","Approval","Share revision","Clarify and build","Refine and go deep","Production","We are here"],"notes":"reportGrayTimeline — derived variant of the report canvas chassis."}
+{"layout":"reportGrayTimeline","bgColor":"#EEEEEE","dark":0,"tag":"STATUS","title":"Campaign progress","intro":"Timeline variant, template slide 72.","milestones":["Share ideas","Get smart and explore","Approval","Share revision","Clarify and build","Refine and go deep","Production","We are here"],"notes":"reportGrayTimeline — derived variant of the report canvas chassis."},
+{"layout":"reportGrayChart","bgColor":"#EEEEEE","dark":0,"tag":"SALES","title":"Model performance","intro":"Column chart, template slides 93/94.","chart":{"type":"column","title":"QoQ GVS by Model","subtitle":"(m953)","note":"Q1 GVS:  98,144\nQ2 GVS:  99,039 (+1% vs. Q1)","opts":{"showLegend":true},"data":[{"name":"Q1","labels":["CX-90","CX-70","CX-50","CX-5","CX-30","Mazda 3","MX-5"],"values":[11204,3423,26297,32364,11789,10301,2766]},{"name":"Q2","labels":["CX-90","CX-70","CX-50","CX-5","CX-30","Mazda 3","MX-5"],"values":[12881,3770,26339,33917,10055,9891,2186]}]},"notes":"reportGrayChart (column) — capability demo, no template slide of its own."},
+{"layout":"reportDarkChart","bgColor":"#262626","dark":1,"tag":"MEDIA MIX","title":"Spend by month","intro":"Doughnut, template slides 82/88.","chart":{"type":"doughnut","title":"Q2","data":[{"name":"Spend","labels":["April","May","June","July","August","September"],"values":[91,76,28,26,21,18]}]},"notes":"reportDarkChart (doughnut) — capability demo, no template slide of its own."},
+{"layout":"canvasDark","els":[{"type":"t","text":"canvasDark -- blank, cfg.els only","x":0.61,"y":3.5,"w":8,"h":0.4,"font":"B","size":14,"color":"mutedGray","caps":false}],"notes":"canvasDark — capability demo, no template slide of its own."},
+{"layout":"canvasGrey","els":[{"type":"t","text":"canvasGrey -- blank, cfg.els only","x":0.61,"y":3.5,"w":8,"h":0.4,"font":"B","size":14,"color":"bodyGray","caps":false}],"notes":"canvasGrey — capability demo, no template slide of its own."},
+{"layout":"canvasLight","els":[{"type":"t","text":"canvasLight -- blank, cfg.els only","x":0.61,"y":3.5,"w":8,"h":0.4,"font":"B","size":14,"color":"bodyGray","caps":false}],"notes":"canvasLight — capability demo, no template slide of its own."},
+{"layout":"mapUS","style":"solid","bgColor":"#EEEEEE","dark":0,"tag":"DEALER EVENTS","title":"Fall test-drive tour","highlight":["CA","WA","CO","TX","IL","GA","FL","NY","MA"],"legend":"Tour states","cities":["Irvine","Seattle","Denver","Dallas","Chicago","Atlanta","Miami","New York","Boston"],"notes":"mapUS (solid) — capability demo, no template slide of its own."},
+{"layout":"mapUS","style":"dots","bgColor":"#262626","dark":1,"tag":"MARKET FOOTPRINT","title":"Where we are launching","highlight":["CA","TX","FL","NY"],"legend":"Launch states","cities":[{"name":"Irvine","note":"Mazda North American Ops"},"Los Angeles","Dallas","Miami","New York","Boston","Providence","Hartford","Newark","Philadelphia","Chicago"],"notes":"mapUS (dots) — capability demo, no template slide of its own."},
+{"layout":"mapWorld","tag":"GLOBAL","title":"One brand, every market","notes":"mapWorld — capability demo, no template slide of its own."},
+{"layout":"mapWorld","style":"dots","tag":"GLOBAL","title":"Worldwide footprint","notes":"mapWorld (dots) — capability demo, no template slide of its own."},
+{"layout":"mapWorld","style":"globes","tag":"REGIONS","title":"Four regional hubs","captions":["North America","Atlantic","Europe & Africa","Asia-Pacific"],"notes":"mapWorld (globes) — capability demo, no template slide of its own."}
 ];
 
 // Report what actually loaded, on the page rather than only in the console.

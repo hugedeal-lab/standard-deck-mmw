@@ -2345,6 +2345,8 @@ function layout_reportGray(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
+  // Bare chassis: hand-placed content goes in cfg.els, drawn over the chassis.
+  if (cfg.els && cfg.els.length) els = els.concat(cfg.els);
   return els;
 }
 
@@ -2368,6 +2370,8 @@ function layout_reportDark(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
+  // Bare chassis: hand-placed content goes in cfg.els, drawn over the chassis.
+  if (cfg.els && cfg.els.length) els = els.concat(cfg.els);
   return els;
 }
 
@@ -3964,7 +3968,7 @@ function resolve(name) {
 // an eyebrow and a title. Warn rather than fail: the slide is still valid.
 var VERSION = 'v2.0-20260902-0137 (87 layouts)';
 var LAYOUT_KEYS = {
-  "canvasDark": [], "canvasGrey": [], "canvasLight": [],
+  "canvasDark": ["els"], "canvasGrey": ["els"], "canvasLight": ["els"],
   "coverLight": [
     "date",
     "title"
@@ -4261,13 +4265,15 @@ var LAYOUT_KEYS = {
     "intro",
     "tag",
     "text",
-    "title"
+    "title",
+    "els"
   ],
   "reportDark": [
     "intro",
     "tag",
     "text",
-    "title"
+    "title",
+    "els"
   ],
   "storyboardVO": [
     "subhead",

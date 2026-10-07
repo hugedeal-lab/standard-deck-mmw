@@ -46,7 +46,7 @@ function cacheDir(dir) {
   for (const f of fs.readdirSync(abs)) cacheOne(dir + '/' + f, dir + '/' + f);
 }
 console.error('[1] caching assets...');
-['assets/logos', 'assets/backgrounds', 'assets/photos', 'assets/social'].forEach(cacheDir);
+['assets/logos', 'assets/backgrounds', 'assets/photos', 'assets/social', 'assets/maps'].forEach(cacheDir);
 console.error('[2] cached', Object.keys(imageCache).length, 'entries');
 
 // The four brand-mark ids the artifact declares as hidden <img> tags.
@@ -164,6 +164,8 @@ console.error('[3] loading engine...');
 run('deck-icons.js');
 run('standard-deck.js');
 run('deck-layouts.js');
+// Maps register into DeckLayouts from their own files.
+if (fs.existsSync(path.join(SRC, 'deck-maps.js'))) { run('map-data.js'); run('deck-maps.js'); }
 run('deck-shell.js');
 console.error('[4] engine loaded');
 
