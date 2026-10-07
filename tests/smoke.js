@@ -16,7 +16,9 @@ for (const n of names) {
       captions:['a','b'], copy:{postCopy:'p',headline:'h'} }); }
     catch(e){ console.log('THREW  '+n+' dark='+dark+': '+e.message); fail++; continue; }
     if (!Array.isArray(els)) { console.log('NOT ARRAY '+n); fail++; continue; }
-    if (els.length===0) { console.log('EMPTY  '+n+' dark='+dark); fail++; continue; }
+    // The canvas* layouts are blank by design (background only + cfg.els).
+    if (els.length===0 && !/^canvas(Dark|Grey|Light)$/.test(n)) { console.log('EMPTY  '+n+' dark='+dark); fail++; continue; }
+    if (els.length===0) continue;
     if (dark===0) totalEls += els.length;
     for (const e of els) {
       if (e.type==='t' && typeof e.size==='number' && e.size>200) warn.push(n+' oversized '+e.size+'pt');

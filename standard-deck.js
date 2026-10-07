@@ -1018,6 +1018,10 @@ function renderSlide(slideData, index) {
   } else {
     els = slideData.els || [];
   }
+  // A layout may default slideData.dark (the canvas* layouts do). Re-read it
+  // after dispatch, as the PPTX exporter already does, so preview and export
+  // resolve colour tokens against the same background.
+  isDark = !!slideData.dark;
 
   if (slideData.bgColor) {
     slide.style.background = slideData.bgColor;

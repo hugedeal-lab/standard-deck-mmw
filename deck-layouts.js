@@ -3704,7 +3704,29 @@ var PHOTO_DEFAULTS = {
 // ==========================================================
 // DISPATCH
 // ==========================================================
+// ============================================================
+// LAYOUT: CANVAS DARK / GREY / LIGHT  ->  cfg.layout = "canvasDark" | "canvasGrey" | "canvasLight"
+// Template: "Blank Dark" / "Blank Grey" / "Blank Light" (7/30/26 slides 110-112)
+// Genuinely empty slides: background only, plus whatever raw elements the
+// deck supplies in cfg.els. The old blankDark/blankGrey/blankLight names are
+// NOT these -- they redirect to report compositions (see RETIRED) and keep
+// doing so, so existing decks don't change. Backgrounds are the masters' own:
+// Blank Dark inherits the slide master (#262626), Grey #EFF0F3, Light #FFFFFF.
+// The layout defaults bgColor/dark when the deck leaves them unset.
+// ============================================================
+function canvasLayout(bg, dark) {
+  return function (cfg) {
+    if (!cfg.bgColor && !cfg.bgImage) cfg.bgColor = bg;
+    if (cfg.dark === undefined) cfg.dark = dark;
+    return (cfg.els || []).slice();
+  };
+}
+var layout_canvasDark  = canvasLayout('#262626', 1);
+var layout_canvasGrey  = canvasLayout('#EFF0F3', 0);
+var layout_canvasLight = canvasLayout('#FFFFFF', 0);
+
 var LAYOUT_MAP = {
+  canvasDark: layout_canvasDark, canvasGrey: layout_canvasGrey, canvasLight: layout_canvasLight,
   coverLight: layout_coverLight,
   coverDark: layout_coverDark,
   coverLight2: layout_coverLight2,
@@ -3942,6 +3964,7 @@ function resolve(name) {
 // an eyebrow and a title. Warn rather than fail: the slide is still valid.
 var VERSION = 'v2.0-20260902-0137 (87 layouts)';
 var LAYOUT_KEYS = {
+  "canvasDark": [], "canvasGrey": [], "canvasLight": [],
   "coverLight": [
     "date",
     "title"
