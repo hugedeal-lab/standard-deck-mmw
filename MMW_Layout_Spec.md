@@ -1231,7 +1231,7 @@ dropped, cards are a fixed 1.44in wide) · `cfg.cornerLeft` / `cfg.cornerRight`
 (`{icon, label, text}`, optional).
 
 **11.5.10 `reportMetricTable`** (slide 95, bg `#262626`) -- see the override in
-`deck-layouts.js`/`overrides.py` directly: `cfg.columns`, 7 fixed columns,
+`deck-layouts.js` directly: `cfg.columns`, 7 fixed columns,
 each `{header, tone, stroke, noStroke, groups}`; a group is one of the
 matrix's 3 funnel bands and can hold one cell or many. Full docs live as code
 comments on the function; this entry exists so the layout is at least
@@ -1250,7 +1250,7 @@ a candidate for the same structured-object treatment as the rest of this
 section.
 
 **11.5.12 `reportChapterOpener`** (slide 97, bg `#EEEEEE`) -- see 11.5.10; the
-full field reference is `deck-layouts.js`/`overrides.py`'s code comments:
+full field reference is `deck-layouts.js`'s code comments:
 `cfg.text2/text3` (eyebrows), `cfg.text4`/`cfg.subhead` (headline pair, NOT
 `cfg.title` -- that slot is the fixed decorative arrow), `cfg.text5/text6`
 (40pt-raw/20pt-engine body copy), `cfg.items[1]/items[2]` (STATUS / WHAT

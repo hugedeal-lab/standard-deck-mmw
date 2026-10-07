@@ -215,7 +215,7 @@ reportGrayTimeline	Content Gray	#EEEEEE	Campaign-progress flow art (template sli
 REPORTING — STRUCTURED COMPOSITIONS (17)
 These manage their own internal positioning — supply the structured fields
 below, not raw els. Full field reference for every one of these lives in
-deck-layouts.js / overrides.py as code comments; this table is the index,
+deck-layouts.js as code comments; this table is the index,
 not the complete spec. When a slide needs one of these, check the field
 list here before writing content, and if a field name doesn't ring a bell,
 open the code comment rather than guessing from another layout's pattern.
