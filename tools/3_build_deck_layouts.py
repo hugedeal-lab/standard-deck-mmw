@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""Generate deck-layouts.js (66 MMW layouts) from mmw_layouts.json."""
+"""FROZEN ARCHIVE -- regenerates a REFERENCE copy of deck-layouts.js into
+tools/build/ from mmw_layouts.json + overrides.py. The root deck-layouts.js
+is hand-maintained and is the source of truth (see HANDOFF.md); never copy
+this script's output over it -- overrides.py stopped being kept in sync on
+2026-09-04."""
 import json, re, collections, sys
 # --- portable paths -------------------------------------------------
 # Override with env vars when the layout differs:
@@ -597,5 +601,7 @@ import datetime as _dt
 _stamp = 'v2.0-' + _dt.datetime.now().strftime('%Y%m%d-%H%M') + ' (' + str(len(order) + len(DERIVED)) + ' layouts)'
 out='\n'.join(parts).replace('__LAYOUT_KEYS__', json.dumps(LAYOUT_KEYS, indent=2)).replace('__BUILD_STAMP__', _stamp)
 open(W('deck-layouts.js'),'w').write(out)
+print('[3_build_deck_layouts] REFERENCE ONLY -> %s. The root deck-layouts.js is the '
+      'source of truth; do not copy this over it.' % W('deck-layouts.js'), file=sys.stderr)
 print("wrote deck-layouts.js: %d bytes, %d lines"%(len(out), out.count('\n')))
 print("layout functions:", out.count('function layout_'))

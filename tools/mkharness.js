@@ -1,7 +1,10 @@
 global.window={StandardDeck:{SD_CONST:{SLIDE_W:13.33,SLIDE_H:7.5,SAFE_X_MIN:.5,SAFE_Y_MIN:.75}}};
-require('./build/deck-layouts.js');
+// The QA deck is built from the real, hand-maintained ../deck-layouts.js (the
+// source of truth), not from a regenerated copy.
+require(process.env.MMW_LAYOUTS || '../deck-layouts.js');
 const DL=global.window.DeckLayouts, fs=require('fs');
-const spec=JSON.parse(fs.readFileSync('build/mmw_layouts.json','utf8'));
+const spec=JSON.parse(fs.readFileSync(fs.existsSync('build/mmw_layouts.json') ? 'build/mmw_layouts.json' : '../mmw_layouts.json','utf8'));
+fs.mkdirSync('build', { recursive: true });
 const byName={}; spec.layouts.forEach(l=>byName[l.name]=l);
 const DARK=new Set(['#262626','#253724','#2C283B','#142A45','#000000','#1A1A1A']);
 const SAMPLE={tag:'NEXT SECTION',subhead:'Supporting subhead',subtitle:'Supporting subhead',

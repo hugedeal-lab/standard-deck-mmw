@@ -11,7 +11,7 @@ Rebuilding the MMW Presentation Builder agent against the real `MMW_PPT_Template
 | Area | Status |
 |---|---|
 | Layout spec, all layouts | Complete — `MMW_Layout_Spec.md` (84 layouts, includes the 24 in the reporting family) |
-| `deck-layouts.js` rebuilt | Complete — 84 functions; 23 hand-authored in `overrides.py`, rest generated |
+| `deck-layouts.js` | Complete — 84 layouts; hand-maintained source of truth (see "Where the layouts live") |
 | Engine patches | 9 applied to `standard-deck.js` / `deck-shell.js` |
 | System prompt | Rewritten for v2.0 |
 | Brand assets | 28 extracted + 6 photo defaults |
@@ -27,35 +27,43 @@ Rebuilding the MMW Presentation Builder agent against the real `MMW_PPT_Template
 
 **2. Layout names follow the template's own names.** v1.0's names were invented and had drifted — its `content03` was built from the template's `Content 01`. `LEGACY_ALIASES` in `deck-layouts.js` maps old to new. Two names (`content03`, `content05`) exist in both versions meaning *different* layouts and log an error.
 
-## How to regenerate the layouts
+## Where the layouts live — edit `deck-layouts.js` directly
 
-**This is no longer a blanket "don't hand-edit" situation.** 23 layouts are
-now deliberately hand-authored in `tools/overrides.py` and will be silently
-regressed by a regeneration if their `OVERRIDES` entry isn't kept in sync
-with `deck-layouts.js` — most because their correct content (real platform
-mockup chrome, chevron shapes read from the source XML, a bezier connector,
-etc.) doesn't exist anywhere in the raw template geometry, extractable or
-not, so the generator can never reproduce them from template data alone. If
-you add or change a hand-authored layout, mirror it into `overrides.py` in
-the same session, not later. Before trusting any regeneration, actually run
-it and diff against committed — don't assume `overrides.py` is in sync.
+**`deck-layouts.js` is the source of truth** (decided 2026-10-07). It is
+hand-maintained: change a layout by editing its function in that file, then
+re-run the tests and a real PPTX export (see "How to test").
+
+This replaced the old model, where `deck-layouts.js` was regenerated from
+`tools/overrides.py` + `mmw_layouts.json`. That model needed every hand edit
+mirrored back into `overrides.py`, and twice in practice it wasn't -- by
+October the generator was 39 layouts behind the shipped file, so a
+regeneration would have silently undone weeks of fixes. Most layouts are
+hand-authored now anyway (real platform mockups, chevrons read from source
+XML, bezier connectors, chart compositions -- none of it derivable from raw
+template geometry).
+
+**What the `tools/` pipeline is still for:**
+
+- `1_extract_template.py` → `2_build_layout_data.py` turn a template revision
+  into `mmw_layouts.json`: measured geometry, type and colour for every
+  layout. Use it as **reference data** when a new template revision lands --
+  compare a layout's fresh numbers against its function and port the
+  differences by hand.
+- `mkharness.js` → `mkstandalone.js` build the QA decks (`test-deck.html`,
+  `test-deck-standalone.html`) from the **real** `deck-layouts.js`.
+- `3_build_deck_layouts.py` + `overrides.py` are **frozen archives** (last in
+  sync 2026-09-04). The script writes only to `tools/build/`; never copy its
+  output over the root `deck-layouts.js`. It can still be useful for seeing
+  what a fresh, purely template-driven function would look like.
 
 ```bash
 cd tools
 export MMW_TEMPLATE="/path/to/MMW_PPT_Template_7_30_26.pptx"   # or whichever revision is current
 python 1_extract_template.py     # PPTX  -> build/resolved.json   (needs python-pptx)
-python 2_build_layout_data.py    #       -> build/mmw_layouts.json
-python 3_build_deck_layouts.py   #       -> build/deck-layouts.js
-node   mkharness.js              #       -> build/test-deck.html
+python 2_build_layout_data.py    #       -> build/mmw_layouts.json  (reference geometry)
+node   mkharness.js              # real ../deck-layouts.js -> build/test-deck.html
+node   mkstandalone.js           #       -> build/test-deck-standalone.html
 ```
-
-Last verified: 80 of 84 layouts regenerate byte-identical to committed; the
-other 4 are confirmed cosmetic-only (two are a unicode-escape display
-difference with identical runtime values, two are an intentional inlining
-of a shared helper the generator has no mechanism to inject) — not a
-behavioral difference. Checked via real dispatch comparison, not assumed.
-
-**32 layouts are machine-generated. 52 are hand-authored** in `tools/overrides.py` (the full list is `OVERRIDES`'s keys in that file) — some because auto-generation flattens their grids into an unusable flat array (`storyboardGrid`, `tableOfContents`, `castingGrid`, `locationOverview`, `moodboardProps`, `moodboardWardrobe`), the rest because their correct content doesn't exist in the raw template geometry at all (real platform mockup chrome, chevron shapes, a bezier connector, etc. — see "This is no longer a blanket..." above). Edit those by hand, in that file.
 
 ## How to test
 

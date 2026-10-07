@@ -323,8 +323,14 @@ var ACCENT_FAMILIES = {
 // Read off the template's own 10 chart parts, ordered brand-forward. v1.0's
 // values were transcribed by eye and every one was a near-miss: #C4A484 for
 // #C4A485, #7CACC1 for #7CA8C1, #43644B for #4A634D, #B3BCB5 for #B3BDB6.
-var CHART_SERIES = ['#BFA588', '#7CA8C1', '#4A634D', '#C4A485', '#808080'];
-var CHART_SERIES_LIGHT = ['#C4A485', '#B3BDB6', '#416986', '#EEEEEE', '#999999'];
+// Series ramps taken from the template's own charts: the 2-series bars
+// (chart2/chart6, the "native chart in a fixed well" pair) are tan + gray, the
+// 6-series bars (chart3/chart7) run tan, gray, green, blue, sage, dark. v1 led
+// with blue at position 2, so every 2-series chart came out tan + blue.
+// _DARK is the dark-chassis ramp (pos 6 lightened so a 6th series clears the
+// #262626 ground); _LIGHT swaps in the deeper blue the light charts use.
+var CHART_SERIES = ['#BFA588', '#808080', '#4A634D', '#7CA8C1', '#B3BDB6', '#E8E8E8'];
+var CHART_SERIES_LIGHT = ['#BFA588', '#808080', '#4A634D', '#416986', '#B3BDB6', '#262626'];
 
 var _accentLight = '#FFE0C0';
 var _accentMid   = '#C4A484';
@@ -582,11 +588,11 @@ function renderText(el, isDark) {
   div.style.textAlign = el.align || (isCompact ? 'center' : 'left');
   // EXPLICIT TYPOGRAPHY (v2.0). MMW layout elements always carry `caps`, which
   // marks the element as fully specified: casing, tracking and line-height come
-  // from the template, not from getTextStyle()'s size/colour guesswork. That
+  // from the template, not from getTextStyle()'s size/color guesswork. That
   // heuristic uppercases anything <=10pt or coloured 'muted' -- which would have
   // wrongly capitalised 161 of the template's body/caption elements -- and
   // hardcodes 1.35 line-height where the template is mostly 1.0.
-  // Elements WITHOUT `caps` (legacy raw compositions) keep the old behaviour.
+  // Elements WITHOUT `caps` (legacy raw compositions) keep the old behavior.
   if (el.caps !== undefined) {
     div.style.textTransform = el.caps ? 'uppercase' : 'none';
     // charSpacing is in POINTS (PowerPoint's "Expanded by N pt"), so convert to
@@ -611,12 +617,12 @@ function renderText(el, isDark) {
   }
   // ---- RICH PARAGRAPHS ------------------------------------------------
   // Some template text boxes are not a flat string: the Table of Contents
-  // heading is a grey subtitle and a black title separated by <a:br/> inside one
-  // paragraph, and its list mixes a grey number run with a black topic run per
+  // heading is a gray subtitle and a black title separated by <a:br/> inside one
+  // paragraph, and its list mixes a gray number run with a black topic run per
   // line, plus indented sub-bullets at a smaller size. `paras` models that:
   //   paras:[{ runs:[{text,color,size,bold}], size, marL, indent,
   //            bullet, bulletSizePct, breakBefore }]
-  // Elements without `paras` keep the old flat-string behaviour untouched.
+  // Elements without `paras` keep the old flat-string behavior untouched.
   if (el.paras && el.paras.length) {
     el.paras.forEach(function (p) {
       var pdiv = document.createElement('div');
@@ -666,14 +672,19 @@ function renderText(el, isDark) {
     return div;
   }
 
-  if (el.text && el.text.indexOf('\n') > -1) {
-    el.text.split('\n').forEach(function (line, i) {
+  // A layout can hand us a non-string text -- a boolean flag passed straight
+  // through (cfg.hereLabel), a numeric cell value. Coerce before any string
+  // method runs: one stray value must not throw out of renderAll and take the
+  // whole deck (toolbar, nav, export) down with it.
+  var _t = (el.text == null) ? '' : (typeof el.text === 'string' ? el.text : String(el.text));
+  if (_t.indexOf('\n') > -1) {
+    _t.split('\n').forEach(function (line, i) {
       if (i > 0) div.appendChild(document.createElement('br'));
       div.appendChild(document.createTextNode(line));
     });
   } else {
     var span = document.createElement('span');
-    span.textContent = el.text || '';
+    span.textContent = _t;
     div.appendChild(span);
   }
   return div;
@@ -906,34 +917,68 @@ function renderChart(el, isDark) {
   return container;
 }
 
+// Filled rounded-rectangle path. r is clamped so a short bar collapses to a
+// lozenge rather than inverting.
+function barRoundPath(ctx, x, y, w, h, r) {
+  r = Math.max(0, Math.min(r, Math.abs(w) / 2, Math.abs(h) / 2));
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+
 function renderBarChart(ctx, data, opts, cw, ch, isDark) {
   if (!data.length || !data[0].values) return;
   var series = data; var labels = series[0].labels || [];
   var nGroups = labels.length; var nSeries = series.length; var maxVal = 0;
   series.forEach(function (s) { s.values.forEach(function (v) { if (v > maxVal) maxVal = v; }); });
   if (maxVal === 0) maxVal = 1;
-  var padding = { top: 60, right: 40, bottom: 50, left: 60 };
-  var plotW = cw - padding.left - padding.right; var plotH = ch - padding.top - padding.bottom;
-  var groupW = plotW / nGroups; var barW = (groupW * 0.7) / nSeries; var gap = groupW * 0.3;
+  // barDir 'bar' (the export default) is HORIZONTAL; 'col' is vertical. Both
+  // draw with full pill ends -- the source template's square bars are a defect
+  // vs the Keynote original (see roundChartBars in deck-shell.js for the PPTX).
+  var horiz = (opts.barDir || 'bar') === 'bar';
   var colors = resolveChartColors(opts.chartColors || null, nSeries, isDark);
-  series.forEach(function (s, si) {
-    s.values.forEach(function (val, vi) {
-      var bx = padding.left + vi * groupW + gap / 2 + si * barW;
-      var bh = (val / maxVal) * plotH; var by = padding.top + plotH - bh;
-      // Square corners -- confirmed against source: vertical (column) bars
-      // do not get rounded ends in this deck. Only horizontal bars do (see
-      // reportSplitPanels / reportSpendBars(Light/Dark), radius:'pill').
-      ctx.fillStyle = colors[si]; ctx.fillRect(bx, by, barW - 2, bh);
-      if (opts.showValue) {
-        ctx.font = '500 ' + ptToPx(8) + 'px Mazda Type, Arial, sans-serif';
-        ctx.fillStyle = resolveColor('title', isDark); ctx.textAlign = 'center';
-        ctx.fillText(formatVal(val), bx + barW / 2, by - 6);
-      }
-    });
-  });
+  var padding = { top: 60, right: 40, bottom: 50, left: horiz ? 92 : 60 };
+  var plotW = cw - padding.left - padding.right; var plotH = ch - padding.top - padding.bottom;
   ctx.font = ptToPx(8) + 'px Mazda Type, Arial, sans-serif';
-  ctx.fillStyle = resolveColor('muted', isDark); ctx.textAlign = 'center';
-  labels.forEach(function (lbl, i) { ctx.fillText(lbl, padding.left + i * groupW + groupW / 2, ch - padding.bottom + 20); });
+
+  if (horiz) {
+    var groupH = plotH / nGroups; var barH = (groupH * 0.72) / nSeries; var gapH = groupH * 0.28;
+    series.forEach(function (s, si) {
+      s.values.forEach(function (val, vi) {
+        var by = padding.top + vi * groupH + gapH / 2 + si * barH;
+        var r = (barH - 2) / 2;
+        var bw = Math.max((val / maxVal) * plotW, r * 2);
+        ctx.fillStyle = colors[si];
+        barRoundPath(ctx, padding.left, by, bw, barH - 2, r); ctx.fill();
+      });
+    });
+    ctx.fillStyle = resolveColor('muted', isDark); ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+    labels.forEach(function (lbl, i) { ctx.fillText(lbl, padding.left - 14, padding.top + i * groupH + groupH / 2); });
+    ctx.textBaseline = 'alphabetic';
+  } else {
+    var groupW = plotW / nGroups; var barW = (groupW * 0.7) / nSeries; var gap = groupW * 0.3;
+    series.forEach(function (s, si) {
+      s.values.forEach(function (val, vi) {
+        var bx = padding.left + vi * groupW + gap / 2 + si * barW;
+        var r = (barW - 2) / 2;
+        var bh = Math.max((val / maxVal) * plotH, r * 2); var by = padding.top + plotH - bh;
+        ctx.fillStyle = colors[si];
+        barRoundPath(ctx, bx, by, barW - 2, bh, r); ctx.fill();
+        if (opts.showValue) {
+          ctx.font = '500 ' + ptToPx(8) + 'px Mazda Type, Arial, sans-serif';
+          ctx.fillStyle = resolveColor('title', isDark); ctx.textAlign = 'center';
+          ctx.fillText(formatVal(val), bx + barW / 2, by - 6);
+          ctx.font = ptToPx(8) + 'px Mazda Type, Arial, sans-serif';
+        }
+      });
+    });
+    ctx.fillStyle = resolveColor('muted', isDark); ctx.textAlign = 'center';
+    labels.forEach(function (lbl, i) { ctx.fillText(lbl, padding.left + i * groupW + groupW / 2, ch - padding.bottom + 20); });
+  }
 }
 
 function renderLineChart(ctx, data, opts, cw, ch, isDark, isArea) {
@@ -1005,10 +1050,11 @@ function renderPieChart(ctx, data, opts, cw, ch, isDark, isDoughnut) {
 }
 
 function resolveChartColors(tokens, count, isDark) {
+  var ramp = isDark ? CHART_SERIES : CHART_SERIES_LIGHT;
   var colors = [];
   for (var i = 0; i < count; i++) {
     if (tokens && tokens[i % tokens.length]) colors.push(resolveColor(tokens[i % tokens.length], isDark));
-    else colors.push(CHART_SERIES[i % CHART_SERIES.length]);
+    else colors.push(ramp[i % ramp.length]);
   }
   return colors;
 }
@@ -1335,8 +1381,8 @@ window.StandardDeck = {
 /* ============================================================
 deck-layouts.js -- MMW Layout Library v2.0 (standard-deck-mmw)
 
-REBUILT from MMW PPT Template_7.24.26.pptx. 66 layouts, one per
-slide layout in the source template (v1.0 shipped 22).
+Built from MMW PPT Template_7.24.26.pptx and revised against 7.30.26.
+84 layouts (v1.0 shipped 22).
 
 TWO BREAKING CHANGES vs v1.0 -- read before upgrading:
 
@@ -1352,8 +1398,11 @@ TWO BREAKING CHANGES vs v1.0 -- read before upgrading:
    built from the template's "Content 01"). LEGACY_ALIASES below
    keeps v1.0 deck data working; new decks should use the new keys.
 
-Geometry, type and colour are machine-generated from the template.
-See MMW_Layout_Spec.md for the full per-layout specification.
+HAND-MAINTAINED -- this file is the source of truth. Edit layouts here.
+(It was originally generated by tools/3_build_deck_layouts.py; that
+generator and tools/overrides.py are now frozen archives -- see
+HANDOFF.md.) Geometry and type were measured from the template; see
+MMW_Layout_Spec.md and mmw_layouts.json for the source numbers.
 ============================================================ */
 
 (function () {
@@ -1387,11 +1436,82 @@ var A = (typeof window !== 'undefined' && window.MMW_ASSET_BASE) || 'assets/';
 function logoRef(cfg)   { return cfg.dark === 1 ? 'gi0w' : 'gi0'; }
 function lockupRef(cfg) { return cfg.dark === 1 ? 'gi1w' : 'gi1'; }
 
+// ------------------------------------------------------------
+// STATEMENT AUTOSIZE. The headline layouts (headlineLight / headlineDark /
+// headlinePhotoWell) and statementSubhead are built for a SHORT statement that
+// sits on ONE line at the template's hero size. Real decks pass longer copy,
+// which wrapped and overran the box. fitStatement() keeps the hero size for a
+// genuinely brief line and otherwise steps the size DOWN until the longest
+// line fits the usable width -- a graceful shrink instead of a wrap. Below the
+// floor it stops shrinking and is allowed to wrap (the box has room for two).
+//
+// Char advances are a Helvetica-Bold-derived uppercase table (em fractions);
+// close enough for Mazda Type Bold at the fidelity this needs. Tracking scales
+// with size (the template's 140pt/14pt tracking is 0.1em) so the look holds at
+// any size. An explicit "\n" in the title is respected -- each line is measured
+// and the widest one drives the size.
+// ------------------------------------------------------------
+var _CAPW = { A:.72,B:.72,C:.72,D:.72,E:.67,F:.61,G:.78,H:.72,I:.28,J:.56,K:.72,
+  L:.61,M:.83,N:.72,O:.78,P:.67,Q:.78,R:.72,S:.67,T:.61,U:.72,V:.67,W:.94,X:.67,
+  Y:.67,Z:.61,' ':.28,'-':.33,'–':.56,'—':1,'.':.28,',':.28,"'":.28,
+  '’':.28,'"':.47,':':.33,';':.33,'!':.33,'?':.61,'&':.72,'/':.33,
+  '0':.56,'1':.56,'2':.56,'3':.56,'4':.56,'5':.56,'6':.56,'7':.56,'8':.56,'9':.56 };
+
+function _lineEm(s) {
+  s = String(s).toUpperCase();
+  var em = 0;
+  for (var i = 0; i < s.length; i++) em += (_CAPW[s[i]] != null ? _CAPW[s[i]] : 0.70);
+  return em;
+}
+
+// opts: { w (frame width in), inset (per-side in, default .035), max, min }
+// returns { size, charSpacing } -- charSpacing kept at size/10 (0.1em).
+function fitStatement(text, opts) {
+  opts = opts || {};
+  var maxPt = opts.max || 140,
+      minPt = opts.min || 80,
+      inset = (opts.inset != null) ? opts.inset : 0.035,
+      // 0.95 keeps a real margin off the frame edge; the Helvetica-derived
+      // table under-measures the wider Mazda Type Bold, so scale em up 8% too.
+      // Tuned so an 8-wide-char word (MOMENTUM) drops from 140 rather than
+      // overrunning and wrapping mid-word in the real face.
+      usable = ((opts.w || 13.09) - inset * 2) * 0.95;
+  var t = String(text == null ? '' : text);
+  var em = 0, n = 0;
+  t.split('\n').forEach(function (ln) {
+    var e = _lineEm(ln) * 1.08;
+    if (e > em) { em = e; n = ln.length; }
+  });
+  if (em <= 0) return { size: maxPt, charSpacing: +(maxPt / 10).toFixed(1) };
+  // width(size) = em*(size/72) + (n-1)*((size/10)/72)   [tracking = size/10 pt]
+  var perPt = em / 72 + (n > 1 ? (n - 1) * 0.1 / 72 : 0);
+  var fitPt = usable / perPt;
+  var size = Math.min(maxPt, Math.floor(fitPt / 2) * 2);   // snap to even pt
+  if (size < minPt) size = minPt;
+  return { size: size, charSpacing: +(size / 10).toFixed(1) };
+}
+
 // Photo well. Renders a replaceable placeholder by default; supply real
 // photography per well with cfg.images -- an array indexed by well order
 // (top-to-bottom, left-to-right within the layout), or an object keyed by index:
 //   { layout:'coverPhoto2', images:['photos/hero.jpg'] }
 // Wells left unspecified stay replaceable, so you can fill only the ones you have.
+// Social spec-sheet device mockup. o.{x,y,w,h} is the frame image's ACTUAL
+// on-slide rectangle (already resolved -- no object-fit letterbox, fit:'fill'
+// maps it 1:1). o.screen is [left,top,right,bottom] as fractions of that
+// rectangle marking the mockup's creative area; a replaceable well is placed
+// there and rendered ON TOP of the opaque frame so a supplied image lands in
+// the phone screen. On the full-bleed video mockups a filled screen covers the
+// baked-in platform UI -- unavoidable with flat mockup art. o.slot is the
+// cfg.images[] index for the screen well.
+function deviceMock(els, cfg, o) {
+  els.push({ type:'img', src:(cfg.assets && cfg.assets[o.name]) || A + 'social/' + o.name,
+    x:o.x, y:o.y, w:o.w, h:o.h, fit:'fill' });
+  var s = o.screen || [0,0,0,0];
+  ph(els, cfg, o.x + s[0]*o.w, o.y + s[1]*o.h,
+    (1 - s[0] - s[2]) * o.w, (1 - s[1] - s[3]) * o.h, o.slot);
+}
+
 function ph(els, cfg, x, y, w, h, slot, mask) {
   var supplied = cfg.images && (Array.isArray(cfg.images) ? cfg.images[slot] : cfg.images[slot]);
   if (supplied) {
@@ -1486,16 +1606,20 @@ function layout_coverPhoto(cfg) {
 // ==========================================================
 function layout_coverPhoto2(cfg) {
   var els = [];
+  // The template ships two Cover Photo2 masters (source slides 10 and 11) that
+  // differ in the photo silhouette AND in where the title sits: variant 1 puts
+  // it at y3.21, variant 2 at y4.37. titleY was previously hard-coded to 4.37,
+  // so the default (variant 1) rendered its title ~1.16in too low.
   var VARIANTS = {
-    1: { x:1.99, y:-0.02, w:11.43, h:7.57,
+    1: { x:1.99, y:-0.02, w:11.43, h:7.57, titleY:3.21,
       points:[[0.99713,0],[1,1],[0.60968,1],[0.35847,0.62088],[0.35847,0.99653],[0,0.99653],[0,0.5681],[0.32366,0.5681],[0.1788,0.3488],[0.1788,0.00292],[0.66745,0.00523],[0.89463,0.34806],[0.89463,0]] },
-    2: { x:3.349, y:0, w:10.074, h:7.538,
+    2: { x:3.349, y:0, w:10.074, h:7.538, titleY:4.37,
       points:[[1,0.50565],[0.99579,0.99866],[0.88431,1],[0.55148,1],[0.40519,0.80509],[0.40588,1],[0.00069,1],[0,0.75639],[0.36912,0.75639],[0.20389,0.53491],[0.20458,0.00056],[0.25773,0],[0.61806,0]] }
   };
   var v = VARIANTS[cfg.variant] || VARIANTS[1];
   ph(els, cfg, v.x, v.y, v.w, v.h, 0, v.points);
   els.push({ type:'img', ref:logoRef(cfg), x:0.41, y:0.37, w:1.12, h:0.31 }); // brand mark (placeholder slot in template)
-  els.push({ type:'t', text:cfg.title || "", x:0.39, y:4.37, w:6.48, h:1.12, font:'H', size:54.5, color:'asphalt', valign:'bottom', caps:true, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:cfg.title || "", x:0.39, y:v.titleY, w:6.48, h:1.12, font:'H', size:54.5, color:'asphalt', valign:'bottom', caps:true, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   els.push({ type:'img', ref:lockupRef(cfg), x:0.42, y:7.06, w:1.02, h:0.19 }); // brand mark (placeholder slot in template)
   return els;
 }
@@ -1619,7 +1743,8 @@ function layout_dividerTides(cfg) {
 function layout_headlineLight(cfg) {
   var els = [];
   if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:2.92, y:2.42, w:7.49, h:0.42, font:'B', size:15.5, color:'accent', bold:true, align:'center', valign:'bottom', caps:true, lineSpacing:0.9, charSpacing:6.97, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:140, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:14, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  var _stmt = fitStatement(cfg.title, { w:13.09, inset:0.035, max:140, min:64 });
+  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:_stmt.size, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:_stmt.charSpacing, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   return els;
 }
 
@@ -1633,7 +1758,8 @@ function layout_headlineDark(cfg) {
   var els = [];
   els.push({ type:'img', src:(cfg.assets && cfg.assets['headline_dark_mark.png']) || A+'backgrounds/headline_dark_mark.png', x:6.29, y:-0.44, w:0.69, h:0.3 });
   if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:2.92, y:2.42, w:7.49, h:0.42, font:'B', size:15.5, color:'accent', bold:true, align:'center', valign:'bottom', caps:true, lineSpacing:0.9, charSpacing:6.97, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:140, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:14, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  var _stmt = fitStatement(cfg.title, { w:13.09, inset:0.035, max:140, min:64 });
+  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:_stmt.size, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:_stmt.charSpacing, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   return els;
 }
 
@@ -1649,8 +1775,12 @@ function layout_headlineDark(cfg) {
 // ==========================================================
 function layout_headlinePhotoWell(cfg) {
   var els = [];
+  // Full-bleed replaceable photo behind the statement (the template carries it
+  // as a master-level placeholder; deckInit pre-fills images[0] from the pool).
+  ph(els, cfg, -0.01, -0.01, 13.35, 7.52, 0);
   if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:2.92, y:2.42, w:7.49, h:0.42, font:'B', size:15.5, color:'accent', bold:true, align:'center', valign:'bottom', caps:true, lineSpacing:0.9, charSpacing:6.97, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:140, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:14, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  var _stmt = fitStatement(cfg.title, { w:13.09, inset:0.035, max:140, min:64 });
+  els.push({ type:'t', text:cfg.title || "", x:0.12, y:2.84, w:13.09, h:4.66, font:'H', size:_stmt.size, color:'white', align:'center', caps:true, lineSpacing:0.9, charSpacing:_stmt.charSpacing, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   return els;
 }
 
@@ -1662,7 +1792,8 @@ function layout_headlinePhotoWell(cfg) {
 // ==========================================================
 function layout_statementSubhead(cfg) {
   var els = [];
-  els.push({ type:'t', text:cfg.title || "", x:0.52, y:2.66, w:12.29, h:1.44, font:'H', size:74, color:'white', align:'center', valign:'bottom', caps:true, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  var _stmt = fitStatement(cfg.title, { w:12.29, inset:0.104, max:74, min:44 });
+  els.push({ type:'t', text:cfg.title || "", x:0.52, y:2.66, w:12.29, h:1.44, font:'H', size:_stmt.size, color:'white', align:'center', valign:'bottom', caps:true, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:0.52, y:4.05, w:12.29, h:1.57, font:'B', size:17.5, color:'accent', align:'center', caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   return els;
 }
@@ -1687,7 +1818,7 @@ function layout_reportSplitPanels(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
-  // staged pills, right-aligned and decreasing. Label colour is fixed by the
+  // staged pills, right-aligned and decreasing. Label color is fixed by the
   // bar it sits on, so a caller cannot accidentally put tan text on tan.
   var BARS = [
     { x:0.94, w:11.79, fill:'accentDim', lx:1.07, label:'paper'     },
@@ -1698,9 +1829,15 @@ function layout_reportSplitPanels(cfg) {
   var stages = cfg.stages || [];
   BARS.forEach(function (b, i) {
     els.push({ type:'s', x:b.x, y:4.09, w:b.w, h:0.71, fill:b.fill, radius:'pill' });
-    if (stages[i]) els.push({ type:'t', text:stages[i], x:b.lx, y:4.16, w:1.73, h:0.56,
-      font:'B', size:15.5, color:b.label, bold:true, valign:'middle', caps:true,
-      lineSpacing:1, charSpacing:6.97, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+    if (stages[i]) {
+      var _sv = String(stages[i]);
+      // 15.5pt suits the source's short stage words; step down + drop tracking
+      // for longer real labels so they don't wrap inside the pill.
+      var _ss = (_sv.length <= 6) ? 15.5 : (_sv.length <= 12 ? 11 : 9);
+      els.push({ type:'t', text:_sv, x:b.lx, y:4.16, w:1.95, h:0.56,
+        font:'B', size:_ss, color:b.label, bold:true, valign:'middle', caps:true,
+        lineSpacing:1, charSpacing:(_ss >= 15 ? 6.97 : 1.5), insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+    }
   });
 
   // Milestone callouts. Two sit above the bar and two below; each is a
@@ -1761,15 +1898,19 @@ function layout_reportStatRow(cfg) {
     font:'H', size:23.8, color:'white', caps:true, lineSpacing:1, charSpacing:-0.475,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
 
-  // Column headers. Numbers in the source; keep them short or the grid shears.
+  // Column headers. The source uses single digits at 28pt in a 0.86in box.
+  // Real column names (channel/metric words) shear that box, so the box now
+  // spans most of the column pitch and the size steps down for longer labels.
   var cols = (cfg.columns || []).slice(0, COLX.length);
   cols.forEach(function (c, i) {
-    els.push({ type:'t', text:String(c), x:COLX[i], y:1.21, w:0.86, h:0.65,
-      font:'H', size:28, color:'#CAA380', caps:true, lineSpacing:1,
+    var s = String(c);
+    var sz = (s.length <= 3) ? 28 : (s.length <= 8 ? 15 : 12);
+    els.push({ type:'t', text:s, x:COLX[i], y:1.21, w:2.2, h:0.65,
+      font:'H', size:sz, color:'#CAA380', caps:true, valign:'bottom', lineSpacing:1,
       insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   });
 
-  // Bands: section label on the left, then one cell per column. Cell colour is
+  // Bands: section label on the left, then one cell per column. Cell color is
   // set by the band so the horizontal reading alternates, which is what
   // separates the sections visually -- it is not a per-cell choice.
   (cfg.sections || []).slice(0, BANDS.length).forEach(function (sec, r) {
@@ -1814,15 +1955,19 @@ function layout_reportStatRowLight(cfg) {
     font:'H', size:23.8, color:'bodyGray', caps:true, lineSpacing:1, charSpacing:-0.475,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
 
-  // Column headers. Numbers in the source; keep them short or the grid shears.
+  // Column headers. The source uses single digits at 28pt in a 0.86in box.
+  // Real column names (channel/metric words) shear that box, so the box now
+  // spans most of the column pitch and the size steps down for longer labels.
   var cols = (cfg.columns || []).slice(0, COLX.length);
   cols.forEach(function (c, i) {
-    els.push({ type:'t', text:String(c), x:COLX[i], y:1.21, w:0.86, h:0.65,
-      font:'H', size:28, color:'#CAA380', caps:true, lineSpacing:1,
+    var s = String(c);
+    var sz = (s.length <= 3) ? 28 : (s.length <= 8 ? 15 : 12);
+    els.push({ type:'t', text:s, x:COLX[i], y:1.21, w:2.2, h:0.65,
+      font:'H', size:sz, color:'#CAA380', caps:true, valign:'bottom', lineSpacing:1,
       insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   });
 
-  // Bands: section label on the left, then one cell per column. Cell colour is
+  // Bands: section label on the left, then one cell per column. Cell color is
   // set by the band so the horizontal reading alternates, which is what
   // separates the sections visually -- it is not a per-cell choice.
   (cfg.sections || []).slice(0, BANDS.length).forEach(function (sec, r) {
@@ -1872,8 +2017,13 @@ function layout_reportSpendBarsLight(cfg) {
   // Six rows, no more: the track is a fixed grid with no overflow rule.
   (cfg.bars || []).slice(0, ROWY.length).forEach(function (bar, i) {
     var y = ROWY[i];
-    var pct = (typeof bar.pct === 'number') ? Math.max(0, Math.min(1, bar.pct)) : 1;
-    var w = Math.max(MIN_W, TRACK_W * pct);
+    // pct accepts a 0-1 fraction OR a 0-100 percentage (what callers usually pass).
+    var pct = (typeof bar.pct === 'number') ? bar.pct : 1;
+    if (pct > 1) pct = pct / 100;
+    pct = Math.max(0, Math.min(1, pct));
+    // Map pct across the MIN_W..TRACK_W range so every bar clears the label+disc
+    // minimum yet the set still tapers (a flat max() flattened small values).
+    var w = MIN_W + (TRACK_W - MIN_W) * pct;
     var fill = bar.color || PALETTE[i % PALETTE.length];
 
     els.push({ type:'s', x:TRACK_X, y:y, w:w, h:0.76, fill:fill, radius:'pill' });
@@ -1936,8 +2086,13 @@ function layout_reportSpendBarsDark(cfg) {
   // Six rows, no more: the track is a fixed grid with no overflow rule.
   (cfg.bars || []).slice(0, ROWY.length).forEach(function (bar, i) {
     var y = ROWY[i];
-    var pct = (typeof bar.pct === 'number') ? Math.max(0, Math.min(1, bar.pct)) : 1;
-    var w = Math.max(MIN_W, TRACK_W * pct);
+    // pct accepts a 0-1 fraction OR a 0-100 percentage (what callers usually pass).
+    var pct = (typeof bar.pct === 'number') ? bar.pct : 1;
+    if (pct > 1) pct = pct / 100;
+    pct = Math.max(0, Math.min(1, pct));
+    // Map pct across the MIN_W..TRACK_W range so every bar clears the label+disc
+    // minimum yet the set still tapers (a flat max() flattened small values).
+    var w = MIN_W + (TRACK_W - MIN_W) * pct;
     var fill = bar.color || PALETTE[i % PALETTE.length];
 
     els.push({ type:'s', x:TRACK_X, y:y, w:w, h:0.76, fill:fill, radius:'pill' });
@@ -1988,24 +2143,30 @@ function layout_reportModelCompare(cfg) {
   var COL_W = [2.21, 2.21, 2.23, 1.86, 1.68];
   var CHIP  = ['#A6A6A6', '#7F7F7F', '#595959', '#404045'];
 
-  if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.61, y:0.54, w:12.12, h:0.29,
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.25, y:0.3, w:12.4, h:0.26,
     font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  if (cfg.title) els.push({ type:'t', text:cfg.title, x:0.25, y:0.38, w:12.4, h:0.5,
+  if (cfg.title) els.push({ type:'t', text:cfg.title, x:0.25, y:0.62, w:12.4, h:0.44,
     font:'H', size:23.8, color:'white', caps:true, lineSpacing:1, charSpacing:-0.475,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
 
   // Four funnel stages: a darkening chip and a tan-outlined section label.
+  // A stage may be a plain label string or {label, code}.
   (cfg.stages || []).slice(0, 4).forEach(function (st, r) {
+    if (typeof st === 'string') st = { label: st };
     var top = ROW_T[r], bot = ROW_B[r], mid = (top + bot) / 2;
-    els.push({ type:'s', x:1.53, y:top, w:0.6, h:bot - top, fill:CHIP[r] });
-    if (st.code) els.push({ type:'t', text:st.code, x:1.58, y:mid - 0.13, w:0.5, h:0.26,
-      font:'B', size:10, color:'white', align:'center', valign:'middle',
+    // Chip sits in the gap between the tan label box (ends x 1.59) and the
+    // first entry column (starts x 2.27) -- it used to start at 1.53 and cut
+    // into the label box.
+    els.push({ type:'s', x:1.68, y:top, w:0.5, h:bot - top, fill:CHIP[r] });
+    if (st.code) els.push({ type:'t', text:st.code, x:1.68, y:mid - 0.13, w:0.5, h:0.26,
+      font:'B', size:9, color:'white', align:'center', valign:'middle',
       caps:false, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
-    els.push({ type:'s', x:0.25, y:mid - 0.5, w:1.34, h:1, fill:'none',
+    // Label box matches the chip's full row height; the caption is centred in it.
+    els.push({ type:'s', x:0.25, y:top, w:1.34, h:bot - top, fill:'none',
       stroke:'#BFA588', strokeWidth:0.5 });
-    if (st.label) els.push({ type:'t', text:st.label, x:0.43, y:mid - 0.42, w:1.12, h:0.84,
-      font:'B', size:11, color:'#BFA588', caps:false, lineSpacing:1,
+    if (st.label) els.push({ type:'t', text:st.label, x:0.43, y:top, w:1.12, h:bot - top,
+      font:'B', size:11, color:'#BFA588', valign:'middle', caps:false, lineSpacing:1,
       insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   });
 
@@ -2021,13 +2182,30 @@ function layout_reportModelCompare(cfg) {
     var y = ROW_T[r0], h = ROW_B[r1] - ROW_T[r0];
 
     els.push({ type:'s', x:x, y:y, w:w, h:h, fill:'none',
-      stroke:'#808080', strokeWidth:0.25 });
+      stroke:'#808080', strokeWidth:0.5 });
 
     var paras = [];
-    if (e.label) paras.push({ runs:[{ text:e.label, size:16, bold:true, color:'white' }] });
-    if (e.copy)  paras.push({ runs:[{ text:e.copy,  size:10, color:'bodyGray' }] });
-    if (paras.length) els.push({ type:'t', x:x + 0.05, y:y + 0.19, w:w - 0.10, h:h - 0.28,
-      font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
+    var _eh = e.label || e.header || '';
+    var _cp = e.copy || '';
+    // Auto-fit: a single-cell entry with long copy overruns its border. Estimate
+    // the height the 16pt head + 10pt body would wrap to at this width and scale
+    // both down (never up) if it exceeds the card. Conservative on purpose --
+    // ~13 chars/in per 10pt so it shrinks a step early rather than a step late.
+    var _pad = 0.14;
+    var _iw = Math.max(0.6, w - _pad * 2), _ih = Math.max(0.5, h - 0.34);
+    var _linesFor = function (t, pt) {
+      var per = Math.max(3, _iw / (pt * 0.0116));
+      return t ? Math.ceil(t.length / per) : 0;
+    };
+    var _need = _linesFor(_eh, 16) * (16 * 1.2 / 72) +
+                (_cp ? 0.08 + _linesFor(_cp, 10) * (10 * 1.2 / 72) : 0);
+    var _sc = _need > _ih ? Math.max(0.58, _ih / _need) : 1;
+    var _hS = Math.round(16 * _sc * 10) / 10;
+    var _bS = Math.max(7, Math.round(10 * _sc * 10) / 10);
+    if (_eh) paras.push({ runs:[{ text:_eh, size:_hS, bold:true, color:'white' }] });
+    if (_cp) paras.push({ runs:[{ text:_cp, size:_bS, color:'bodyGray' }] });
+    if (paras.length) els.push({ type:'t', x:x + _pad, y:y + 0.15, w:w - _pad * 2, h:h - 0.28,
+      font:'B', size:_bS, color:'bodyGray', caps:false, lineSpacing:1.1,
       insets:{l:0.028,t:0.028,r:0.028,b:0.028}, paras:paras });
   });
   return els;
@@ -2052,13 +2230,24 @@ function layout_reportBrandPillars(cfg) {
     font:'H', size:23.8, color:'white', caps:true, lineSpacing:1, charSpacing:-0.475,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
 
-  // Channel chips, top right. Rounded corners: adj=16667 is 16.667% of the
-  // short side, which on a 0.32in chip is a 0.053in radius -- not a full pill.
+  // Channel chips, top right. The source holds one short word per chip
+  // ("Paid" / "Owned" / "Earned") in a fixed 0.98in badge; a longer label
+  // overran it. The chip now sizes to its text -- staying at 0.98in for a
+  // short word, widening to a 1.95in cap, then shrinking the type (floor 8pt)
+  // -- while its right edge stays pinned at 12.90.
+  var CHIP_RIGHT = 12.90;
   (cfg.channels || []).slice(0, 3).forEach(function (ch, i) {
-    els.push({ type:'s', x:11.92, y:PILL_Y[i], w:0.98, h:0.32,
+    var _ct = String(ch || '');
+    var _cs = 11;
+    var _cpad = 0.22;
+    var _cest = _ct.length * (_cs * 0.0079) + _cpad;
+    var _cw = Math.max(0.98, Math.min(1.95, _cest));
+    if (_cest > _cw) _cs = Math.max(8, Math.round(_cs * (_cw - _cpad) / (_cest - _cpad)));
+    var _cx = CHIP_RIGHT - _cw;
+    els.push({ type:'s', x:_cx, y:PILL_Y[i], w:_cw, h:0.32,
       fill:PILL_FILL[i], radius:0.32 * 0.16667 });
-    els.push({ type:'t', text:ch, x:11.92, y:PILL_Y[i] + 0.02, w:0.98, h:0.28,
-      font:'B', size:11, color:'white', align:'center', valign:'middle',
+    els.push({ type:'t', text:_ct, x:_cx, y:PILL_Y[i] + 0.02, w:_cw, h:0.28,
+      font:'B', size:_cs, color:'white', align:'center', valign:'middle',
       caps:false, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
   });
 
@@ -2087,16 +2276,36 @@ function layout_reportBrandPillars(cfg) {
   if ((cfg.sections || []).length > 1)
     els.push({ type:'s', x:6.82, y:1.9, w:0.008, h:0.91, fill:'#CAA380' });
 
-  // Three outlined pillars.
+  // Three outlined pillars. Source: header 20pt Mazda Type Bold #CFB496,
+  // copy 10pt Arial #808080, in a 1.36in box. Header and copy are separate
+  // elements (different fonts) and both fit-to-box: the header shrinks to
+  // one line, then the copy shrinks (floor 7pt) so it clears the bottom rule.
+  var PB_Y = 3.07, PB_H = 1.36;
   (cfg.pillars || []).slice(0, 3).forEach(function (p, i) {
-    els.push({ type:'s', x:COL_X[i], y:3.07, w:COL_W[i], h:1.36, fill:'none',
+    var bx = COL_X[i], bw = COL_W[i];
+    els.push({ type:'s', x:bx, y:PB_Y, w:bw, h:PB_H, fill:'none',
       stroke:'#CAA380', strokeWidth:0.5 });
-    var paras = [];
-    if (p.header) paras.push({ runs:[{ text:p.header, size:20, color:'#CFB496' }] });
-    if (p.copy)   paras.push({ runs:[{ text:p.copy,   size:10, color:'bodyGray' }] });
-    if (paras.length) els.push({ type:'t', x:COL_X[i] + 0.03, y:3.19, w:COL_W[i] - 0.08, h:1.12,
-      font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
-      insets:{l:0.028,t:0.028,r:0.028,b:0.028}, paras:paras });
+    var _ph = String(p.header || ''), _pc = String(p.copy || '');
+    var _tw = bw - 0.20;
+    var _ty = PB_Y + 0.12;
+    var _hH = 0;
+    if (_ph) {
+      var _hS = Math.max(11, Math.min(20, Math.floor(_tw / (_ph.length * 0.0116 + 0.001))));
+      _hH = _hS / 72 * 1.2 + 0.05;
+      els.push({ type:'t', text:_ph, x:bx + 0.10, y:_ty, w:_tw, h:_hH,
+        font:'H', size:_hS, color:'#CFB496', caps:false, lineSpacing:1,
+        insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+      _ty += _hH;
+    }
+    if (_pc) {
+      var _cAvail = (PB_Y + PB_H) - _ty - 0.08;
+      var _cS = 10;
+      var _cl = function (pt) { return Math.ceil(_pc.length / Math.max(3, _tw / (pt * 0.0113))); };
+      while (_cS > 7 && _cl(_cS) * (_cS / 72 * 1.18) > _cAvail) _cS -= 0.5;
+      els.push({ type:'t', text:_pc, x:bx + 0.10, y:_ty, w:_tw, h:_cAvail + 0.06,
+        font:'B', size:_cS, color:'bodyGray', caps:false, lineSpacing:1.1,
+        insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+    }
   });
 
   // Target row -- no outline. The middle entry is italic in the source; the
@@ -2151,15 +2360,21 @@ function layout_reportPlatformMatrix(cfg) {
   var SPOKE_R = 0.605, BOX_W = 2.22, BOX_H = 1.0, OVERLAP = 0.35;
   var MAX_SPOKES = 8;
 
-  if (cfg.title) els.push({ type:'t', text:cfg.title, x:3.81, y:0.23, w:5.71, h:0.64,
-    font:'H', size:35, color:'bodyGray', align:'center', caps:true, lineSpacing:0.8,
+  // Centered title over the diagram: 35pt suits the source's 2-word title;
+  // step down + widen for longer real ones so a 2-line wrap doesn't land on
+  // the top spoke node.
+  if (cfg.title) els.push({ type:'t', text:cfg.title, x:2.5, y:0.18, w:8.33,
+    h:0.72, font:'H', size:(cfg.title.length <= 22 ? 35 : (cfg.title.length <= 34 ? 24 : 19)),
+    color:'bodyGray', align:'center', caps:true, lineSpacing:0.85,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
 
   // Capacity. Boxes are 2.22 x 1.00 and stack on the outer side of their spoke;
   // the ring spans 4.7in vertically, so about four boxes fit per side before
   // they collide. Eight is therefore the ceiling -- which is exactly what the
   // source uses. Extras are dropped rather than allowed to overlap.
-  var spokes = cfg.spokes || [];
+  var spokes = (cfg.spokes || []).map(function (s) {
+    return (typeof s === 'string') ? { label: s } : (s || {});
+  });
   if (spokes.length > MAX_SPOKES) {
     console.warn('[deck-layouts] reportPlatformMatrix takes at most ' + MAX_SPOKES +
       ' spokes; ' + (spokes.length - MAX_SPOKES) + ' dropped. More would overlap.');
@@ -2167,55 +2382,86 @@ function layout_reportPlatformMatrix(cfg) {
   }
   var n = spokes.length;
 
-  // Connectors first, so every disc paints over them.
+  // Ring positions. Offset by half a step (PI/n) so no spoke lands on a pure
+  // axis -- a top/bottom spoke's card would otherwise reach sideways straight
+  // into the next spoke's circle. At n=8 this is the source's 4-per-side ring.
+  var A0 = -Math.PI / 2 + Math.PI / (n || 1);
   var pos = spokes.map(function (s, i) {
-    var a = -Math.PI / 2 + (2 * Math.PI * i) / (n || 1);
+    var a = A0 + (2 * Math.PI * i) / (n || 1);
     return { a:a, x:HX + RX * Math.cos(a), y:HY + RY * Math.sin(a), left:Math.cos(a) < 0 };
   });
+
+  // Connectors first, so every disc paints over them.
   pos.forEach(function (p) {
     els.push({ type:'ln', x:HX, y:HY, w:p.x - HX, h:p.y - HY,
       color:'#7F7F7F', weight:0.38 });
   });
 
-  // Box slots, de-collided per side. Two spokes on the same side can land
-  // closer together than a box is tall, so each side is walked top-down and any
-  // box that would touch its predecessor is pushed clear.
-  var used = { left:[], right:[] };
-  pos.forEach(function (p, i) {
-    var side = p.left ? 'left' : 'right';
-    var by = p.y - SPOKE_R + 0.47;
+  // Card vertical slots. Walk each side top-down: push a card clear of the
+  // previous card AND clear of any same-side neighbour circle it would sit
+  // behind. CIRC_KEEP is the dashed-ring radius plus a small margin.
+  var CIRC_KEEP = 0.68;
+  var byIdx = pos.map(function (_, i) { return i; })
+                 .sort(function (a, b) { return pos[a].y - pos[b].y; });
+  var used = { left: [], right: [] };
+  byIdx.forEach(function (i) {
+    var p = pos[i], side = p.left ? 'left' : 'right';
+    var by = p.y - BOX_H / 2;
     used[side].forEach(function (prev) {
-      if (Math.abs(by - prev) < BOX_H + 0.06) by = prev + BOX_H + 0.06;
+      if (by < prev + BOX_H + 0.08) by = prev + BOX_H + 0.08;
     });
-    by = Math.max(0.95, Math.min(7.5 - BOX_H - 0.1, by));
+    // clear same-side circles that sit below this card's own spoke
+    pos.forEach(function (q, j) {
+      if (j === i || (q.left ? 'left' : 'right') !== side || q.y <= p.y + 0.01) return;
+      if (by + BOX_H > q.y - CIRC_KEEP && by < q.y + CIRC_KEEP) by = q.y - CIRC_KEEP - BOX_H;
+    });
+    by = Math.max(0.9, Math.min(7.5 - BOX_H - 0.1, by));
     used[side].push(by);
     p.by = by;
   });
 
+  // PASS 1 -- all dotted cards + their text (drawn UNDER every circle).
   pos.forEach(function (p, i) {
     var s = spokes[i];
-    if (s.header || s.copy) {
-      var bx = p.left ? (p.x - SPOKE_R + OVERLAP - BOX_W) : (p.x + SPOKE_R - OVERLAP);
-      bx = Math.max(0.1, Math.min(13.33 - BOX_W - 0.1, bx));
-      els.push({ type:'s', x:bx, y:p.by, w:BOX_W, h:BOX_H, fill:'none',
-        stroke:'#9B9B9B', strokeWidth:1, dash:'dot', radius:0.118 });
-      var paras = [];
-      if (s.header) paras.push({ runs:[{ text:s.header, size:6, bold:true }] });
-      if (s.copy)   paras.push({ runs:[{ text:s.copy,   size:6 }] });
-      els.push({ type:'t', x:bx + (p.left ? 0.08 : 0.42), y:p.by + 0.1,
-        w:BOX_W - 0.5, h:BOX_H - 0.2,
-        font:'B', size:6, color:'#7F7F7F', caps:false, lineSpacing:1.15,
-        insets:{l:0.028,t:0.028,r:0.028,b:0.028}, paras:paras });
-    }
+    var _cHead = (s.label && s.header && s.header !== s.label) ? s.header : '';
+    var _cBody = s.copy || '';
+    if (!(_cHead || _cBody)) return;
+    // Left cards are floored at x 1.95 so they never reach into the category
+    // column (which ends ~2.1); right cards clamp to the slide edge.
+    var bx = p.left ? Math.max(1.95, p.x - SPOKE_R + OVERLAP - BOX_W)
+                    : Math.min(13.33 - BOX_W - 0.1, p.x + SPOKE_R - OVERLAP);
+    els.push({ type:'s', x:bx, y:p.by, w:BOX_W, h:BOX_H, fill:'none',
+      stroke:'#9B9B9B', strokeWidth:1, dash:'dot', radius:0.118 });
+    // Text sits on the FAR side of the card from the spoke and stops short of
+    // the spoke's inner disc; shrink toward 4.5pt if the copy would overrun.
+    var _tx = p.left ? (bx + 0.10) : (bx + 0.55);
+    var _tw = p.left ? Math.max(0.9, (p.x - 0.52) - _tx) : (BOX_W - 0.67);
+    var _tcnt = (_cHead ? _cHead.length + 2 : 0) + _cBody.length;
+    var _tsz = 6;
+    var _lpi = function (pt) { return Math.max(6, _tw / (pt * 0.0104)); };
+    while (_tsz > 4.5 && Math.ceil(_tcnt / _lpi(_tsz)) * (_tsz * 1.18 / 72) > (BOX_H - 0.18)) _tsz -= 0.5;
+    var paras = [];
+    if (_cHead) paras.push({ runs:[{ text:_cHead, size:_tsz, bold:true }] });
+    if (_cBody) paras.push({ runs:[{ text:_cBody, size:_tsz }] });
+    els.push({ type:'t', x:_tx, y:p.by + 0.09, w:_tw, h:BOX_H - 0.16,
+      font:'B', size:_tsz, color:'#7F7F7F', caps:false, lineSpacing:1.16,
+      insets:{l:0.028,t:0.028,r:0.028,b:0.028}, paras:paras });
+  });
 
-    // Outer ring is DASHED; the inner disc is solid and carries the shadow.
+  // PASS 2 -- all spoke circles + labels, so a circle always paints cleanly
+  // over any card corner tucked behind it.
+  pos.forEach(function (p, i) {
+    var _circ = spokes[i].label || spokes[i].header || '';
     els.push({ type:'o', x:p.x - 0.605, y:p.y - 0.605, w:1.21, h:1.21,
       fill:'#EFF0F3', stroke:'#BFA588', strokeWidth:0.5, dash:'dash' });
     els.push({ type:'o', x:p.x - 0.44, y:p.y - 0.44, w:0.88, h:0.88,
       fill:'#EEEEEE', stroke:'#90A291', strokeWidth:2.5, shadow:true });
-    if (s.label) els.push({ type:'t', text:s.label, x:p.x - 0.44, y:p.y - 0.44, w:0.88, h:0.88,
-      font:'B', size:7, color:'asphalt', align:'center', valign:'middle',
-      caps:true, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+    if (_circ) {
+      var _cz = _circ.length <= 10 ? 7 : (_circ.length <= 18 ? 6 : 5);
+      els.push({ type:'t', text:_circ, x:p.x - 0.44, y:p.y - 0.44, w:0.88, h:0.88,
+        font:'B', size:_cz, color:'asphalt', align:'center', valign:'middle',
+        caps:true, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+    }
   });
 
   // Hub, last, so it wins every overlap. Both discs are solid and shadowed.
@@ -2223,26 +2469,38 @@ function layout_reportPlatformMatrix(cfg) {
     fill:'#EEEEEE', stroke:'#7F7F7F', strokeWidth:1, shadow:true });
   els.push({ type:'o', x:HX - 0.705, y:HY - 0.7, w:1.41, h:1.4,
     fill:'#EEEEEE', stroke:'#BFA588', strokeWidth:0.5, shadow:true });
+  // Hub name sits in a 1.41in disc. 20.5pt only fits a very short source name
+  // ("Drive"); real names ("Brand platform") orphaned a letter onto its own
+  // line, so scale the name down by length.
+  var _hubName = (cfg.hub && cfg.hub.name) || '';
+  var _hubNameSize = _hubName.length <= 6 ? 20.5 : (_hubName.length <= 15 ? 13 : 10);
   if (cfg.hub) els.push({ type:'t', x:HX - 0.705, y:HY - 0.7, w:1.41, h:1.4,
     font:'B', size:10.5, color:'asphalt', align:'center', valign:'middle',
     caps:true, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02},
     paras:[{ runs:[{ text:cfg.hub.label || '', size:10.5 }] },
-           { runs:[{ text:cfg.hub.name || '', size:20.5 }] }] });
+           { runs:[{ text:_hubName, size:_hubNameSize }] }] });
 
-  // Category chips: light-grey gradient disc, white outline, black label, with
+  // Category chips: light-gray gradient disc, white outline, black label, with
   // #7F7F7F bullet text beside it.
-  (cfg.categories || []).slice(0, 6).forEach(function (c, i) {
-    var cy = 1.04 + i * 0.79;
-    els.push({ type:'o', x:0.18, y:cy, w:0.54, h:0.54,
+  var _cats = (cfg.categories || []).slice(0, 6).map(function (c, i) {
+    return (typeof c === 'string') ? { code: String(i + 1).padStart(2, '0'), text: c } : c;
+  });
+  // Spread the rows over the available height so a 2-line description never
+  // crowds the next chip.
+  var _cgap = _cats.length > 1 ? Math.min(0.98, (5.9 - 1.04) / (_cats.length - 1)) : 0.98;
+  _cats.forEach(function (c, i) {
+    var cy = 1.04 + i * _cgap;
+    els.push({ type:'o', x:0.16, y:cy, w:0.5, h:0.5,
       gradient:{ from:'#EEEEEE', to:'#E8E8E8', angle:90 },
       stroke:'white', strokeWidth:1, shadow:{ offset:0.125 } });
-    if (c.code) els.push({ type:'t', text:c.code, x:0.18, y:cy, w:0.54, h:0.54,
-      font:'B', size:7, color:'asphalt', align:'center', valign:'middle',
+    if (c.code) els.push({ type:'t', text:c.code, x:0.16, y:cy, w:0.5, h:0.5,
+      font:'B', size:6.5, color:'asphalt', align:'center', valign:'middle',
       caps:true, lineSpacing:1, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
-    if (c.text) els.push({ type:'t', x:0.82, y:cy - 0.01, w:1.6, h:0.56,
-      font:'B', size:7, color:'#7F7F7F', caps:false, lineSpacing:1.15,
+    // Description column ends by x~2.0 so it never meets a left spoke card.
+    if (c.text) els.push({ type:'t', x:0.74, y:cy - 0.13, w:1.28, h:0.76,
+      font:'B', size:6.5, color:'#7F7F7F', valign:'middle', caps:false, lineSpacing:1.15,
       insets:{l:0.028,t:0.028,r:0.028,b:0.028},
-      paras:[{ runs:[{ text:c.text }], bullet:true, marL:0.1, indent:-0.1 }] });
+      paras:[{ runs:[{ text:c.text }], bullet:true, marL:0.09, indent:-0.09 }] });
   });
   return els;
 }
@@ -2264,8 +2522,9 @@ function layout_reportEcosystemTree(cfg) {
   var SPAN_L = 1.66, SPAN_R = 11.665;
   var DISC = { from:'#EEEEEE', to:'#E8E8E8', angle:90 };
 
-  if (cfg.title) els.push({ type:'t', text:cfg.title, x:3.9, y:0.15, w:5.53, h:0.64,
-    font:'H', size:35, color:'bodyGray', align:'center', caps:true, lineSpacing:0.8,
+  if (cfg.title) els.push({ type:'t', text:cfg.title, x:2.5, y:0.12, w:8.33,
+    h:0.7, font:'H', size:(cfg.title.length <= 22 ? 35 : (cfg.title.length <= 34 ? 24 : 19)),
+    color:'bodyGray', align:'center', caps:true, lineSpacing:0.85,
     insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
 
   // Corner blocks. The source flattens circle and icon into one 446-point path;
@@ -2331,6 +2590,9 @@ function layout_reportEcosystemTree(cfg) {
     });
 
     branches.forEach(function (b, i) {
+      // A branch can be a plain label string or {label, icon, items}. Callers
+      // reach for the string form, so coerce it rather than render an empty disc.
+      if (typeof b === 'string') b = { label: b };
       var x = colX[i];
       els.push({ type:'o', x:x - SMALL_R, y:SMALL_CY - SMALL_R, w:SMALL_R * 2, h:SMALL_R * 2,
         gradient:DISC, stroke:'white', strokeWidth:1, shadow:{ offset:0.1 } });
@@ -2410,7 +2672,7 @@ function layout_reportMetricTable(cfg) {
         { h: 1.55, cells: [{ text: 'DCP', tone: 'dark' }] } ] },
     { header: 'Outcomes & KPI', shadow: SHADOW_DEFAULT, gap: GAP, size: 6,
       groups: [
-        { h: 2.11, cells: [{ text: 'Build New Demand Consideration amongst non-owners', tone: 'lt' }] },
+        { h: 2.11, cells: [{ text: 'Build New Demand Consideration among non-owners', tone: 'lt' }] },
         { h: 1.79, cells: [{ text: 'Capture Existing Demand', tone: 'mid' }] },
         { h: 1.55, cells: [{ text: 'Convert Intent to Sales', tone: 'dark' }] } ] },
     { header: 'Channel', stroke: STROKE_DEFAULT, gap: GAP,
@@ -2446,7 +2708,7 @@ function layout_reportMetricTable(cfg) {
   columns.slice(0, 7).forEach(function (col, ci) {
     var x = COL_X[ci], w = COL_W, gap = col.gap || 0;
 
-    // Header cell -- every column gets one, dark grey fill. Headings never
+    // Header cell -- every column gets one, dark gray fill. Headings never
     // take an outline or a shadow, regardless of the column's own treatment.
     els.push({ type: 's', x: x, y: HEADER_Y, w: w, h: HEADER_H, fill: '#55555C' });
     els.push({ type: 't', text: col.header || '', x: x, y: HEADER_Y, w: w, h: HEADER_H,
@@ -2455,11 +2717,20 @@ function layout_reportMetricTable(cfg) {
 
     // Body: independent stack of groups, each group's cells sharing its height.
     var y = COL_TOP;
+    // Callers that don't hand-tune band heights: split the body area evenly.
+    var BODY_BOTTOM = 7.06;
+    var autoGroupH = ((col.groups && col.groups.length) ? (BODY_BOTTOM - COL_TOP) / col.groups.length : 0);
     (col.groups || []).forEach(function (group) {
-      var cells = group.cells || [];
+      // `cells` is the code-level name; accept `items` (what callers reach for,
+      // consistent with every other list-bearing layout) and coerce bare
+      // strings to {text} so a plain array of labels renders.
+      var cells = (group.cells || group.items || []).map(function (c) {
+        return (typeof c === 'string') ? { text: c } : c;
+      });
+      var groupH = group.h || autoGroupH;
       var specified = cells.reduce(function (s, c) { return s + (c.h || 0); }, 0);
       var unspecified = cells.filter(function (c) { return !c.h; }).length;
-      var autoH = unspecified ? Math.max(0, (group.h - specified) / unspecified) : 0;
+      var autoH = unspecified ? Math.max(0, (groupH - specified) / unspecified) : 0;
 
       cells.forEach(function (cell) {
         var h = (cell.h || autoH) - gap;
@@ -2552,11 +2823,15 @@ function layout_reportChapterOpener(cfg) {
   els.push({ type:'t', text:cfg.text2 || 'CHAPTER 1', x:1.16, y:2.78, w:4.84, h:0.17, font:'B', size:7.5, color:'bodyGray', bold:true, valign:'middle', caps:true, lineSpacing:1, charSpacing:1.87, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:cfg.text3 || 'CHAPTER 2 \u00b7 TODAY', x:7.52, y:2.81, w:4.84, h:0.11, font:'B', size:7.5, color:'accentDim', bold:true, valign:'middle', caps:true, lineSpacing:1, charSpacing:1.87 });
   // Headline pair, top-anchored so a wrap to a second line grows down into
-  // the empty space above the primary body copy rather than up into the
-  // eyebrow directly above it.
-  els.push({ type:'t', text:cfg.text4 || 'Lorem Ipsum', x:1.17, y:3.06, w:4.82, h:1.1, font:'B', size:33, color:'nearBlack', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:7.53, y:3.06, w:4.82, h:1.1, font:'B', size:33, color:'white', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  else els.push({ type:'t', text:'Lorem Ipsum', x:7.53, y:3.06, w:4.82, h:1.1, font:'B', size:33, color:'white', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  // the empty space above the primary body copy. 33pt suits the source's
+  // 1-2 word headline; step down for longer real ones so a 2-line wrap still
+  // clears the body copy at y4.43.
+  var _h4 = cfg.text4 || 'Lorem Ipsum';
+  var _hR = (cfg.subhead || cfg.subtitle || 'Lorem Ipsum');
+  var _hlen = Math.max(_h4.length, _hR.length);
+  var _hsz = (_hlen <= 14) ? 33 : (_hlen <= 26 ? 24 : 19);
+  els.push({ type:'t', text:_h4, x:1.17, y:3.06, w:4.82, h:1.1, font:'B', size:_hsz, color:'nearBlack', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:_hR, x:7.53, y:3.06, w:4.82, h:1.1, font:'B', size:_hsz, color:'white', bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   // Fixed decorative arrow between the two boxes -- not a content slot.
   els.push({ type:'t', text:'\u2192', x:6.37, y:4.11, w:0.78, h:0.89, font:'B', size:60, color:'accentDim', bold:true, align:'center', valign:'middle', caps:false, lineSpacing:1 });
   // Primary body copy: source declares 40pt raw -> 40 / 2.0005 = 20pt engine.
@@ -2614,16 +2889,22 @@ function layout_reportStrategyStack(cfg) {
 
   // Wide divider box: point/point headline (white, tan) + gray body on the
   // left; caps tan insight header + gray body on the right.
-  els.push({ type:'s', x:0.54, y:2.01, w:11.89, h:1.14, fill:'#1F1F1F', stroke:STROKE, strokeWidth:0.75, radius:R+0.01, shadow:SHADOW });
-  els.push({ type:'t', x:0.8, y:2.18, w:6.02, h:0.44, font:'B', size:24, bold:true, valign:'bottom', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035},
+  // The source's insight bar carries a one-line proof point and a one-line
+  // insight header. Real copy wraps, so the bar is taller and the two headline
+  // texts step down + top-anchor so a 2-line wrap doesn't collide with the
+  // body copy beneath it.
+  var _psz = ((cfg.pointOne || '').length + (cfg.pointTwo || '').length <= 34) ? 24 : 17;
+  var _isz = ((cfg.insightHead || '').length <= 22) ? 11 : 9;
+  els.push({ type:'s', x:0.54, y:2.01, w:11.89, h:1.42, fill:'#1F1F1F', stroke:STROKE, strokeWidth:0.75, radius:R+0.01, shadow:SHADOW });
+  els.push({ type:'t', x:0.8, y:2.14, w:6.02, h:0.62, font:'B', size:_psz, bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035},
     paras:[{ runs:[
       { text:(cfg.pointOne || '') + ' ', color:'white' },
       { text:cfg.pointTwo || '', color:'#D2B08D' }
     ] }] });
-  els.push({ type:'s', x:7.05, y:2.22, w:0.01, h:0.71, fill:'ltGray' }); // divider rule
-  els.push({ type:'t', text:cfg.pointBody || '', x:0.8, y:2.59, w:6.02, h:0.43, font:'B', size:11, color:'ltGray', caps:false, lineSpacing:1.05, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:cfg.insightHead || '', x:7.23, y:2.18, w:4.95, h:0.24, font:'B', size:11, color:'#D2B08D', bold:true, valign:'top', caps:true, lineSpacing:1.05, charSpacing:2.44, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.insightBody || '', x:7.23, y:2.44, w:4.95, h:0.53, font:'B', size:11, color:'ltGray', caps:false, lineSpacing:1.05, insets:{l:0.104,t:0.035,r:0.104,b:0.104} });
+  els.push({ type:'s', x:7.05, y:2.18, w:0.01, h:1.08, fill:'ltGray' }); // divider rule
+  els.push({ type:'t', text:cfg.pointBody || '', x:0.8, y:2.82, w:6.02, h:0.5, font:'B', size:11, color:'ltGray', caps:false, lineSpacing:1.05, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:cfg.insightHead || '', x:7.23, y:2.14, w:4.95, h:0.4, font:'B', size:_isz, color:'#D2B08D', bold:true, valign:'top', caps:true, lineSpacing:1.05, charSpacing:2.44, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:cfg.insightBody || '', x:7.23, y:2.62, w:4.95, h:0.7, font:'B', size:10, color:'ltGray', caps:false, lineSpacing:1.05, insets:{l:0.104,t:0.035,r:0.104,b:0.104} });
 
   // Three-across panels. Each: tan "NEXT SECTION"-style tag, white caps
   // subhead, then either repeatable {head,body} sections or a bullet list
@@ -2704,7 +2985,7 @@ function layout_reportStrategyStack(cfg) {
 //
 // cfg.panels: array of 4 { tone:'dark'|'tan', icon, header, date, sections }
 //   sections: array of 3 { label, items } -- items is a list where each
-//   entry is a plain string (grey bullet) or { text, bold, color } for a
+//   entry is a plain string (gray bullet) or { text, bold, color } for a
 //   bullet that needs to stand out, e.g. an approval-deadline date.
 // tone controls which of the two source treatments a column gets: 'dark'
 // (asphalt header/icon, tan date text) or 'tan' (accentDim header/icon,
@@ -2720,7 +3001,7 @@ function layout_reportJourneyMap(cfg) {
 
   if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:0.61, y:0.54, w:12.12, h:0.29, font:'B', size:14.5, color:'accentDim', valign:'bottom', caps:true, lineSpacing:0.9, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   els.push({ type:'t', text:cfg.title || '', x:0.61, y:0.85, w:12.12, h:0.5, font:'H', size:24, color:'titleGray', caps:true, lineSpacing:1, charSpacing:2.64, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:cfg.hereLabel || 'WE ARE HERE', x:4.13, y:1.43, w:1.8, h:0.16, font:'B', size:10, color:'#8D7057', bold:true, align:'center', valign:'middle', caps:true, lineSpacing:1, charSpacing:1.7 });
+  els.push({ type:'t', text:(typeof cfg.hereLabel === 'string' ? cfg.hereLabel : 'WE ARE HERE'), x:4.13, y:1.43, w:1.8, h:0.16, font:'B', size:10, color:'#8D7057', bold:true, align:'center', valign:'middle', caps:true, lineSpacing:1, charSpacing:1.7 });
   // Connector: a real line (was a 0.01in filled rectangle, which can't carry
   // arrowheads), 3pt raw / 2.0005 = 1.5pt, both ends arrowed per source.
   els.push({ type:'ln', x:5.03, y:1.69, w:0, h:0.29, color:'ltGray', weight:1.5, arrows:'both' });
@@ -2749,10 +3030,17 @@ function layout_reportJourneyMap(cfg) {
     // source -- already correct).
     els.push({ type:'s', x:x, y:2.09, w:COL_W, h:0.77, fill:headerFill });
 
-    // Icon: a real circle (was a filled rectangle) with room for one white
-    // character.
+    // Icon disc. p.icon is an icon NAME (compass, camera, ...) -> render the
+    // glyph; a single char or number -> render as text; empty -> the column
+    // index. Previously p.icon was always drawn as text, so an icon name
+    // rendered as a clipped word fragment inside the 0.32in disc.
     els.push({ type:'o', x:x+0.37, y:2.32, w:0.32, h:0.32, fill:'gray' });
-    els.push({ type:'t', text:p.icon || String(i+1), x:x+0.37, y:2.32, w:0.32, h:0.32, font:'B', size:12, color:'white', align:'center', valign:'middle', caps:false, lineSpacing:1 });
+    var _pi = p.icon || '';
+    if (/^[a-z][a-z0-9-]+$/.test(_pi)) {
+      els.push({ type:'i', icon:_pi, x:x+0.435, y:2.385, w:0.19, h:0.19, color:'white' });
+    } else {
+      els.push({ type:'t', text:_pi || String(i+1), x:x+0.37, y:2.32, w:0.32, h:0.32, font:'B', size:12, color:'white', align:'center', valign:'middle', caps:false, lineSpacing:1 });
+    }
 
     // Width widened from the source's literal 1.27in -- at 13pt with 3pt
     // tracking that fit "DEFINE" but wrapped "DEVELOP" into the icon above it.
@@ -2760,7 +3048,7 @@ function layout_reportJourneyMap(cfg) {
     els.push({ type:'t', text:p.date || '', x:x+1.98, y:2.4, w:0.8, h:0.12, font:'B', size:8, color:dateColor, bold:true, align:'right', caps:true, lineSpacing:1 });
 
     // Three sections: caps underlined header + bulleted body. A bullet item
-    // can be a plain string (grey, standard weight) or { text, bold, color }
+    // can be a plain string (gray, standard weight) or { text, bold, color }
     // to call out something like an approval date in black/bold.
     var sections = p.sections || [];
     SECTIONS_Y.forEach(function (sy, si) {
@@ -3016,11 +3304,11 @@ function layout_reportNumberedSteps(cfg) {
 // Agenda. Faithful to template slide 22 -- four distinct pieces:
 //
 //  1. HEADING  one box, one paragraph, a <br/> between two runs:
-//     grey subtitle above black title. 17pt bold ALL CAPS, 90% line spacing.
-//  2. LIST     one box. Each item is a grey NUMBER run + a black TOPIC run at
+//     gray subtitle above black title. 17pt bold ALL CAPS, 90% line spacing.
+//  2. LIST     one box. Each item is a gray NUMBER run + a black TOPIC run at
 //     30pt bold, 110% line spacing. Sub-bullets sit under an item at 15pt bold
 //     black, hanging indent, bullet glyph at 80% of text size.
-//  3. COPY BLOCK  lower left, 10pt grey -- this layout has no footer.
+//  3. COPY BLOCK  lower left, 10pt gray -- this layout has no footer.
 //  4. BACKDROP  two crops of one image at 65.6% opacity behind the list.
 //
 // cfg.items accepts either a plain string or {number, topic, subs:[...]}:
@@ -3042,7 +3330,7 @@ function layout_tableOfContents(cfg) {
   els.push({ type:'img', src:backdrop, x:3.67, y:3.24, w:9.67, h:4.28,
     transparency:34.4, crop:{ r:0.4283, b:0.6825 } });
 
-  // 2 -- heading: grey subtitle over black title, one box, one paragraph
+  // 2 -- heading: gray subtitle over black title, one box, one paragraph
   els.push({ type:'t', x:0.29, y:0.43, w:2.81, h:0.72,
     font:'B', size:17, bold:true, caps:true, lineSpacing:0.9, charSpacing:0,
     color:'bodyGray', insets:{l:0.104,t:0.104,r:0.104,b:0.104},
@@ -3135,7 +3423,11 @@ function layout_thankYouDark(cfg) {
 function layout_content01(cfg) {
   var els = [];
   ph(els, cfg, 6.62, 0.47, 6.71, 3.44, 0);
-  els.push({ type:'t', text:cfg.title || "", x:0.76, y:3.2, w:5.52, h:0.6, font:'HR', size:35, color:'bodyGray', bold:true, caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  // Step the 35pt source title down for longer real-deck titles so a 2-line
+  // wrap does not run into the photo well below.
+  var _c1t = String(cfg.title || '');
+  var _c1s = _c1t.length <= 16 ? 35 : (_c1t.length <= 26 ? 26 : 20);
+  els.push({ type:'t', text:cfg.title || "", x:0.76, y:3.2, w:5.52, h:0.78, font:'HR', size:_c1s, color:'bodyGray', bold:true, caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 0.81, 4.06, 6.73, 3.44, 1);
   els.push({ type:'t', text:cfg.text || '', x:7.83, y:4.1, w:4.16, h:1.44, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   return els;
@@ -3149,7 +3441,11 @@ function layout_content01(cfg) {
 // ==========================================================
 function layout_content02(cfg) {
   var els = [];
-  els.push({ type:'t', text:cfg.title || "", x:0.76, y:1.38, w:6.09, h:0.6, font:'HR', size:35, color:'bodyGray', bold:true, caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  // Title sits directly above the well strip (y:2.05) with room for one 35pt
+  // line only; shrink longer titles so a wrap does not overrun the strip.
+  var _c2t = String(cfg.title || '');
+  var _c2s = _c2t.length <= 16 ? 35 : (_c2t.length <= 27 ? 24 : 19);
+  els.push({ type:'t', text:cfg.title || "", x:0.76, y:1.38, w:6.09, h:0.6, font:'HR', size:_c2s, color:'bodyGray', bold:true, caps:true, lineSpacing:0.8, charSpacing:-0.7, valign:'bottom', insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:cfg.text || '', x:9.51, y:2.01, w:2.99, h:1.79, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 0.81, 2.05, 2.31, 1.75, 0);
   ph(els, cfg, 3.2, 2.05, 1.4, 1.75, 1);
@@ -3167,9 +3463,14 @@ function layout_content02(cfg) {
 // ==========================================================
 function layout_content03(cfg) {
   var els = [];
-  els.push({ type:'t', text:cfg.title || "", x:0.63, y:2.01, w:4.23, h:0.6, font:'HR', size:35, color:'bodyGray', bold:true, caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  // Source title is two words at 35pt. Real decks pass longer descriptive
+  // titles that wrapped to three lines and collided with the body copy, so
+  // step the size down by length and give the box room for a 2-3 line wrap.
+  var _c3t = String(cfg.title || '');
+  var _c3s = _c3t.length <= 14 ? 35 : (_c3t.length <= 26 ? 24 : 18);
+  els.push({ type:'t', text:cfg.title || "", x:0.63, y:2.01, w:4.30, h:1.10, font:'HR', size:_c3s, color:'bodyGray', bold:true, caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 5.06, 2.03, 8.01, 3.28, 0);
-  els.push({ type:'t', text:cfg.text || '', x:0.65, y:2.66, w:3.31, h:1.79, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:cfg.text || '', x:0.65, y:3.16, w:3.31, h:2.10, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 3.52, 5.42, 1.45, 1.75, 1);
   ph(els, cfg, 5.02, 5.42, 2.85, 1.74, 2);
   ph(els, cfg, 7.98, 5.42, 1.64, 1.75, 3);
@@ -3240,9 +3541,13 @@ function layout_content08(cfg) {
   els.push({ type:'t', text:cfg.text || '', x:0.85, y:2.53, w:2.74, h:2.47, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   ph(els, cfg, 10.12, 3.71, 2.86, 2.79, 2);
   ph(els, cfg, 4.42, 4.68, 2.51, 2.38, 3);
-  els.push({ type:'s', x:11.3, y:5.36, w:0.46, h:0.99, fill:'#040B13' });
-  els.push({ type:'s', x:11.3, y:6.43, w:0.46, h:0.9, fill:'#535B69' });
-  els.push({ type:'s', x:11.3, y:7.4, w:0.46, h:0.9, fill:'#8D7057' });
+  // Palette chips: a horizontal strip tucked under the bottom-right well,
+  // aligned to its left edge and stopping short of its right edge and the
+  // footer line. (Was a vertical stack that overhung the well and ran the
+  // third chip off the bottom of the slide.)
+  els.push({ type:'s', x:10.12, y:6.60, w:0.90, h:0.44, fill:'#040B13' });
+  els.push({ type:'s', x:11.08, y:6.60, w:0.90, h:0.44, fill:'#535B69' });
+  els.push({ type:'s', x:12.04, y:6.60, w:0.90, h:0.44, fill:'#8D7057' });
   return els;
 }
 
@@ -3273,15 +3578,43 @@ function layout_content09(cfg) {
 // Source slide: 29   Background: solid #262626
 // Set slideData.bgColor = "#262626" (engine honours bgColor on export + preview).
 // ==========================================================
+// Three columns, each an optional header row over a body row. Callers reach
+// for text/text2/text3 as the three column bodies (this is what §6.1 documents),
+// so those are primary; items[] still works, either as three body strings or as
+// [{head,body},...]. Legacy subhead/subtitle seeds column 1's header.
+function threeColBody(cfg) {
+  var items = Array.isArray(cfg.items) ? cfg.items : [];
+  var bodies = [cfg.text, cfg.text2, cfg.text3];
+  return {
+    head: function (i) {
+      var it = items[i];
+      if (it && typeof it === 'object' && it.head) return it.head;
+      return (i === 0) ? (cfg.subhead || cfg.subtitle || '') : '';
+    },
+    body: function (i) {
+      var it = items[i];
+      if (it && typeof it === 'object') return it.body || '';
+      if (typeof it === 'string') return it;
+      return bodies[i] || '';
+    }
+  };
+}
+function threeColRows(els, cfg, headColor, bodyColor) {
+  var COLX = [0.9, 5.02, 9.08];
+  var m = threeColBody(cfg);
+  COLX.forEach(function (x, i) {
+    var h = m.head(i);
+    if (h) els.push({ type:'t', text:h, x:x, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:headColor, caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  });
+  COLX.forEach(function (x, i) {
+    els.push({ type:'t', text:m.body(i), x:x, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:bodyColor, caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  });
+}
+
 function layout_threeColDark(cfg) {
   var els = [];
   els.push({ type:'t', text:cfg.title || "", x:0.9, y:1.91, w:11.53, h:0.79, font:'HR', size:35, color:'white', valign:'bottom', caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:0.9, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:'lt2', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text || '', x:5.02, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:'lt2', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text2 || '', x:9.08, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:'lt2', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.9, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:5.02, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:9.08, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  threeColRows(els, cfg, 'lt2', 'bodyGray');
   return els;
 }
 
@@ -3294,12 +3627,7 @@ function layout_threeColDark(cfg) {
 function layout_threeColLight(cfg) {
   var els = [];
   els.push({ type:'t', text:cfg.title || "", x:0.9, y:1.91, w:11.53, h:0.79, font:'H', size:35, color:'bodyGray', valign:'bottom', caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:0.9, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:'asphalt', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text || '', x:5.02, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:'asphalt', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text2 || '', x:9.08, y:3.2, w:2.97, h:0.69, font:'B', size:13, color:'asphalt', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.9, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:5.02, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:9.08, y:3.96, w:3.4, h:1.59, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  threeColRows(els, cfg, 'asphalt', 'bodyGray');
   return els;
 }
 
@@ -3309,15 +3637,33 @@ function layout_threeColLight(cfg) {
 // Source slide: 26   Background: solid #262626
 // Set slideData.bgColor = "#262626" (engine honours bgColor on export + preview).
 // ==========================================================
+
+// Slot resolution shared by the three twoRows variants. Callers reach for
+// text / text2 as the two row bodies ("2 labeled rows"); when text2 is
+// present that reading wins and row-2's label comes from subhead2. Without
+// text2 the legacy shape holds: text is row-2's label and items[0..2] carry
+// the bodies. items[1] is always the small left-column caption.
+function twoRowSlots(cfg) {
+  var items = Array.isArray(cfg.items) ? cfg.items : [];
+  var pair = (cfg.text2 != null);
+  return {
+    r1label: cfg.subhead || cfg.subtitle || '',
+    r1body:  pair ? (cfg.text || '') : (items[0] || ''),
+    leftCap: items[1] || '',
+    r2label: pair ? (cfg.subhead2 || '') : (cfg.text || ''),
+    r2body:  pair ? (cfg.text2 || '') : (items[2] || '')
+  };
+}
 function layout_twoRowsDark(cfg) {
   var els = [];
+  var s = twoRowSlots(cfg);
   els.push({ type:'s', x:5.13, y:1.96, w:0.01, h:4.01, fill:'ltGray' }); // rule
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'lt2', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (s.r1label) els.push({ type:'t', text:s.r1label, x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'lt2', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.r1body, x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   els.push({ type:'t', text:cfg.title || "", x:0.73, y:3.11, w:4.08, h:0.79, font:'H', size:35, color:'paper', align:'right', valign:'bottom', caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'paper', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text || '', x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'lt2', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.leftCap, x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'paper', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (s.r2label) els.push({ type:'t', text:s.r2label, x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'lt2', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.r2body, x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   return els;
 }
 
@@ -3329,14 +3675,15 @@ function layout_twoRowsDark(cfg) {
 // ==========================================================
 function layout_twoRowsLight(cfg) {
   var els = [];
+  var s = twoRowSlots(cfg);
   els.push({ type:'s', x:5.13, y:1.96, w:0.01, h:4.01, fill:'ltGray' }); // rule
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (s.r1label) els.push({ type:'t', text:s.r1label, x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.r1body, x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   els.push({ type:'t', text:cfg.title || "", x:0.73, y:3.11, w:4.08, h:0.79, font:'H', size:35, color:'bodyGray', align:'right', valign:'bottom', caps:true, lineSpacing:0.8, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['thankyou_texture.png']) || A+'backgrounds/thankyou_texture.png', x:3.67, y:3.24, w:9.67, h:4.28, transparency:34.4, crop:{"r": 0.4283, "b": 0.6825} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'bodyGray', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text || '', x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.leftCap, x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'bodyGray', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (s.r2label) els.push({ type:'t', text:s.r2label, x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.r2body, x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   return els;
 }
 
@@ -3348,13 +3695,14 @@ function layout_twoRowsLight(cfg) {
 // ==========================================================
 function layout_twoRowsLightAlt(cfg) {
   var els = [];
+  var s = twoRowSlots(cfg);
   els.push({ type:'s', x:5.13, y:1.96, w:0.01, h:4.01, fill:'ltGray' }); // rule
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (s.r1label) els.push({ type:'t', text:s.r1label, x:6.21, y:2.11, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.r1body, x:6.21, y:2.6, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   els.push({ type:'t', text:cfg.title || "", x:0.73, y:3.11, w:4.08, h:0.79, font:'H', size:35, color:'bodyGray', align:'right', valign:'bottom', caps:true, lineSpacing:0.8, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'bodyGray', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.text || '', x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.leftCap, x:0.73, y:3.79, w:4.08, h:0.36, font:'B', size:10, color:'bodyGray', align:'right', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  if (s.r2label) els.push({ type:'t', text:s.r2label, x:6.21, y:3.84, w:2.97, h:0.45, font:'B', size:13, color:'asphalt', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:s.r2body, x:6.21, y:4.32, w:5.06, h:1.06, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
   return els;
 }
 
@@ -3510,8 +3858,12 @@ function layout_castingGrid(cfg) {
   var colX = [1.13, 3.93, 6.72, 9.52];
   for (var i = 0; i < 4; i++) {
     ph(els, cfg, colX[i], 2.15, 2.58, 2.72);
-    els.push({ type:'t', text: 'Name: ' + ((items[i] && items[i].name) || ''),
-      x:colX[i], y:4.98, w:1.70, h:0.59, font:'B', size:10, color:'captionGray' , caps:false, lineSpacing:1.2 , insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+    var _t = items[i] || {};
+    var _f = ['Name: ' + (_t.name || '')];
+    if (_t.height) _f.push('Height: ' + _t.height);
+    if (_t.weight) _f.push('Weight: ' + _t.weight);
+    els.push({ type:'t', text:_f.join('\n'),
+      x:colX[i], y:4.98, w:2.4, h:0.9, font:'B', size:10, color:'captionGray', caps:false, lineSpacing:1.25, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   }
   return els;
 }
@@ -3530,12 +3882,16 @@ function layout_castingTalent(cfg) {
   ph(els, cfg, 3.61, 2.08, 2.69, 4.2, 1);
   ph(els, cfg, 7.07, 2.08, 2.69, 2.81, 2);
   ph(els, cfg, 9.87, 2.08, 2.69, 4.2, 3);
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:4.18, y:3.18, w:1.52, h:0.27, font:'B', size:14, color:'ink', bold:true, align:'center', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:"Full body shot", x:10.44, y:3.18, w:1.52, h:0.27, font:'B', size:14, color:'ink', bold:true, align:'center', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:"Headshot", x:1.65, y:3.19, w:1.02, h:0.54, font:'B', size:14, color:'ink', bold:true, align:'center', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:"Headshot", x:7.91, y:3.19, w:1.02, h:0.54, font:'B', size:14, color:'ink', bold:true, align:'center', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:"Name:", x:0.81, y:4.94, w:2.69, h:0.59, font:'B', size:10, color:'captionGray', bold:true, valign:'middle', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:"Name:", x:7.06, y:5.01, w:2.69, h:0.59, font:'B', size:10, color:'captionGray', bold:true, caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  // Frame-type captions ride the top-left corner of their well rather than
+  // sitting centred over the (unfilled) placeholder text.
+  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:3.7, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:"Full body", x:9.96, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:"Headshot", x:0.9, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:"Headshot", x:7.16, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  var _t0 = (cfg.items && cfg.items[0]) || {}, _t1 = (cfg.items && cfg.items[1]) || {};
+  function _nm(t) { var s = 'Name: ' + (t.name || ''); if (t.height) s += '   Height: ' + t.height; if (t.weight) s += '   Weight: ' + t.weight; return s; }
+  els.push({ type:'t', text:_nm(_t0), x:0.81, y:6.4, w:5.4, h:0.35, font:'B', size:10, color:'captionGray', bold:true, valign:'middle', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  els.push({ type:'t', text:_nm(_t1), x:7.07, y:6.4, w:5.4, h:0.35, font:'B', size:10, color:'captionGray', bold:true, valign:'middle', caps:false, lineSpacing:1.2, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   return els;
 }
 
@@ -3546,7 +3902,7 @@ function layout_castingTalent(cfg) {
 // Set slideData.bgColor = "#FFFFFF".
 // HAND-AUTHORED: structured item API (auto-generation flattens this grid).
 // ==========================================================
-// 5-across labelled location strip + 3 stacked extras beneath column 5.
+// 5-across labeled location strip + 3 stacked extras beneath column 5.
 // Wells pitch 2.70in, gutter 0.15in; column 1 bleeds off the left edge.
 // Labels sit ABOVE their wells and are the only centred captions in the deck.
 // cfg.items: [{ label:'WEEKEND GETAWAY' }, ...] x5
@@ -3724,9 +4080,8 @@ function layout_metaCarousel1x1(cfg) {
   // footer all baked in), positioned by matching its transparent
   // content-hole fraction against the source's own placeholder geometry --
   // not the old bezel-only overlay.
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_carousel_frame.png']) || A+'social/meta_carousel_frame.png', x:0.68, y:1.781, w:2.142, h:4.977 });
+  deviceMock(els, cfg, { name:'meta_carousel_frame.png', x:0.68, y:2.64, w:2.142, h:3.259, screen:[0,0.275,0,0.067], slot:0 });
   els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 0.68, 3.15, 2.14, 3.27, 0);
   els.push({ type:'t', text:cfg.text2 || '', x:0.77, y:3.5, w:1.97, h:0.51, font:'B', size:6.5, color:'black', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"1:1 Carousel", x:10.68, y:3.64, w:1.23, h:0.23, font:'B', size:11, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 2.97, 4.04, 2.14, 2.13, 1);
@@ -3760,7 +4115,7 @@ function layout_metaCarousel4x5(cfg) {
   // Fixed device chrome: same real Meta Carousel MockUp asset as the 1x1
   // variant, repositioned for this format's own "main" content-well
   // geometry (index5 below, not the filmstrip cards).
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_carousel_frame.png']) || A+'social/meta_carousel_frame.png', x:0.71, y:2.673, w:2.042, h:3.881 });
+  deviceMock(els, cfg, { name:'meta_carousel_frame.png', x:0.71, y:3.061, w:2.042, h:3.106, screen:[0,0.275,0,0.067], slot:5 });
   els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   ph(els, cfg, 0.68, 2.99, 2.14, 0.32, 0);
   els.push({ type:'t', text:"4:5 Carousel", x:10.78, y:3.21, w:1.23, h:0.23, font:'B', size:11, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
@@ -3769,7 +4124,6 @@ function layout_metaCarousel4x5(cfg) {
   ph(els, cfg, 5.24, 3.6, 2.14, 2.67, 2);
   ph(els, cfg, 7.5, 3.6, 2.14, 2.67, 3);
   ph(els, cfg, 9.77, 3.6, 2.14, 2.67, 4);
-  ph(els, cfg, 0.71, 3.74, 2.04, 2.55, 5);
   ph(els, cfg, 0.68, 6.37, 2.1, 0.2, 6);
   return els;
 }
@@ -3789,14 +4143,12 @@ function layout_metaVideoStatic(cfg) {
   // in), positioned by matching its transparent content-hole fraction
   // against the source's own placeholder geometry -- not the generic
   // bezel-only overlay used before.
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_reel_frame.png']) || A+'social/meta_reel_frame.png', x:5.13, y:1.154, w:2.465, h:6.279 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_reel_frame.png']) || A+'social/meta_reel_frame.png', x:8.73, y:1.154, w:2.465, h:6.279 });
+  deviceMock(els, cfg, { name:'meta_reel_frame.png', x:5.13, y:1.667, w:2.465, h:5.254, screen:[0,0.05,0,0.085], slot:0 });
+  deviceMock(els, cfg, { name:'meta_reel_frame.png', x:8.73, y:1.667, w:2.465, h:5.254, screen:[0,0.05,0,0.085], slot:1 });
   els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:"9:16 STATIC REEL", x:5.63, y:1.02, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"9:16 STORY", x:9.44, y:1.02, w:0.97, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 5.13, 1.48, 2.46, 5.23, 0);
-  ph(els, cfg, 8.73, 1.48, 2.46, 5.23, 1);
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -3855,11 +4207,10 @@ function layout_redditCarousel(cfg) {
   // context, the rest are plain swipeable thumbnails). Repositioned to the
   // real Reddit UI mockup's content-hole fraction; the previous overlay
   // pair didn't match this card's actual bounds.
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:0.74, y:3.304, w:3.123, h:3.164 });
+  deviceMock(els, cfg, { name:'reddit_video_frame.png', x:1.321, y:3.304, w:1.962, h:3.164, screen:[0.205,0.185,0.21,0.17], slot:2 });
   els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:"4:5 Carousel", x:11.45, y:3.3, w:0.83, h:0.16, font:'B', size:7, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 3.53, 3.56, 2.1, 2.62, 1);
-  ph(els, cfg, 1.26, 3.57, 2.08, 2.6, 2);
   ph(els, cfg, 5.72, 3.57, 2.1, 2.62, 3);
   ph(els, cfg, 7.9, 3.57, 2.1, 2.62, 4);
   ph(els, cfg, 10.08, 3.57, 2.1, 2.62, 5);
@@ -3880,8 +4231,8 @@ function layout_redditVideoStatic1x1(cfg) {
   // comment/share/award row, u/username caption, Home/Inbox/You nav all
   // baked in), positioned by matching its checkerboard content-hole
   // fraction against the source's own placeholder geometry.
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:4.413, y:2.32, w:4.129, h:5.124 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:7.813, y:2.32, w:4.129, h:5.124 });
+  deviceMock(els, cfg, { name:'reddit_video_frame.png', x:4.889, y:2.32, w:3.178, h:5.124, screen:[0.205,0.185,0.21,0.17], slot:1 });
+  deviceMock(els, cfg, { name:'reddit_video_frame.png', x:8.289, y:2.32, w:3.178, h:5.124, screen:[0.205,0.185,0.21,0.17], slot:2 });
   ph(els, cfg, 0.61, 0.44, 1.22, 0.62, 0); // was demo photo image114.png
   els.push({ type:'t', text:"1:1 STATIC", x:5.75, y:0.51, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"1:1 VIDEO", x:9.37, y:0.56, w:0.63, h:0.17, font:'B', size:7.5, color:'captionGray', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
@@ -3890,8 +4241,6 @@ function layout_redditVideoStatic1x1(cfg) {
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 5.1, 2.75, 2.75, 4.21, 1);
-  ph(els, cfg, 8.5, 2.75, 2.75, 4.21, 2);
   els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -3919,12 +4268,10 @@ function layout_redditVideoStatic4x5(cfg) {
   // Fixed device chrome: the real Reddit UI mockup, positioned per column by
   // matching its checkerboard content-hole fraction against each column's
   // own placeholder geometry (the two columns aren't the same height).
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:4.405, y:1.475, w:4.174, h:5.184 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_video_frame.png']) || A+'social/reddit_video_frame.png', x:7.97, y:1.981, w:4.204, h:4.272 });
-  ph(els, cfg, 5.1, 1.91, 2.78, 4.26, 1);
+  deviceMock(els, cfg, { name:'reddit_video_frame.png', x:4.885, y:1.475, w:3.215, h:5.184, screen:[0.205,0.185,0.21,0.17], slot:1 });
+  deviceMock(els, cfg, { name:'reddit_video_frame.png', x:8.748, y:1.981, w:2.649, h:4.272, screen:[0.205,0.185,0.21,0.17], slot:2 });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 8.67, 2.34, 2.8, 3.51, 2);
   els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -4004,13 +4351,11 @@ function layout_tiktokVideoStatic(cfg) {
   // "Learn more" CTA, bottom nav all baked in), positioned by matching its
   // checkerboard content-hole fraction against the source's own placeholder
   // geometry -- not the generic bezel-only overlay used before.
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['tiktok_video_frame.png']) || A+'social/tiktok_video_frame.png', x:4.92, y:1.036, w:2.432, h:6.1 });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['tiktok_video_frame.png']) || A+'social/tiktok_video_frame.png', x:8.83, y:1.036, w:2.432, h:6.1 });
+  deviceMock(els, cfg, { name:'tiktok_video_frame.png', x:4.92, y:1.519, w:2.432, h:5.135, screen:[0,0.06,0,0.075], slot:0 });
+  deviceMock(els, cfg, { name:'tiktok_video_frame.png', x:8.83, y:1.519, w:2.432, h:5.135, screen:[0,0.06,0,0.075], slot:1 });
   els.push({ type:'t', text:"9:16 STATIC", x:5.44, y:0.86, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"9:16 VIDEO", x:9.35, y:0.86, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 4.92, 1.42, 2.43, 5.13, 0);
-  ph(els, cfg, 8.83, 1.42, 2.43, 5.13, 1);
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -4061,14 +4406,13 @@ function layout_pinterest2x3(cfg) {
   // places directly at that placeholder's bounds -- no hole-fraction scaling
   // needed. That also confirms index2 (the actual swappable ad card, 5.92,
   // 2.97, 1.17, 2.00) already lines up with the mockup's real content hole.
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_2x3_frame.jpg']) || A+'social/pinterest_2x3_frame.jpg', x:4.71, y:1.36, w:2.4, h:5.2 });
+  deviceMock(els, cfg, { name:'pinterest_2x3_frame.jpg', x:4.71, y:1.36, w:2.4, h:5.2, screen:[0.52,0.31,0.02,0.36], slot:2 });
   els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   ph(els, cfg, 8.76, 1.88, 2.44, 4.18, 1);
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 5.92, 2.97, 1.17, 2, 2);
   els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -4099,13 +4443,12 @@ function layout_pinterest1x1(cfg) {
   // checkerboard content-hole fraction against the source's own placeholder.
   // Replaces two overlapping overlays (a generic bezel + a partial Pinterest
   // asset) with one correctly-positioned frame.
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_1x1_frame.png']) || A+'social/pinterest_1x1_frame.png', x:6.566, y:0.752, w:2.902, h:6.198 });
+  deviceMock(els, cfg, { name:'pinterest_1x1_frame.png', x:6.566, y:0.826, w:2.902, h:6.051, screen:[0.04,0.32,0.04,0.24], slot:0 });
   els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 6.61, 2.74, 2.77, 2.84, 0);
   els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -4156,8 +4499,7 @@ function layout_youtubeVideoAd(cfg) {
   els.push({ type:'s', x:0, y:-0.01, w:3.52, h:7.5, fill:'#E2E2E2' });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['youtube_logo.png']) || A+'social/youtube_logo.png', x:0.52, y:0.66, w:1.27, h:0.3 });
   // Fixed player chrome, drawn first so the video well sits on top of it.
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['youtube_video_frame.png']) || A+'social/youtube_video_frame.png', x:4.35, y:0.99, w:7.65, h:5.98 });
-  ph(els, cfg, 4.33, 0.96, 7.69, 4.33, 0);
+  deviceMock(els, cfg, { name:'youtube_video_frame.png', x:4.35, y:0.99, w:7.65, h:5.98, screen:[0,0,0,0.28], slot:0 });
   els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -4181,6 +4523,87 @@ function layout_youtubeVideoAd(cfg) {
 // Set slideData.bgColor = "#EEEEEE".
 // HAND-AUTHORED: the base layout is a bare chassis; this adds the well.
 // ==========================================================
+// Source ramp for hand-composed bar charts (matches standard-deck.js CHART_SERIES
+// and the template's own chart parts). Dark chassis lightens the last stop.
+var CHART_BARS_DARK  = ['#BFA588', '#808080', '#4A634D', '#7CA8C1', '#B3BDB6', '#E8E8E8'];
+var CHART_BARS_LIGHT = ['#BFA588', '#808080', '#4A634D', '#416986', '#B3BDB6', '#262626'];
+
+function _niceMax(v) {
+  if (!(v > 0)) return 1;
+  var mag = Math.pow(10, Math.floor(Math.log(v) / Math.LN10));
+  return Math.ceil(v / mag) * mag;
+}
+
+// Horizontal grouped bar chart built from primitives so the pill ends survive
+// export -- PowerPoint's chart renderer ignores series geometry, so a native
+// <c:barChart> can only ever draw flat bars. Axis line, 5 gridlines, category
+// labels, optional legend and tip value labels. Non-bar chart types still go
+// through the native chart element (see the callers).
+function chartBarEls(els, cfg, X, Y, W, H, dark) {
+  var ch = cfg.chart || {};
+  var data = (ch.data || []).filter(function (s) { return s && s.values && s.values.length; });
+  if (!data.length) return;
+  var opts = ch.opts || {};
+  var labels = data[0].labels || data[0].values.map(function (_, i) { return String(i + 1); });
+  var nG = labels.length, nS = data.length;
+  var PAL = dark ? CHART_BARS_DARK : CHART_BARS_LIGHT;
+  var axisCol = dark ? 'mutedGray' : 'bodyGray';
+  var gridCol = dark ? '#3C3C3C' : '#D8D8D8';
+
+  var rawMax = 0;
+  data.forEach(function (s) { s.values.forEach(function (v) { if (+v > rawMax) rawMax = +v; }); });
+  var step = _niceMax(rawMax / 5) || 1;
+  var axisMax = step * Math.max(1, Math.ceil(rawMax / step));
+  var nGrid = Math.max(1, Math.round(axisMax / step));
+
+  var GL = 1.15, GB = 0.36;
+  var showLeg = opts.showLegend && nS > 1;
+  var GT = showLeg ? 0.40 : 0.06;
+  var px = X + GL, py = Y + GT, pw = W - GL - 0.20, ph = H - GT - GB;
+
+  // Gridlines + value-axis labels at each nice step.
+  for (var g = 0; g <= nGrid; g++) {
+    var gx = px + (pw * g) / nGrid;
+    els.push({ type:'ln', x:gx, y:py, w:0, h:ph, color:gridCol, weight:0.75 });
+    els.push({ type:'t', text:String(step * g), x:gx - 0.5, y:py + ph + 0.05,
+      w:1.0, h:0.26, font:'B', size:8, color:axisCol, align:'center', valign:'top',
+      caps:false, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+  }
+  // Category axis (left rule).
+  els.push({ type:'ln', x:px, y:py, w:0, h:ph, color:axisCol, weight:1 });
+
+  var groupH = ph / nG, barH = (groupH * 0.74) / nS, pad = groupH * 0.13;
+  labels.forEach(function (lbl, gi) {
+    els.push({ type:'t', text:String(lbl), x:X, y:py + gi * groupH, w:GL - 0.14, h:groupH,
+      font:'B', size:9.5, color:axisCol, align:'right', valign:'middle',
+      caps:false, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+    data.forEach(function (s, si) {
+      var v = +s.values[gi] || 0;
+      var bw = Math.max((v / axisMax) * pw, barH);
+      var by = py + gi * groupH + pad + si * barH;
+      var fill = (nS === 1) ? PAL[gi % PAL.length] : PAL[si % PAL.length];
+      els.push({ type:'s', x:px, y:by, w:bw, h:barH - 0.03, fill:fill, radius:'pill' });
+      if (opts.showValue !== false) {
+        els.push({ type:'t', text:String(v), x:px + bw + 0.09, y:by - 0.02, w:0.9, h:barH,
+          font:'B', size:8, color:axisCol, align:'left', valign:'middle',
+          caps:false, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+      }
+    });
+  });
+
+  // Legend row.
+  if (showLeg) {
+    var lx = px;
+    data.forEach(function (s, si) {
+      els.push({ type:'s', x:lx, y:Y + 0.06, w:0.16, h:0.16, fill:PAL[si % PAL.length], radius:0.03 });
+      var name = String(s.name || ('Series ' + (si + 1)));
+      els.push({ type:'t', text:name, x:lx + 0.22, y:Y - 0.02, w:2.4, h:0.32, font:'B', size:8.5,
+        color:axisCol, align:'left', valign:'middle', caps:false, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+      lx += 0.22 + Math.min(2.4, 0.09 * name.length + 0.4) + 0.25;
+    });
+  }
+}
+
 function layout_reportGrayChart(cfg) {
   var els = [];
   if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.61, y:0.54, w:12.12, h:0.29,
@@ -4193,10 +4616,15 @@ function layout_reportGrayChart(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
-  els.push({ type:'chart', x:0.78, y:2.22, w:11.5, h:4.36,
-    chartType:(cfg.chart && cfg.chart.type) || 'bar',
-    data:(cfg.chart && cfg.chart.data) || [],
-    opts:(cfg.chart && cfg.chart.opts) || {} });
+  var _ct = (cfg.chart && cfg.chart.type) || 'bar';
+  if (_ct === 'bar') {
+    chartBarEls(els, cfg, 0.78, 2.22, 11.5, 4.36, false);
+  } else {
+    els.push({ type:'chart', x:0.78, y:2.22, w:11.5, h:4.36,
+      chartType:_ct,
+      data:(cfg.chart && cfg.chart.data) || [],
+      opts:(cfg.chart && cfg.chart.opts) || {} });
+  }
 
   return els;
 }
@@ -4221,10 +4649,15 @@ function layout_reportDarkChart(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
-  els.push({ type:'chart', x:0.78, y:2.22, w:11.5, h:4.36,
-    chartType:(cfg.chart && cfg.chart.type) || 'bar',
-    data:(cfg.chart && cfg.chart.data) || [],
-    opts:(cfg.chart && cfg.chart.opts) || {} });
+  var _ct = (cfg.chart && cfg.chart.type) || 'bar';
+  if (_ct === 'bar') {
+    chartBarEls(els, cfg, 0.78, 2.22, 11.5, 4.36, true);
+  } else {
+    els.push({ type:'chart', x:0.78, y:2.22, w:11.5, h:4.36,
+      chartType:_ct,
+      data:(cfg.chart && cfg.chart.data) || [],
+      opts:(cfg.chart && cfg.chart.opts) || {} });
+  }
 
   return els;
 }
@@ -4290,31 +4723,36 @@ function tableBody(cfg, theme) {
 
   var headers = cfg.headers || [];
   els.push({ type:'s', x:TBL_X, y:TBL_Y, w:COL1_W + COL2_W, h:HEADER_H, fill:theme.headerFill });
+  // Header band + row headings + bullets are all Mazda Type Bold (+mj-lt) in
+  // the source table, not Arial. Sizes/tracking/colors read from the cell XML:
+  // header sz3400 b1, heading sz4000 b0 spc440 #CFB496, bullet sz1600 spc176
+  // #919292 -- all halved into engine space.
   els.push({ type:'t', text:headers[0] || '', x:TBL_X + 0.13, y:TBL_Y, w:COL1_W - 0.26, h:HEADER_H,
-    font:'B', size:17, color:theme.headerText, bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
+    font:'H', size:17, color:theme.headerText, bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
   els.push({ type:'t', text:headers[1] || '', x:COL2_X + 0.13, y:TBL_Y, w:COL2_W - 0.26, h:HEADER_H,
-    font:'B', size:17, color:theme.headerText, bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
+    font:'H', size:17, color:theme.headerText, bold:true, valign:'middle', caps:true, lineSpacing:0.9 });
 
   var rows = cfg.rows || [];
   function cell(x, w, y, h, content) {
     if (!content) return;
     var ty = y + 0.2;
     if (content.heading) {
-      // Box tall enough for two lines so a wrap (narrower right column,
-      // or this sandbox's Arial fallback running wider than Mazda Type)
-      // doesn't get clipped -- but the bullets below only shift down a
-      // little, not a full second line's worth, or they end up cramped
-      // against the row boundary instead. In the normal single-line case
-      // this leaves a small gap; in the wrap case the bullets sit close
-      // under the wrapped second line rather than fully clear of it --
-      // the lesser of the two failure modes.
-      els.push({ type:'t', text:content.heading, x:x + 0.13, y:ty, w:w - 0.26, h:0.48,
-        font:'B', size:20, color:'#CFB496', caps:true, charSpacing:2.2, lineSpacing:1 });
-      ty += 0.44;
+      // Fit the heading to one line: the narrow right column wrapped
+      // "LOREM IPSUM DOLOR" at 20pt and the second line ran into the bullets.
+      // Step the size down (floor 12) so it fits the column width, then
+      // advance past its ACTUAL height so the bullets clear it.
+      var _hw = w - 0.26;
+      var _hl = String(content.heading).length || 1;
+      var _hs = Math.max(12, Math.min(20, Math.floor((_hw * 0.92) / (_hl * 0.01073))));
+      var _lineH = _hs / 72 * 1.16;
+      var _wraps = (_hl * _hs * 0.01073) > _hw ? 2 : 1;   // only at the 12pt floor
+      els.push({ type:'t', text:content.heading, x:x + 0.13, y:ty, w:_hw, h:_lineH * _wraps + 0.05,
+        font:'H', size:_hs, color:'#CFB496', caps:true, charSpacing:_hs / 20 * 2.2, lineSpacing:1 });
+      ty += _lineH * _wraps + 0.08;
     }
     if (content.bullets && content.bullets.length) {
-      els.push({ type:'t', x:x + 0.13, y:ty, w:w - 0.26, h:(y + h) - ty - 0.1,
-        font:'B', size:8, color:'#919292', valign:'top', caps:true, lineSpacing:1.2,
+      els.push({ type:'t', x:x + 0.13, y:ty, w:w - 0.26, h:(y + h) - ty - 0.08,
+        font:'H', size:8, color:'#919292', valign:'top', caps:true, lineSpacing:1.2, charSpacing:0.88,
         insets:{l:0,t:0,r:0,b:0},
         paras:content.bullets.map(function (b) { return { runs:[{ text:b }], bullet:true, marL:0.21, indent:-0.14 }; }) });
     }
@@ -4375,7 +4813,8 @@ function layout_reportChannelMatrix(cfg) {
   var DARK = '#262626';
 
   function txt(x, w, y, h, text, opts) {
-    var o = Object.assign({ type:'t', text:text || '', x:x + 0.09, y:y, w:w - 0.18, h:h,
+    var _t = (text == null || text === '') ? '' : String(text); // baseValue/incValue arrive numeric
+    var o = Object.assign({ type:'t', text:_t, x:x + 0.09, y:y, w:w - 0.18, h:h,
       font:'B', size:6, valign:'middle', lineSpacing:1, caps:true }, opts || {});
     els.push(o);
   }
@@ -4494,7 +4933,7 @@ function layout_reportGrayTimeline(cfg) {
 // ------------------------------------------------------------
 // DEFAULT PHOTOGRAPHY POOLS
 // Image-led layouts pre-populate with real photography from the template deck
-// so a fresh deck never opens on empty grey boxes. Every one is still a normal
+// so a fresh deck never opens on empty gray boxes. Every one is still a normal
 // picture in the exported PPTX, so right-click -> Change Picture works as usual.
 //
 // Rotation is applied ONCE by deckInit (see assignDefaultPhotos in
@@ -5007,6 +5446,7 @@ var LAYOUT_KEYS = {
     "subtitle",
     "text",
     "text2",
+    "text3",
     "title"
   ],
   "threeColLight": [
@@ -5015,27 +5455,34 @@ var LAYOUT_KEYS = {
     "subtitle",
     "text",
     "text2",
+    "text3",
     "title"
   ],
   "twoRowsDark": [
     "items",
     "subhead",
+    "subhead2",
     "subtitle",
     "text",
+    "text2",
     "title"
   ],
   "twoRowsLight": [
     "items",
     "subhead",
+    "subhead2",
     "subtitle",
     "text",
+    "text2",
     "title"
   ],
   "twoRowsLightAlt": [
     "items",
     "subhead",
+    "subhead2",
     "subtitle",
     "text",
+    "text2",
     "title"
   ],
   "reportGray": [
@@ -5262,6 +5709,21 @@ function errorSlide(msg, detail) {
 }
 
 function dispatch(slideData) {
+  // Agents sometimes nest a layout's parameters under `cfg:` -- a misreading of
+  // this system's "cfg.foo" shorthand, which means "the slide object's foo",
+  // not a literal nested key. Every layout fn reads slideData.foo directly, so
+  // an un-hoisted cfg wrapper renders the slide almost empty (title only).
+  // Hoist cfg's keys onto the slide; a key already on the slide wins; then drop
+  // the wrapper so warnUnusedKeys doesn't flag it. Idempotent across the
+  // several dispatch() passes per slide.
+  if (slideData && slideData.cfg && typeof slideData.cfg === 'object' && !Array.isArray(slideData.cfg)) {
+    for (var _k in slideData.cfg) {
+      if (Object.prototype.hasOwnProperty.call(slideData.cfg, _k) && slideData[_k] === undefined) {
+        slideData[_k] = slideData.cfg[_k];
+      }
+    }
+    delete slideData.cfg;
+  }
   var fn = resolve(slideData.layout);
   if (fn) {
     var slug = slideData.layout;
@@ -5321,6 +5783,9 @@ function fontFor(el) { return (el && FONT_FACES[el.font]) || FONT; }
 var _D = []; var _config = {}; var _currentSlide = 0; var _totalSlides = 0;
 var _customLogo = null; var _noLogo = false; var _imageMode = false;
 var _imageCache = {};
+// Natural pixel dims per resolved image src, filled by prefetchImage()'s onload.
+// Used only for fit:'cover' center-crop math in exportImage().
+var _imageDims = {};
 // Set by deckInit()'s prefetchDeckAssets(); exportPPTX() awaits it before
 // export. Declared here (module scope), not with `var` inside deckInit, so
 // exportPPTX -- a sibling top-level function, not a nested one -- can see it.
@@ -5343,6 +5808,11 @@ return new Promise(function (resolve) {
   var img = new Image();
   img.crossOrigin = 'anonymous';
   img.onload = function () {
+    // Record natural pixel dims -- exportImage() needs the true aspect ratio to
+    // center-crop a fit:'cover' photo (PptxGenJS 3.12's own cover sizing can't).
+    if (img.naturalWidth && img.naturalHeight) {
+      _imageDims[url] = { w: img.naturalWidth, h: img.naturalHeight };
+    }
     var canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
     var ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
@@ -5856,13 +6326,18 @@ try {
   }).then(function (zip) {
     var jobs = [];
     zip.forEach(function (path, entry) {
-      if (!/^ppt\/slides\/slide\d+\.xml$/.test(path)) return;
-      jobs.push(entry.async('string').then(function (xml) {
-        xml = xml.replace(/(<a:rPr\b[^>]*?)\skern="0"/g, '$1 kern="100"');
-        xml = applyPhotoMasks(xml);
-        xml = applyGradients(xml);
-        zip.file(path, xml);
-      }));
+      if (/^ppt\/slides\/slide\d+\.xml$/.test(path)) {
+        jobs.push(entry.async('string').then(function (xml) {
+          xml = xml.replace(/(<a:rPr\b[^>]*?)\skern="0"/g, '$1 kern="100"');
+          xml = applyPhotoMasks(xml);
+          xml = applyGradients(xml);
+          zip.file(path, xml);
+        }));
+      } else if (/^ppt\/charts\/chart\d+\.xml$/.test(path)) {
+        jobs.push(entry.async('string').then(function (xml) {
+          zip.file(path, roundChartBars(xml));
+        }));
+      }
     });
     return Promise.all(jobs).then(function () {
       return zip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' });
@@ -5903,7 +6378,14 @@ function insetMargin(el) {
 
 function exportText(slide, el, isDark) {
   var isCompact = el.w <= 0.80 && el.h <= 0.80;
-  var exportedText = el.text || '';
+  // Coerce a non-string text (boolean flag, numeric value) the same way the
+  // preview renderer does -- keep export and preview from diverging, and keep
+  // one bad value from throwing out of the export loop.
+  var exportedText = (el.text == null) ? '' : (typeof el.text === 'string' ? el.text : String(el.text));
+  // A type:'t' element is nothing but its text. Layouts emit these for optional
+  // slots the deck left unfilled; PptxGenJS would still stamp a zero-size empty
+  // box per one. Drop them -- there is nothing to draw.
+  if (!exportedText && !(el.paras && el.paras.length)) return;
   var cs, lsm, boldFlag;
 
   // EXPLICIT TYPOGRAPHY (v2.0) -- see the matching note in standard-deck.js.
@@ -5969,6 +6451,23 @@ function exportText(slide, el, isDark) {
     wrap: !isCompact, margin: insetMargin(el), shrinkText: isCompact,
     rotate: el.rotation || undefined
   });
+}
+
+// PptxGenJS has no option for rounded bars, and the source template's chart
+// bars are square -- but the Keynote original they derive from has full pill
+// ends. Inject a roundRect geometry into every bar series' <c:spPr> (before
+// the fill; that is the CT_ShapeProperties child order). adj 50000 puts the
+// corner radius at half the bar's short side -> a full pill. PowerPoint and
+// Keynote honour series geometry; LibreOffice's chart renderer ignores it, so
+// a LibreOffice render still shows square bars even though the .pptx is round.
+function roundChartBars(xml) {
+  if (xml.indexOf('<c:barChart>') === -1 && xml.indexOf('<c:bar3DChart>') === -1) return xml;
+  if (xml.indexOf('prst="roundRect"') !== -1) return xml;   // already processed
+  var GEOM = '<a:prstGeom prst="roundRect"><a:avLst><a:gd name="adj" fmla="val 50000"/></a:avLst></a:prstGeom>';
+  // The first <c:spPr> inside each <c:ser> is that series' bar shape. The
+  // tempered [(?!</c:ser>)] guard keeps the match from ever crossing into the
+  // next series or the axis <c:spPr> if a series happens to omit its own.
+  return xml.replace(/(<c:ser>(?:(?!<\/c:ser>)[\s\S])*?<c:spPr>)/g, '$1' + GEOM);
 }
 
 // Swap the rect geometry of a tagged picture for its real outline. PptxGenJS
@@ -6083,7 +6582,7 @@ function exportShape(slide, el, isDark, accent, pptx) {
   tagGradient(opts, el, isDark);
   if (el.transparency) opts.fill.transparency = el.transparency;
   if (!isDark && el.fill === 'cardBg' && !el.noShadow && !el._pptxGradient) opts.shadow = { type:'outer', color:'000000', blur:4, offset:2, angle:135, opacity:0.08 };
-  // Rotation (degrees clockwise about centre) -- matches renderShape's CSS
+  // Rotation (degrees clockwise about center) -- matches renderShape's CSS
   // transform:rotate(). Carried on all three addShape paths below.
   if (el.rotation) opts.rotate = el.rotation;
 
@@ -6208,7 +6707,8 @@ function exportChart(slide, el, isDark, accent, pptx) {
   var ctm = { bar:'BAR', line:'LINE', pie:'PIE', doughnut:'DOUGHNUT', area:'AREA' };
   var pt = pptx.charts[ctm[el.chartType]||'BAR']; var opts = el.opts||{};
   var rc; var ct = opts.chartColors||null;
-  if (ct) rc = ct.map(function(t){return SD.colorForPptx(t,isDark);}); else rc = SD.CHART_SERIES.map(function(h){return h.replace('#','');});
+  var ramp = isDark ? SD.CHART_SERIES : (SD.CHART_SERIES_LIGHT || SD.CHART_SERIES);
+  if (ct) rc = ct.map(function(t){return SD.colorForPptx(t,isDark);}); else rc = ramp.map(function(h){return h.replace('#','');});
   var co = { x:el.x, y:el.y, w:el.w, h:el.h, chartColors:rc, showValue:opts.showValue!==false, showTitle:!!opts.showTitle, title:opts.title||'',
     titleColor:SD.colorForPptx('title',isDark), titleFontSize:12, showLegend:opts.showLegend||false, legendPos:opts.legendPos||'b', legendColor:SD.colorForPptx('body',isDark),
     valGridLine:{color:isDark?'535B69':'E2E8F0',size:0.5}, catGridLine:{style:'none'} };
@@ -6221,13 +6721,30 @@ function exportChart(slide, el, isDark, accent, pptx) {
     co.barGrouping=opts.barGrouping||'clustered'; co.barDir=opts.barDir||'bar'; co.valAxisHidden=opts.valAxisHidden||false;
     co.catAxisLabelColor=SD.colorForPptx('body',isDark); co.valAxisLabelColor=SD.colorForPptx('body',isDark);
     if (el.chartType==='bar') co.dataLabelPosition=opts.dataLabelPosition||'outEnd';
+    // Area fill defaults to opaque, which reads as a solid wedge and swamps the
+    // trend line. The preview draws it at 15% -- match that here.
+    if (el.chartType==='area') co.chartColorsOpacity = opts.chartColorsOpacity != null ? opts.chartColorsOpacity : 18;
   }
   if (el.chartType==='pie'||el.chartType==='doughnut') {
     co.showPercent=opts.showPercent!==false; co.showValue=opts.showValue||false;
     co.dataLabelColor=SD.colorForPptx(opts.dataLabelColor||'white',isDark);
     if (el.chartType==='doughnut') co.holeSize=opts.holeSize||70;
   }
-  slide.addChart(pt, el.data, co);
+  // pptxgenjs throws ("reading 'length'" on undefined labels) if a series has
+  // no category array. renderChart tolerates that; the export must not be the
+  // thing that dies on a sloppily-shaped chart. Drop empty series, and
+  // synthesise index labels ('1','2',...) for any series that omitted them.
+  var data = (Array.isArray(el.data) ? el.data : []).filter(function (s) {
+    return s && Array.isArray(s.values) && s.values.length;
+  });
+  if (!data.length) return;
+  var maxLen = data.reduce(function (m, s) { return Math.max(m, s.values.length); }, 0);
+  data = data.map(function (s) {
+    if (Array.isArray(s.labels) && s.labels.length) return s;
+    var lbls = []; for (var i = 0; i < maxLen; i++) lbls.push(String(i + 1));
+    return Object.assign({}, s, { labels: lbls });
+  });
+  slide.addChart(pt, data, co);
 }
 
 function exportTable(slide, el, isDark) {
@@ -6261,8 +6778,29 @@ function exportImage(slide, el) {
   }
   // alphaModFix -> PptxGenJS transparency (0 = opaque, 100 = invisible).
   if (typeof el.transparency === 'number') opts.transparency = el.transparency;
-  // A photo supplied into a well fills the frame; PptxGenJS crops to do that.
-  if (el.fit === 'cover' && !el.crop) opts.sizing = { type: 'cover', w: el.w, h: el.h };
+  // A photo supplied into a well fills the frame. PptxGenJS 3.12's
+  // sizing:{type:'cover'} cannot do this: it uses the BOX dims as the image
+  // size, so imgRatio === boxRatio and it emits a zero srcRect -- a plain
+  // stretch that distorts any photo whose aspect ratio isn't the frame's
+  // (e.g. a 3:2 shot in a 16:9 well renders 18% too wide). Derive the
+  // center-crop here from the image's real pixel dims and run it through the
+  // crop path below; fall back to best-effort cover sizing only when the dims
+  // are unknown (a raw data: URI that never went through prefetch).
+  var coverCrop = null;
+  if (el.fit === 'cover' && !el.crop) {
+    var _d = _imageDims[src];
+    if (_d && _d.w > 0 && _d.h > 0 && el.w > 0 && el.h > 0) {
+      var _ia = _d.w / _d.h, _ba = el.w / el.h;
+      if (_ia > _ba) {                       // image wider than frame -> trim sides
+        var _kw = _ba / _ia;
+        coverCrop = { l: (1 - _kw) / 2, r: (1 - _kw) / 2, t: 0, b: 0 };
+      } else if (_ia < _ba) {                // image taller than frame -> trim top/bottom
+        var _kh = _ia / _ba;
+        coverCrop = { l: 0, r: 0, t: (1 - _kh) / 2, b: (1 - _kh) / 2 };
+      }
+    }
+    if (!coverCrop) opts.sizing = { type: 'cover', w: el.w, h: el.h };
+  }
   // srcRect -> PptxGenJS crop sizing.
   //
   // Its crop model is "place the image at w/h, then keep the box at x/y/w/h",
@@ -6272,9 +6810,10 @@ function exportImage(slide, el) {
   // wrongly-scaled box. It also resizes the picture to the crop box, so the
   // image option additionally has to be pre-divided by the kept fraction for
   // the picture to land at the size the layout asked for.
-  if (el.crop) {
-    var cl = el.crop.l || 0, ct = el.crop.t || 0,
-        cr = el.crop.r || 0, cb = el.crop.b || 0;
+  var _crop = el.crop || coverCrop;
+  if (_crop) {
+    var cl = _crop.l || 0, ct = _crop.t || 0,
+        cr = _crop.r || 0, cb = _crop.b || 0;
     var kw = Math.max(1 - cl - cr, 0.001), kh = Math.max(1 - ct - cb, 0.001);
     opts.w = el.w / kw; opts.h = el.h / kh;
     opts.sizing = { type: 'crop',
@@ -6300,6 +6839,25 @@ function exportImage(slide, el) {
 function deckInit(config) {
 config = config || {}; _config = config; _D = window.D || [];
 _totalSlides = _D.length; _noLogo = !!config.noLogo; _imageMode = !!config.imageMode;
+
+// Resolve bare bgImage filenames ('pattern_dark.png') against the asset base.
+// slideData.bgImage is consumed verbatim -- by the preview (standard-deck.js's
+// url(...) rule) and by the PPTX export (exportPPTX STEP 3's { path: ... }).
+// It never passes through deck-layouts.js's `A` prefix the way layout-emitted
+// <img> src values do, so a deck authored per the prompt (bare asset names)
+// would 404 every background. A name with no '/' is a bare reference and
+// belongs under backgrounds/; anything already carrying a path separator (the
+// build harness writes full 'assets/backgrounds/x.png' paths) or a data: URI
+// is left untouched.
+var _assetBase = (typeof window !== 'undefined' && window.MMW_ASSET_BASE) || 'assets/';
+if (_assetBase && _assetBase.slice(-1) !== '/') _assetBase += '/';
+_D.forEach(function (sd) {
+  if (sd && typeof sd.bgImage === 'string' &&
+      sd.bgImage.indexOf('/') === -1 && sd.bgImage.indexOf('data:') !== 0) {
+    sd.bgImage = _assetBase + 'backgrounds/' + sd.bgImage;
+  }
+});
+
 injectStyles();
 
 if (config.accent) SD.setAccent(config.accent);
@@ -6486,11 +7044,11 @@ var D=[
 {"layout":"content07","bgColor":"#EEEEEE","dark":0,"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","title":"Section Heading","notes":"content07 — template layout \"Content 07\", source slide 40."},
 {"layout":"content08","bgColor":"#EEEEEE","dark":0,"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","title":"Section Heading","notes":"content08 — template layout \"Content 08\", source slide 42."},
 {"layout":"content09","bgColor":"#EEEEEE","dark":0,"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","title":"Section Heading","notes":"content09 — template layout \"Content 09\", source slide 43."},
-{"layout":"threeColDark","bgColor":"#262626","dark":1,"items":["Item one","Item two","Item three"],"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","text2":"Secondary body copy.","title":"Section Heading","notes":"threeColDark — template layout \"Content - 3 columns - Dark\", source slide 29."},
-{"layout":"threeColLight","bgColor":"#EEEEEE","dark":0,"items":["Item one","Item two","Item three"],"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","text2":"Secondary body copy.","title":"Section Heading","notes":"threeColLight — template layout \"Content - 3 columns - Light\", source slide 30."},
-{"layout":"twoRowsDark","bgColor":"#262626","dark":1,"items":["Item one","Item two","Item three"],"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","title":"Section Heading","notes":"twoRowsDark — template layout \"Content 2 Rows - Dark\", source slide 26."},
-{"layout":"twoRowsLight","bgColor":"#FFFFFF","dark":0,"items":["Item one","Item two","Item three"],"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","title":"Section Heading","notes":"twoRowsLight — template layout \"Content 2 Rows - Light\", source slide 28."},
-{"layout":"twoRowsLightAlt","bgColor":"#EEEEEE","dark":0,"items":["Item one","Item two","Item three"],"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","title":"Section Heading","notes":"twoRowsLightAlt — template layout \"Content - 2 rows - Light\", source slide 27."},
+{"layout":"threeColDark","bgColor":"#262626","dark":1,"items":["Item one","Item two","Item three"],"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","text2":"Secondary body copy.","text3":"Tertiary body copy.","title":"Section Heading","notes":"threeColDark — template layout \"Content - 3 columns - Dark\", source slide 29."},
+{"layout":"threeColLight","bgColor":"#EEEEEE","dark":0,"items":["Item one","Item two","Item three"],"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","text2":"Secondary body copy.","text3":"Tertiary body copy.","title":"Section Heading","notes":"threeColLight — template layout \"Content - 3 columns - Light\", source slide 30."},
+{"layout":"twoRowsDark","bgColor":"#262626","dark":1,"items":["Item one","Item two","Item three"],"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","text2":"Secondary body copy.","title":"Section Heading","notes":"twoRowsDark — template layout \"Content 2 Rows - Dark\", source slide 26."},
+{"layout":"twoRowsLight","bgColor":"#FFFFFF","dark":0,"items":["Item one","Item two","Item three"],"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","text2":"Secondary body copy.","title":"Section Heading","notes":"twoRowsLight — template layout \"Content 2 Rows - Light\", source slide 28."},
+{"layout":"twoRowsLightAlt","bgColor":"#EEEEEE","dark":0,"items":["Item one","Item two","Item three"],"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","text2":"Secondary body copy.","title":"Section Heading","notes":"twoRowsLightAlt — template layout \"Content - 2 rows - Light\", source slide 27."},
 {"layout":"reportGray","bgColor":"#EEEEEE","dark":0,"tag":"NEXT SECTION","text":"Supporting body copy for layout verification.","title":"Section Heading","notes":"reportGray — template layout \"Content Gray\", source slide 72."},
 {"layout":"reportDark","bgColor":"#262626","dark":1,"tag":"NEXT SECTION","text":"Supporting body copy for layout verification.","title":"Section Heading","notes":"reportDark — template layout \"Content Dark\", source slide 93."},
 {"layout":"storyboardVO","bgColor":"#EEEEEE","dark":0,"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","title":"Concept: Weekend Getaway","notes":"storyboardVO — template layout \"Storyboard 01\", source slide 35."},

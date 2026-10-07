@@ -1,5 +1,9 @@
 # -*- coding: utf-8 -*-
-"""Hand-authored bodies for layouts whose auto-generated flat item array is unusable.
+"""FROZEN ARCHIVE -- not the source of truth (see HANDOFF.md, "Where the layouts live").
+Last in sync with deck-layouts.js on 2026-09-04; edits since then were made to
+deck-layouts.js only. Do not regenerate deck-layouts.js from this.
+
+Hand-authored bodies for layouts whose auto-generated flat item array is unusable.
 Geometry is taken verbatim from MMW_Layout_Spec.md / mmw_layouts.json."""
 
 OVERRIDES = {}
