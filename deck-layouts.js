@@ -3224,6 +3224,151 @@ function chartBarEls(els, cfg, X, Y, W, H, dark) {
   }
 }
 
+// ---------- Vertical columns (template slides 93/94) ----------
+// Clustered columns from primitives, for the same reason as chartBarEls: real
+// shapes keep their pill ends in PowerPoint, a native <c:barChart> cannot.
+// Spacing is the source chart's own: gapWidth 219 (gap between clusters =
+// 2.19 bar widths) and overlap -27 (0.27 bar widths between bars in a
+// cluster). Series colours are the source's: ink, grey, Spark, Canopy, Tide
+// -- ink being #262626 on light and #EEEEEE on dark, as on slides 93 / 94.
+// The source shows no gridlines, value axis or value labels; opts.gridlines
+// and opts.showValue opt back in.
+var CHART_COLS_LIGHT = ['#262626', '#808080', '#BFA588', '#4A634D', '#416986', '#B3BDB6'];
+var CHART_COLS_DARK  = ['#EEEEEE', '#808080', '#BFA588', '#4A634D', '#416986', '#B3BDB6'];
+function chartColEls(els, cfg, X, Y, W, H, dark) {
+  var ch = cfg.chart || {};
+  var data = (ch.data || []).filter(function (s) { return s && s.values && s.values.length; });
+  if (!data.length) return;
+  var opts = ch.opts || {};
+  var labels = data[0].labels || data[0].values.map(function (_, i) { return String(i + 1); });
+  var nG = labels.length, nS = data.length;
+  var PAL = dark ? CHART_COLS_DARK : CHART_COLS_LIGHT;
+  var ink = dark ? '#EEEEEE' : '#262626', axisCol = dark ? 'mutedGray' : 'bodyGray';
+  var gridCol = dark ? '#3C3C3C' : '#D8D8D8';
+  var showLeg = opts.showLegend && nS > 1, grid = !!opts.gridlines;
+
+  var rawMax = 0;
+  data.forEach(function (s) { s.values.forEach(function (v) { if (+v > rawMax) rawMax = +v; }); });
+  var step = _niceMax(rawMax / 5) || 1;
+  var axisMax = grid ? step * Math.max(1, Math.ceil(rawMax / step)) : (rawMax || 1);
+
+  var GL = grid ? 0.7 : 0.1, GB = 0.34, GT = (showLeg ? 0.34 : 0) + (opts.showValue ? 0.22 : 0.05);
+  var px = X + GL, py = Y + GT, pw = W - GL - 0.1, ph = H - GT - GB;
+
+  if (grid) {
+    var nGrid = Math.max(1, Math.round(axisMax / step));
+    for (var g = 1; g <= nGrid; g++) {
+      var gy = py + ph - (ph * g) / nGrid;
+      els.push({ type:'ln', x:px, y:gy, w:pw, h:0, color:gridCol, weight:0.75 });
+      els.push({ type:'t', text:String(step * g), x:X, y:gy - 0.13, w:GL - 0.08, h:0.26, font:'B', size:8,
+        color:axisCol, align:'right', valign:'middle', caps:false, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+    }
+  }
+  // Baseline.
+  els.push({ type:'ln', x:px, y:py + ph, w:pw, h:0, color:axisCol, weight:1 });
+
+  var groupW = pw / nG;
+  var bw = groupW / (nS + 0.27 * (nS - 1) + 2.19), inner = bw * 0.27;
+  var clusterW = nS * bw + (nS - 1) * inner;
+  labels.forEach(function (lbl, gi) {
+    var gx = px + gi * groupW + (groupW - clusterW) / 2;
+    data.forEach(function (s, si) {
+      var v = +s.values[gi] || 0;
+      var bh = Math.max((v / axisMax) * ph, bw);   // never shorter than its own pill
+      var bx = gx + si * (bw + inner);
+      var fill = (nS === 1) ? PAL[0] : PAL[si % PAL.length];
+      els.push({ type:'s', x:bx, y:py + ph - bh, w:bw, h:bh, fill:fill, radius:'pill' });
+      if (opts.showValue) {
+        els.push({ type:'t', text:String(v), x:bx - 0.3, y:py + ph - bh - 0.22, w:bw + 0.6, h:0.2,
+          font:'B', size:7.5, color:axisCol, align:'center', valign:'bottom', caps:false,
+          insets:{l:0,t:0,r:0,b:0} });
+      }
+    });
+    els.push({ type:'t', text:String(lbl), x:px + gi * groupW, y:py + ph + 0.05, w:groupW, h:0.26,
+      font:'B', size:9.5, color:ink, align:'center', valign:'top', caps:false,
+      insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+  });
+
+  if (showLeg) {
+    var lx = px;
+    data.forEach(function (s, si) {
+      els.push({ type:'s', x:lx, y:Y + 0.06, w:0.16, h:0.16, fill:PAL[si % PAL.length], radius:0.03 });
+      var name = String(s.name || ('Series ' + (si + 1)));
+      els.push({ type:'t', text:name, x:lx + 0.22, y:Y - 0.02, w:2.4, h:0.32, font:'B', size:8.5,
+        color:axisCol, align:'left', valign:'middle', caps:false, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
+      lx += 0.22 + Math.min(2.4, 0.09 * name.length + 0.4) + 0.25;
+    });
+  }
+}
+
+// ---------- Doughnut (template slides 82/88) ----------
+// Native chart (data stays editable in PowerPoint), styled to the source:
+// hole 75, category + percent labels in each slice, the source's six slice
+// colours, no legend, and cfg.chart.title set in the centre of the ring in
+// the display face (24pt engine = the source's 48pt). The source's last
+// slice is #262626 -- invisible on the dark chassis, so it lifts to #5C5C5C
+// (that slice's own outline colour in the source) there.
+var DOUGHNUT_COLORS = ['#7CA8C1', '#C4A485', '#AFAFC1', '#4A634D', '#6D649F', '#262626'];
+function chartDoughnutEls(els, cfg, X, Y, W, H, dark) {
+  var ch = cfg.chart || {}, opts = {}, k;
+  var cols = DOUGHNUT_COLORS.map(function (c) { return (dark && c === '#262626') ? '#5C5C5C' : c; });
+  var base = { holeSize: 75, showLabel: true, showPercent: true, showValue: false, showLegend: false,
+               chartColors: cols, dataLabelColor: '#FFFFFF', dataLabelFontSize: 10, pieScale: 0.49 };
+  for (k in base) opts[k] = base[k];
+  for (k in (ch.opts || {})) opts[k] = ch.opts[k];
+  var D = Math.min(W, H);                      // square frame, centred in the well
+  var fx = X + (W - D) / 2, fy = Y + (H - D) / 2;
+  els.push({ type:'chart', x:fx, y:fy, w:D, h:D, chartType:'doughnut', data:ch.data || [], opts:opts });
+  if (ch.title) {
+    var hole = D * opts.pieScale * 2 * (opts.holeSize / 100) * 0.92;
+    els.push({ type:'t', text:ch.title, x:fx + (D - hole) / 2, y:fy + (D - hole) / 2, w:hole, h:hole,
+      font:'H', size:ch.title.length > 12 ? 16 : 24, color:'titleGray', align:'center', valign:'middle',
+      caps:false, lineSpacing:1, insets:{l:0.04,t:0.04,r:0.04,b:0.04} });
+  }
+}
+
+// ---------- The chart well shared by reportGrayChart / reportDarkChart ----------
+// cfg.chart = { type, data, opts, title, subtitle, note }
+//   type:  'bar' (horizontal, default) | 'column' | 'line' | 'area' | 'pie' | 'doughnut'
+//          ('bar' with opts.barDir:'col' is accepted as 'column')
+//   title / subtitle: small centred heading above the plot (slide 93's
+//          "QoQ GVS by Model / (m953)"); for 'doughnut' the title sits in
+//          the ring's centre instead.
+//   note:  centred summary under the plot (slide 93's "Q1 GVS: ..."); a
+//          string, '\n' for a second line.
+function chartWellEls(els, cfg, dark) {
+  var ch = cfg.chart || {};
+  var type = ch.type || 'bar';
+  if (type === 'bar' && ch.opts && ch.opts.barDir === 'col') type = 'column';
+  var X = 0.78, W = 11.5, top = 2.22, bottom = 6.58;
+  if (ch.title && type !== 'doughnut') {
+    els.push({ type:'t', text:ch.title, x:X, y:top, w:W, h:0.24, font:'B', size:13, color:'bodyGray',
+      align:'center', valign:'bottom', caps:false, lineSpacing:1, insets:{l:0,t:0,r:0,b:0} });
+    top += 0.26;
+    if (ch.subtitle) {
+      els.push({ type:'t', text:ch.subtitle, x:X, y:top, w:W, h:0.2, font:'B', size:11, color:'bodyGray',
+        align:'center', valign:'top', caps:false, lineSpacing:1, insets:{l:0,t:0,r:0,b:0} });
+      top += 0.22;
+    }
+    top += 0.08;
+  }
+  if (ch.note) {
+    // At the source's own position (slide 93: y 6.49); the plot then runs
+    // down to just above it rather than stopping at the plain well's 6.58.
+    var lines = String(ch.note).split('\n').length;
+    var nh = 0.2 * lines + 0.04;
+    els.push({ type:'t', text:ch.note, x:X, y:6.49, w:W, h:nh, font:'B', size:10, color:'bodyGray',
+      align:'center', valign:'top', caps:false, lineSpacing:1.05, insets:{l:0,t:0,r:0,b:0} });
+    bottom = 6.37;
+  }
+  var H = bottom - top;
+  if (type === 'bar') chartBarEls(els, cfg, X, top, W, H, dark);
+  else if (type === 'column') chartColEls(els, cfg, X, top, W, H, dark);
+  else if (type === 'doughnut') chartDoughnutEls(els, cfg, X, top, W, H, dark);
+  else els.push({ type:'chart', x:X, y:top, w:W, h:H, chartType:type,
+    data:ch.data || [], opts:ch.opts || {} });
+}
+
 function layout_reportGrayChart(cfg) {
   var els = [];
   if (cfg.tag) els.push({ type:'t', text:cfg.tag, x:0.61, y:0.54, w:12.12, h:0.29,
@@ -3236,15 +3381,7 @@ function layout_reportGrayChart(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
-  var _ct = (cfg.chart && cfg.chart.type) || 'bar';
-  if (_ct === 'bar') {
-    chartBarEls(els, cfg, 0.78, 2.22, 11.5, 4.36, false);
-  } else {
-    els.push({ type:'chart', x:0.78, y:2.22, w:11.5, h:4.36,
-      chartType:_ct,
-      data:(cfg.chart && cfg.chart.data) || [],
-      opts:(cfg.chart && cfg.chart.opts) || {} });
-  }
+  chartWellEls(els, cfg, false);
 
   return els;
 }
@@ -3269,15 +3406,7 @@ function layout_reportDarkChart(cfg) {
     font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1,
     insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
-  var _ct = (cfg.chart && cfg.chart.type) || 'bar';
-  if (_ct === 'bar') {
-    chartBarEls(els, cfg, 0.78, 2.22, 11.5, 4.36, true);
-  } else {
-    els.push({ type:'chart', x:0.78, y:2.22, w:11.5, h:4.36,
-      chartType:_ct,
-      data:(cfg.chart && cfg.chart.data) || [],
-      opts:(cfg.chart && cfg.chart.opts) || {} });
-  }
+  chartWellEls(els, cfg, true);
 
   return els;
 }
