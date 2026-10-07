@@ -178,6 +178,8 @@ function placeLabels(pts) {
 // Layout
 // ------------------------------------------------------------
 function layout_mapUS(cfg) {
+  // Light report chassis unless the deck says otherwise.
+  if (!cfg.bgColor && !cfg.bgImage && cfg.dark === undefined) { cfg.bgColor = '#EEEEEE'; cfg.dark = 0; }
   var els = [];
   var dark = cfg.dark === 1;
   var BG = dark ? '#262626' : '#EEEEEE';

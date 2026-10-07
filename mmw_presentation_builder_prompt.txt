@@ -3,7 +3,7 @@ CDN: standard-deck-mmw@55bd22fb28973025232a602c6399bcfdd2225f98 (hugedeal-lab)
 
 V2.0 rebuilt the layout library directly from the real MMW template (originally
 MMW PPT Template_7.24.26.pptx; template revisions since then, plus a full
-reporting-family expansion, have been folded in — see §6.1). 84 layouts (V1.0
+reporting-family expansion, have been folded in — see §6.1). 89 layouts (V1.0
 had 22; V2.0's first release had 66). Two breaking changes from V1.0 — read §0.
 
 ── 0. WHAT CHANGED IN V2.0 ─────────────────────────────────
@@ -45,7 +45,7 @@ navigation, interactivity, PPTX export and icons.
 ── 2. HARD RULES ────────────────────────────────────────────
 Artifact: HTML only. data-type="html". width="1920" height="1200"
 CDN only. One idea per slide.
-Layout inventory: ONLY the 84 names in §6.1 are valid. Check before writing any
+Layout inventory: ONLY the 89 names in §6.1 are valid. Check before writing any
   layout: value. An unknown name logs an error and produces an EMPTY slide.
 Content completeness: picking the right layout name is not sufficient — fill
   its actual fields. A layout given only bgColor/notes with no title/content
@@ -147,7 +147,7 @@ Four margin systems — do not mix:
 Every layout has fixed, template-verified coordinates. The generic
 renderHeader/getGrid system is not used by any MMW layout.
 
-6.1 LAYOUT INVENTORY — the ONLY 84 valid names
+6.1 LAYOUT INVENTORY — the ONLY 89 valid names
 
 COVERS (5)
 Name	Template layout	Background	Use
@@ -252,8 +252,17 @@ blank/near-empty cfg:
   blankLight   -> reportJourneyMap       (needs cfg.panels)
   titleBullets -> reportPlatformMatrix   (needs cfg.hub/cfg.spokes)
 If a slide genuinely needs an unstructured escape-hatch canvas with no
-composition at all, use the bare reportGray/reportDark chassis above and
-build it from raw els — there is no dedicated "blank" name anymore.
+composition at all, use canvasDark/canvasGrey/canvasLight below (fully
+blank) or the bare reportGray/reportDark chassis above (report header kept),
+and place your content in cfg.els. Those five are the ONLY layouts that draw
+cfg.els -- on any other layout, els are discarded.
+
+BLANK CANVASES (3)
+Name	Template layout	Background	Use
+canvasDark	Blank Dark	#262626	Genuinely empty slide. Background only + cfg.els (raw elements, §6.3).
+canvasGrey	Blank Grey	#EFF0F3	Same, grey.
+canvasLight	Blank Light	#FFFFFF	Same, white.
+(bgColor/dark default to the template's values; set them only to override.)
 
 PRODUCTION PLANNING (11)
 Name	Template layout	Background	Use
@@ -287,6 +296,11 @@ pinterest2x3	Pinterest 2:3	#FFFFFF	Pinterest 2:3 spec sheet.
 pinterest1x1	Pinterest 1:1	#FFFFFF	Pinterest 1:1 spec sheet.
 youtubeDivider	Youtube_Divider	#000000	YouTube platform divider.
 youtubeVideoAd	Youtube_VideoAd	#FFFFFF	YouTube video ad, 16:9.
+
+MAPS (2) — styled after the template's map slide; report chassis (tag/title/intro)
+Name	Template layout	Background	Use
+mapUS	(map slide)	#EEEEEE or #262626	US map with highlighted states and labelled locations. cfg.style 'solid' (filled states) | 'dots' (dot grid). cfg.highlight: states as postal codes or names (['CA','TX'] / ['California']) -> Spark tan. cfg.cities: ['Irvine', 'Dallas'] or {name, state?, note?, label?} -- ~770 US cities built in; for anywhere else pass {name, lat, lon}. cfg.legend: label for the tan highlight. cfg.marker 'pin'|'dot' (default: template pins, auto-switching to dots when cities crowd). Labels place themselves; list cities in priority order. Defaults to the light chassis; for dark pass dark:1, bgColor:'#262626'. Unknown states/cities log a warning and are skipped -- never invent coordinates.
+mapWorld	(map slide)	#262626 (default)	Decorative world map -- NO country boundaries, so never use it to show specific countries or markets. cfg.style 'solid' | 'dots' | 'globes' (cfg.globes: any of 'americas','atlantic','europe-africa','asia-pacific', default all four; cfg.captions labels them). For "global / worldwide / every market" framing only. dark:0 + light bgColor switches to the light variants.
 Names are case-sensitive. The exact template names ("Cover Dark", "Moodboard "
 with its trailing space, "Title & Bullets", "Meta_Video&Static") also resolve,
 so this prompt and MMW_Layout_Spec.md agree.
@@ -302,7 +316,10 @@ points -> threeCol* | Two-step process -> twoRows* | VO script -> storyboardVO
 collage -> videoReference | Talent -> castingGrid/castingTalent | Locations ->
 locationOverview/locationDetail | Props -> moodboardProps | Wardrobe ->
 moodboardWardrobe | Aesthetic -> moodboardToneManner | Paid social -> the
-platform+ratio layout that matches the asset being delivered
+platform+ratio layout that matches the asset being delivered | US
+states/markets/locations -> mapUS | Global/worldwide framing (no specific
+countries) -> mapWorld | Fully blank slide for hand-placed content ->
+canvasDark/Grey/Light
 
 Reporting family — pick the composition that matches the content's actual
 shape, not just "it's a report slide": a chart/table with no other structure
@@ -321,7 +338,22 @@ grouped rows -> reportChannelMatrix | Campaign-progress flow art (slide 72
 specifically) -> reportGrayTimeline
 
 6.3 Raw element types: t | s | o | i | d | p | b | bl | chart | tbl | img
-Icons: Lucide names, kebab-case. Icon color defaults 'accent'.
+Icons: kebab-case names. Icon color defaults 'accent'.
+PREFER the MMW brand set (mmw-*, the template's own line icons) whenever one fits; fall back to
+Lucide names only when none does. Never mix the two sets on one slide -- MMW icons are finer-lined.
+MMW set (prefix each with 'mmw-'): agreement, announcement, approved, area-chart, bar-horizontal, bar-line-combo,
+bar-steps, bars-rising, budget-calc, budget-plan, business-cycle, business-
+expansion, business-meeting, candlestick, chart-board, column-chart, columns,
+cost-analysis, customer-value, dashboard, dealer-network, decline-curve,
+donut-chart, global-business, global-growth, goal-hit, goal-reached, growth-
+hand, idea, investment, laptop-trend, launch, line-chart, market-reach,
+market-research, mobile-analytics, monitor-chart, opportunity-search,
+oversight, percent-growth, performance-alert, pie-3d, pie-select,
+presentation-audience, presenting-growth, pricing-review, profit-up, puzzle,
+radar-chart, rate-change, retail-expansion, retail-growth, revenue-growth,
+risk-report, roi, seo, steps-3d, store-exchange, store-network, strategy-plan,
+summit, target, target-metrics, team-growth, trading-screen, trend-analysis,
+trend-nodes, trend-up, trend-watch, verified, web-analytics, web-trend
 
 6.4 Fixed item counts — these grids have no spare cell and no overflow rule
 storyboardGrid 6 {number,caption} | castingGrid 4 {name} | locationOverview 5
@@ -507,7 +539,7 @@ MMW_ASSET_BASE, so it must be absolute:
   id=gi1  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@55bd22fb28973025232a602c6399bcfdd2225f98/assets/logos/wpp_mazda_lockup_black.png
   id=gi1w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@55bd22fb28973025232a602c6399bcfdd2225f98/assets/logos/wpp_mazda_lockup_white.png
 
-Then seven script elements, in this exact order and this exact order only.
+Then nine script elements, in this exact order and this exact order only.
 Each is either EXTERNAL (a src attribute pointing at a URL, empty body) or
 INLINE (no src attribute, a JS body). Emit each as a real script element:
 opening tag with the src attribute if external, the stated body if inline,
@@ -518,16 +550,20 @@ then the closing tag immediately after.
 3. EXTERNAL  src = https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js
 4. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@55bd22fb28973025232a602c6399bcfdd2225f98/standard-deck.js
 5. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@55bd22fb28973025232a602c6399bcfdd2225f98/deck-layouts.js
-6. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@55bd22fb28973025232a602c6399bcfdd2225f98/deck-shell.js
-7. INLINE    body:
+6. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@55bd22fb28973025232a602c6399bcfdd2225f98/map-data.js
+7. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@55bd22fb28973025232a602c6399bcfdd2225f98/deck-maps.js
+8. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@55bd22fb28973025232a602c6399bcfdd2225f98/deck-shell.js
+9. INLINE    body:
    var D=[__D_ARRAY__];
    deckInit({title:'[Title]', contentFooter:'Company Confidential'});
 
 Closing: </body></html>
 
 The commit ref (currently 55bd22fb28973025232a602c6399bcfdd2225f98) is a pin, not
-a branch. It appears in script items 1, 4, 5 and 6, in script item 2's
-MMW_ASSET_BASE, and in all four brand-mark img src URLs above -- nine places.
+a branch. It appears in script items 1, 4, 5, 6, 7 and 8, in script item 2's
+MMW_ASSET_BASE, and in all four brand-mark img src URLs above -- eleven places.
+Items 6 and 7 (map-data.js, deck-maps.js) are required in every artifact,
+whether or not the deck uses a map.
 A stale pin silently serves old code and old assets, and the code pin and the
 asset pin drifting apart is its own failure mode. Update every occurrence
 together, never just some.
@@ -535,7 +571,7 @@ together, never just some.
 deckInit options: title (REQUIRED) | contentFooter string|false | noLogo true
 
 ── 14. PRE-GEN CHECKLIST ────────────────────────────────────
-Content: □ One idea/slide □ Every layout name from §6.1's 84 □ Fixed item counts
+Content: □ One idea/slide □ Every layout name from §6.1's 89 □ Fixed item counts
   respected (§6.4) □ Titles copy-fitted (§6.7) BEFORE layout choice
 Typography: □ Sizes from §6.5, engine-space □ Nothing scaled twice
 Color: □ Tokens only □ 'paper'/'asphalt' not 'white'/'black' for MMW neutrals

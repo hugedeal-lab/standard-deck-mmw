@@ -870,9 +870,9 @@ genuinely blank canvas work (a slide that doesn't match any composition in
 (`blankDark`, `blankGrey`, `blankLight`, plus `titleBullets` for
 `Title & Bullets`) turned out to be broken duplicates of a slide composition
 that was later given its own proper `report*` name, and have been retired to
-point at that composition instead (§11.4). There is currently no engine name
-that renders these masters genuinely empty -- for real blank-canvas work use
-`reportGray`/`reportDark` (§11.1) and hand-place content.
+point at that composition instead (§11.4). Genuinely empty slides use the
+`canvasDark` / `canvasGrey` / `canvasLight` engine names (§11.2) -- new names
+rather than reclaimed ones, so decks relying on the redirects don't change.
 
 ### 11.1 The report header chassis
 
@@ -949,12 +949,23 @@ Three empty layouts carrying **nothing but a slide number**. They exist so a dec
 | Layout | Background | Slides |
 |---|---|---|
 | `Blank Dark` | inherits master **#262626** | 74, 75, 89, 90, 95, 110, 114 |
-| `Blank Grey` | **#EEEEEE** | 92, 96, 111 |
+| `Blank Grey` | **#EFF0F3** | 92, 96, 111 |
 | `Blank Light` | **#FFFFFF** | 99, 100, 112 |
 
-Note `Blank Grey` (#EEEEEE) and `Blank Light` (#FFFFFF) are genuinely different surfaces — grey is MMW Paper, light is pure white. Every instance composes its own body; there is no shared structure to inherit. For agent purposes, treat these as an escape hatch: use them only when no other layout fits, and hand-place against the §2 grid.
+Note `Blank Grey` (#EFF0F3 -- the layout XML's own fill; an earlier revision of this table said #EEEEEE) and `Blank Light` (#FFFFFF) are genuinely different surfaces. Every instance composes its own body; there is no shared structure to inherit. For agent purposes, treat these as an escape hatch: use them only when no other layout fits, and hand-place against the §2 grid.
 
-**Engine note:** the `blankDark`/`blankGrey`/`blankLight` *engine* names no longer render empty — each retired to the specific `report*` composition that shares its source slide (§11.4), since those were broken duplicates of that composition rather than a true blank canvas. There is currently no engine name that renders these masters genuinely empty; for real blank-canvas work, use `reportGray`/`reportDark` (§11.1) instead and hand-place content.
+**Engine note:** the `blankDark`/`blankGrey`/`blankLight` *engine* names no longer render empty — each retired to the specific `report*` composition that shares its source slide (§11.4), since those were broken duplicates of that composition rather than a true blank canvas. Genuinely empty slides now use `canvasDark`/`canvasGrey`/`canvasLight` (below).
+
+**Blank canvases -- `canvasDark` / `canvasGrey` / `canvasLight`.** The engine names
+for these three masters as they really are: background only (`#262626`
+inherited from the slide master / `#EFF0F3` / `#FFFFFF`, defaulted when the deck
+leaves `bgColor`/`dark` unset), plus whatever raw elements the deck supplies in
+`cfg.els`. `reportGray` / `reportDark` (§11.1) also draw `cfg.els` over their
+header chassis. Those five layouts opt in by listing `els` in `LAYOUT_KEYS`;
+the engine discards `els` on every other layout ("layout takes precedence").
+Before 2026-10, `els` were discarded on all layouts -- including the bare
+chassis this doc told authors to compose on -- so hand-placed content never
+rendered.
 
 ### Blank Dark
 
@@ -2112,6 +2123,63 @@ Pick the layout by the **asset ratio being delivered**, not by taste. A 4:5 asse
 | body / caption | 0.47 | 6.44 | 2.65 | 0.39 | **10.0pt** | Arial | #868686 muted | left / top | line 115%; e.g. "CTA: Learn More" |
 | body / caption | 0.47 | 6.85 | 2.65 | 0.39 | **10.0pt** | Arial | #868686 muted | left / top | line 115%; e.g. "Destination: VLP" |
 ---
+
+## 13A. Maps — 2 layouts (styled after template slide 114)
+
+The template's map slide (7/30/26, slide 114) is a set of decorative graphics: a
+solid world map (grey `#808080` land), a dot-matrix world map (Spark), four
+globes (Spark land, `#EEEEEE` ocean) and three location markers. None of it
+carries boundaries -- continents are single shapes -- so it can't highlight a
+specific place. Two layouts split the job. Both live in `deck-maps.js`
+(geometry in the generated `map-data.js`), not in `deck-layouts.js`.
+
+### mapUS — data map: highlighted states, labelled locations
+
+- **Geometry:** US Census state boundaries (via `us-atlas@3`, public domain),
+  simplified to ~3.6k points, Albers USA with Alaska/Hawaii insets (=
+  `d3.geoAlbersUsa().scale(1300)`). Cities: Natural Earth populated places
+  (public domain), ~770 US entries. Regenerate with `tools/build_us_map.js`.
+- **Styles:** `solid` -- every state a separate freeform shape (95 incl.
+  islands), land `#CCCCCC` light / `#808080` dark, borders in the slide colour;
+  `dots` -- a ~1,700-dot grid (template density), base `#C2C2C2` / `#5E5E5E`.
+  Highlighted states turn Spark `#BFA588` in both. Every state, DC included,
+  owns at least one dot.
+- **Markers:** the template's own pin (Google Shape 3337, tip on the point,
+  hole drawn in the slide colour) by default. When any two cities sit closer
+  than a pin is wide the whole map switches to dots (`marker` forces either);
+  overlapping dots are pushed apart until they just touch (~7 miles).
+- **Labels:** 8pt bold caps (+0.6pt tracking), optional 7pt note line. Placed
+  greedily in the author's order, avoiding every marker and earlier label;
+  falls back to a 0.5pt leader line. On the dot grid a slide-coloured plate
+  clears dots behind each name.
+- **Fields:** `style`, `highlight` (postal codes or names), `cities` (names,
+  `{name, state?, note?, label?}` or `{name, lat, lon}`), `legend`, `marker`,
+  plus the report chassis `tag`/`title`/`intro`. Light chassis by default.
+- **Export:** states, pins and dots are real shapes; labels are live text. A
+  user can recolour any state in PowerPoint.
+- **DMAs:** pending the county-to-DMA assignment list (Nielsen data); the
+  pipeline is the same, with counties dissolved into DMAs.
+
+### mapWorld — decorative world / globes
+
+- `assets/maps/`: `world_solid_{dark,light}`, `world_dots`,
+  `globe_{americas,atlantic,europe_africa,asia_pacific}_{dark,light}` --
+  transparent PNGs extracted from slide 114's own shapes
+  (`tools/extract_map_group.py`). Light variants: land `#CCCCCC`, globe ocean
+  `#FFFFFF`.
+- `style`: `solid` (default) | `dots` | `globes` (`globes` picks any of the
+  four, west to east by default; `captions` labels them). Dark chassis by
+  default, as on the source slide.
+- Decorative only: never use it to indicate specific countries.
+
+### Icons — the MMW set
+
+The template's MARKET ANALYSIS and CHARTS line icons ship as 72 `mmw-*` icons
+in `deck-icons.js` (built by `tools/build_mmw_icons.py` from the Keynote
+package's original SVGs; names in `tools/mmw_icon_names.json`; seven
+near-duplicate CHARTS icons left out). They recolour like Lucide (`type:'i'`),
+at a finer stroke (3.4% of icon size) -- prefer them over Lucide, and don't mix
+the two sets on one slide.
 
 ## 14. Build rules and pre-flight checklist
 
