@@ -6,12 +6,21 @@
 // and deck-shell.js are executed verbatim in a shared vm context. A bug found
 // here is a bug in the code the browser runs.
 const fs = require('fs'), path = require('path'), vm = require('vm');
+// pptxgenjs / jszip: normal resolution (a local node_modules, or NODE_PATH),
+// falling back to a global install. `npm i pptxgenjs@3.12.0 jszip@3.10.1`
+// anywhere and point NODE_PATH at it.
+function need(m) {
+  try { return require(m); } catch (e) {
+    try { return require(path.join(require('child_process').execSync('npm root -g').toString().trim(), m)); }
+    catch (e2) { console.error('!! cannot find "' + m + '" -- npm i pptxgenjs@3.12.0 jszip@3.10.1, then set NODE_PATH'); process.exit(1); }
+  }
+}
 
-const SRC = process.env.MMW_SRC || '/mnt/workspace/output/mmw-v2/';
+const SRC = process.env.MMW_SRC || path.join(__dirname, '..');   // repo root by default
 // Assets are read from their own root: the published copies live on a synced
 // surface where some files block indefinitely on read.
 const ASSETS = process.env.MMW_ASSETS || SRC;
-const OUT = process.argv[2] || '/tmp/mmw_layout_reference.pptx';
+const OUT = path.resolve(process.argv[2] || 'mmw_layout_reference.pptx');
 const read = f => fs.readFileSync(path.join(SRC, f), 'utf8');
 
 // ---- image cache: real bytes as data URIs, keyed by the path layouts use ----
@@ -141,8 +150,8 @@ const sandbox = {
   // btoa is a browser global; deck-icons.js uses it for its SVG data URIs.
   btoa: function (str) { return Buffer.from(str, 'binary').toString('base64'); },
   unescape: unescape, encodeURIComponent: encodeURIComponent,
-  JSZip: require('/usr/lib/node_modules/jszip'),
-  PptxGenJS: require('/usr/lib/node_modules/pptxgenjs'),
+  JSZip: need('jszip'),
+  PptxGenJS: need('pptxgenjs'),
   __captured: null,
   addEventListener: noop, removeEventListener: noop,
   innerWidth: 1920, innerHeight: 1200, devicePixelRatio: 1,

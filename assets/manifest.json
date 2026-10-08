@@ -165,5 +165,89 @@
  {
   "file": "social/pinterest_1x1_frame.png",
   "note": "Real Pinterest video-pin mockup (scrubber, Learn more arrow), replaces pinterest_device_frame.png."
+ },
+ {
+  "file": "maps/globe_americas_dark.png",
+  "source": "slide114 vector group (tools/extract_map_group.py)",
+  "bytes": 49022,
+  "md5": "5e03265f3963",
+  "note": "Globe, Americas view -- template colours (Spark land, #EEEEEE ocean), dark slides (mapWorld)."
+ },
+ {
+  "file": "maps/globe_americas_light.png",
+  "source": "slide114 vector group (tools/extract_map_group.py)",
+  "bytes": 47188,
+  "md5": "7c4eba525d72",
+  "note": "Globe, Americas view -- white ocean, light slides (mapWorld)."
+ },
+ {
+  "file": "maps/globe_asia_pacific_dark.png",
+  "source": "slide114 vector group (tools/extract_map_group.py)",
+  "bytes": 50324,
+  "md5": "18765e72e07f",
+  "note": "Globe, Asia-Pacific view -- template colours (Spark land, #EEEEEE ocean), dark slides (mapWorld)."
+ },
+ {
+  "file": "maps/globe_asia_pacific_light.png",
+  "source": "slide114 vector group (tools/extract_map_group.py)",
+  "bytes": 49431,
+  "md5": "51119fe64dac",
+  "note": "Globe, Asia-Pacific view -- white ocean, light slides (mapWorld)."
+ },
+ {
+  "file": "maps/globe_atlantic_dark.png",
+  "source": "slide114 vector group (tools/extract_map_group.py)",
+  "bytes": 54754,
+  "md5": "5668f6f68f67",
+  "note": "Globe, Atlantic view -- template colours (Spark land, #EEEEEE ocean), dark slides (mapWorld)."
+ },
+ {
+  "file": "maps/globe_atlantic_light.png",
+  "source": "slide114 vector group (tools/extract_map_group.py)",
+  "bytes": 54076,
+  "md5": "2b9c7e58388f",
+  "note": "Globe, Atlantic view -- white ocean, light slides (mapWorld)."
+ },
+ {
+  "file": "maps/globe_europe_africa_dark.png",
+  "source": "slide114 vector group (tools/extract_map_group.py)",
+  "bytes": 51549,
+  "md5": "9b0fe941ce97",
+  "note": "Globe, Europe/Africa view -- template colours (Spark land, #EEEEEE ocean), dark slides (mapWorld)."
+ },
+ {
+  "file": "maps/globe_europe_africa_light.png",
+  "source": "slide114 vector group (tools/extract_map_group.py)",
+  "bytes": 49938,
+  "md5": "6bad64723b6d",
+  "note": "Globe, Europe/Africa view -- white ocean, light slides (mapWorld)."
+ },
+ {
+  "file": "maps/world_dots.png",
+  "source": "slide114 vector group (tools/extract_map_group.py)",
+  "bytes": 164593,
+  "md5": "b94364517032",
+  "note": "Dot-matrix world map, Spark #BFA588 -- either background (mapWorld)."
+ },
+ {
+  "file": "maps/world_solid_dark.png",
+  "source": "slide114 vector group (tools/extract_map_group.py)",
+  "bytes": 107609,
+  "md5": "a9d71735b213",
+  "note": "Solid world map, template grey #808080 land -- dark slides. From 7/30/26 slide 114 (mapWorld)."
+ },
+ {
+  "file": "maps/world_solid_light.png",
+  "source": "slide114 vector group (tools/extract_map_group.py)",
+  "bytes": 111363,
+  "md5": "584078446396",
+  "note": "Solid world map, #CCCCCC land -- light slides (mapWorld)."
+ },
+ {
+  "file": "backgrounds/campaign_progress.png",
+  "source": "Keynote export of the template slide 72 flow art",
+  "bytes": 988528,
+  "md5": "47791eb80693",
+  "note": "Campaign-progress flow art for reportGrayTimeline (replaced report_timeline_flow.png, which rendered pixelated). White keyed to transparent."
  }
 ]

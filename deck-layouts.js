@@ -3966,7 +3966,7 @@ function resolve(name) {
 // Keys each layout actually reads. Anything else a deck supplies is content
 // that would vanish without trace -- e.g. `subhead` on a divider, which has only
 // an eyebrow and a title. Warn rather than fail: the slide is still valid.
-var VERSION = 'v2.0-20260902-0137 (87 layouts)';
+var VERSION = 'v2.1-20261008 (87 layouts; +2 map layouts in deck-maps.js)';
 var LAYOUT_KEYS = {
   "canvasDark": ["els"], "canvasGrey": ["els"], "canvasLight": ["els"],
   "coverLight": [
