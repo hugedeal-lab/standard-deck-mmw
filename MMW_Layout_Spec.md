@@ -2197,9 +2197,17 @@ specific place. Two layouts split the job. Both live in `deck-maps.js`
 The template's MARKET ANALYSIS and CHARTS line icons ship as 72 `mmw-*` icons
 in `deck-icons.js` (built by `tools/build_mmw_icons.py` from the Keynote
 package's original SVGs; names in `tools/mmw_icon_names.json`; seven
-near-duplicate CHARTS icons left out). They recolour like Lucide (`type:'i'`),
-at a finer stroke (3.4% of icon size) -- prefer them over Lucide, and don't mix
-the two sets on one slide.
+near-duplicate CHARTS icons left out). They are the primary set (`type:'i'`).
+
+**Fallback: Phosphor thin (`ph-*`).** 1,512 single-subject line icons from
+Phosphor (MIT; `licenses/phosphor-LICENSE.txt`), built by
+`tools/build_phosphor_icons.py` from the thin weight -- its stroke (3.1% of
+icon size) matches the MMW set's (3.4%); light/regular read heavier. Use for
+subjects the MMW set lacks (car, calendar, map pin, camera). One family per
+slide: MMW icons are small illustrations, Phosphor icons simple symbols.
+Names resolve exact -> `ph-` form -> legacy Lucide; an unknown name draws
+nothing and warns (it used to print its own text). Lucide stays in the bundle
+only so older decks keep rendering.
 
 ## 14. Build rules and pre-flight checklist
 

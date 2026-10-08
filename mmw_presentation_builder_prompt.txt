@@ -361,9 +361,15 @@ grouped rows -> reportChannelMatrix | Campaign-progress flow art (slide 72
 specifically) -> reportGrayTimeline
 
 6.3 Raw element types: t | s | o | i | d | p | b | bl | chart | tbl | img
-Icons: kebab-case names. Icon color defaults 'accent'.
-PREFER the MMW brand set (mmw-*, the template's own line icons) whenever one fits; fall back to
-Lucide names only when none does. Never mix the two sets on one slide -- MMW icons are finer-lined.
+Icons (type:'i'): kebab-case names. Icon color defaults 'accent'. TWO sets, same line weight:
+  1. PRIMARY -- the MMW brand set (mmw-*): the template's own illustrative line icons, for
+     concepts (growth, strategy, analytics, retail, teamwork). Use one whenever it fits.
+  2. FALLBACK -- Phosphor thin (ph-*): 1,500+ single-subject icons for everything the MMW set
+     doesn't cover (car, steering wheel, calendar, map pin, camera...). Any Phosphor icon name
+     works with the ph- prefix (phosphoricons.com); the common ones are listed below.
+  Don't mix mmw-* and ph-* on one slide: MMW icons are small illustrations, Phosphor icons are
+  simple symbols -- one family per slide reads as a set. The old Lucide names are not offered.
+  An unknown name renders nothing (and logs a warning) -- use only names from these lists.
 MMW set (prefix each with 'mmw-'): agreement, announcement, approved, area-chart, bar-horizontal, bar-line-combo,
 bar-steps, bars-rising, budget-calc, budget-plan, business-cycle, business-
 expansion, business-meeting, candlestick, chart-board, column-chart, columns,
@@ -377,6 +383,24 @@ radar-chart, rate-change, retail-expansion, retail-growth, revenue-growth,
 risk-report, roi, seo, steps-3d, store-exchange, store-network, strategy-plan,
 summit, target, target-metrics, team-growth, trading-screen, trend-analysis,
 trend-nodes, trend-up, trend-watch, verified, web-analytics, web-trend
+
+Phosphor -- common names (prefix each with 'ph-'; any other Phosphor name works too):
+  Vehicle: car car-profile car-simple steering-wheel engine gas-pump charging-station lightning
+    road-horizon traffic-sign speedometer gauge tire key garage
+  Place: map-pin map-trifold compass globe-hemisphere-west navigation-arrow mountains tree sun
+    moon city house buildings storefront airplane-tilt
+  People: user users users-three user-circle handshake hand-heart heart smiley chat-circle chats megaphone
+  Media/production: camera video-camera film-slate film-strip microphone headphones image images
+    monitor-play play-circle aperture pen-nib paint-brush palette
+  Digital/channels: device-mobile desktop laptop browser globe at envelope share-network hash
+    broadcast television newspaper rss
+  Data/business: chart-bar chart-line chart-pie chart-donut trend-up trend-down presentation-chart
+    currency-dollar coins wallet calculator briefcase target trophy medal
+  Planning: calendar calendar-check calendar-dots clock timer hourglass check-circle check-square
+    list-checks clipboard-text flag path git-branch arrows-clockwise funnel kanban
+  Ideas/quality: lightbulb sparkle star seal-check shield-check lock eye magnifying-glass
+    puzzle-piece rocket-launch leaf recycle
+  UI: arrow-right arrow-up-right arrows-out caret-right plus minus x info warning question link
 
 6.4 Fixed item counts — these grids have no spare cell and no overflow rule
 storyboardGrid 6 {number,caption} | castingGrid 4 {name} | locationOverview 5

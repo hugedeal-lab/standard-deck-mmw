@@ -850,6 +850,9 @@ if (window.DeckIcons && window.DeckIcons.toDataURL) {
     return;
   }
 }
+// An unknown icon NAME exports nothing (DeckIcons has warned), matching the
+// preview -- it used to be written onto the slide as text.
+if (window.DeckIcons && /^[a-z0-9-]+$/.test(String(el.icon || ''))) return;
 // Fallback: emoji as text
 var scale = (el.w >= 0.45) ? 0.50 : 0.42;
 slide.addText(el.icon || '', { x: el.x, y: el.y, w: el.w, h: el.h,

@@ -55,6 +55,9 @@ template geometry).
   differences by hand.
 - `mkharness.js` → `mkstandalone.js` build the QA decks (`test-deck.html`,
   `test-deck-standalone.html`) from the **real** `deck-layouts.js`.
+- `build_phosphor_icons.py <phosphor>/SVGs/thin` rebuilds the `ph-*` block in
+  deck-icons.js (fallback icon set; idempotent). Source: the Phosphor zip in the
+  project's OneDrive folder.
 - `copy_budgets.js` measures every field's character budget from the QA deck
   through the engine's own text fit, writes `COPY_BUDGETS.md` and regenerates
   the budget block in the prompt's §6.7. Re-run it after changing a layout's
@@ -82,6 +85,7 @@ node smoke.js        # every layout in deck-layouts.js dispatches, both dark mod
 node mapstest.js     # mapUS / mapWorld: projection, markers, labels, assets
 node fittest.js      # text fit: QA deck clean, social copy API, overflow warnings
 node bgtest.js       # template backgrounds: tokens, missing, junk, asset paths
+node icontest.js     # icons: mmw-* + ph-* sets, name resolution, unknown names blank
 node covertest.js    # 5 cover variants, asset resolution
 node divtest.js      # 8 divider variants
 node rotatetest.js   # photo rotation + determinism across 4 dispatch passes

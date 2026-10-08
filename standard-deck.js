@@ -633,9 +633,13 @@ div.style.width = toX(el.w) + 'px'; div.style.height = toY(el.h) + 'px';
 var color = resolveColor(el.color || 'accent', isDark);
 var sizePx = Math.min(toX(el.w), toY(el.h)) * 0.55;
 
-// Try Lucide SVG first, fall back to emoji/text
+// Icon set first (mmw-* / ph-* / legacy names, resolved by DeckIcons). An
+// unknown icon NAME draws nothing (DeckIcons warns) -- it used to print the
+// name itself on the slide. A non-name value (an emoji) still renders as text.
 if (window.DeckIcons && window.DeckIcons.has(el.icon)) {
   div.innerHTML = window.DeckIcons.get(el.icon, color, Math.round(sizePx));
+} else if (window.DeckIcons && /^[a-z0-9-]+$/.test(String(el.icon || ''))) {
+  window.DeckIcons.resolve && window.DeckIcons.resolve(el.icon);   // logs the warning
 } else {
   div.style.fontSize = sizePx + 'px';
   div.style.color = color;

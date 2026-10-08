@@ -54,8 +54,9 @@ Neutrals: asphalt #262626 · paper #EEEEEE · titleGray #919292 · bodyGray #808
 Mood families for dividers/headlines only: canopy · aurora · tide.
 setAccent() is GLOBAL and STATEFUL — set it right before the slide, then back to
 'spark'. The divider TAG stays Spark on all 8.
-Icons (type:'i'): PREFER the MMW set (mmw-*, list in prompt §6.3); Lucide only
-when nothing fits; never mix the two sets on one slide.
+Icons (type:'i'): PRIMARY the MMW set (mmw-*, list in prompt §6.3); FALLBACK
+Phosphor thin (ph-*, e.g. ph-car, ph-calendar, ph-map-pin). One family per slide.
+Unknown names render nothing.
 
 ── HARD RULES ───────────────────────────────────────────────
 One idea per slide. Semantic colour tokens only — no hex in the D array. Safe
