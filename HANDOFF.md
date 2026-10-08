@@ -11,7 +11,7 @@ Rebuilding the MMW Presentation Builder agent against the real `MMW_PPT_Template
 | Area | Status |
 |---|---|
 | Layout spec, all layouts | Complete — `MMW_Layout_Spec.md` (84 layouts, includes the 24 in the reporting family) |
-| `deck-layouts.js` | Complete — 87 layouts (+ 2 map layouts in `deck-maps.js` = 89); hand-maintained source of truth (see "Where the layouts live") |
+| `deck-layouts.js` | Complete — 88 layouts (+ 2 map layouts in `deck-maps.js` = 90); hand-maintained source of truth (see "Where the layouts live") |
 | Charts | Column chart and template doughnut added (slides 93/94, 82/88); chart title/subtitle/note on every chart type |
 | Maps | `mapUS` (highlighted states, labelled cities, template pins) and `mapWorld` (decorative) — `deck-maps.js` + `map-data.js`; DMAs pending the county-to-DMA list |
 | Blank canvases | `canvasDark/Grey/Light`; `reportGray/Dark` now draw `cfg.els` |
@@ -86,7 +86,7 @@ node divtest.js      # 8 divider variants
 node rotatetest.js   # photo rotation + determinism across 4 dispatch passes
 ```
 
-Expected: smoke reports every layout dispatched (87 today), 0 failures, 0 warnings; mapstest "all map checks passed".
+Expected: smoke reports every layout dispatched (88 today), 0 failures, 0 warnings; mapstest "all map checks passed".
 
 In a browser: **serve over http, not `file://`** (`python -m http.server 8000`) — under `file://` the canvas is tainted and images link instead of embedding. **Install `Mazda Type Bold` and `Mazda Type`** or every metric will look wrong for reasons unrelated to the code.
 

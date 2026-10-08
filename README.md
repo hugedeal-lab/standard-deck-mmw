@@ -1,6 +1,6 @@
 # MMW Presentation Builder — implementation bundle
 
-Built from `MMW PPT Template_7.24.26.pptx` (v2.0) and revised against `7.30.26`. **89 layouts** (v1.0 had 22, v2.0 shipped 66), corrected type scale, the brand asset set extracted from the template, and — since v2.0 — real chart compositions, US and world maps, blank canvases and the MMW icon set. See **"Since v2.0"** below, and `HANDOFF.md` for the current state and workflow.
+Built from `MMW PPT Template_7.24.26.pptx` (v2.0) and revised against `7.30.26`. **90 layouts** (v1.0 had 22, v2.0 shipped 66), corrected type scale, the brand asset set extracted from the template, and — since v2.0 — real chart compositions, US and world maps, blank canvases and the MMW icon set. See **"Since v2.0"** below, and `HANDOFF.md` for the current state and workflow.
 
 ## What's here
 
@@ -549,7 +549,7 @@ cd tests && node smoke.js && node mapstest.js && node fittest.js   # plus covert
 cd tools && node export_node.js out.pptx           # real PPTX export, headless (see "Exporting without a browser")
 ```
 
-Expected today: smoke dispatches all 87 layouts in `deck-layouts.js` at `dark:0` and `dark:1` with 0 failures and 0 warnings; `mapstest.js` reports "all map checks passed"; `fittest.js` "all fit checks passed" (the QA deck raises no overflow warnings); the 95-slide QA deck exports cleanly. `mmw_layouts.json` remains the measured-geometry reference for checking a layout against the template.
+Expected today: smoke dispatches all 88 layouts in `deck-layouts.js` at `dark:0` and `dark:1` with 0 failures and 0 warnings; `mapstest.js` reports "all map checks passed"; `fittest.js` "all fit checks passed" (the QA deck raises no overflow warnings); the 95-slide QA deck exports cleanly. `mmw_layouts.json` remains the measured-geometry reference for checking a layout against the template.
 
 *At the v2.0 release (66 layouts)* casing, line-spacing and font face matched the template exactly on all 426 geometry-matched text elements, and the cover was measured pixel-to-spec against a template render:
 

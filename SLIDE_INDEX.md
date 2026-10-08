@@ -30,7 +30,7 @@ the engine equivalent where one exists.
 | 17 | Divider Canopy | `dividerCanopy` |  |
 | 18 | Divider Aurora | `dividerAurora` |  |
 | 19 | Divider Tides | `dividerTides` |  |
-| 20 | 1_Divider Tides | `dividerTides` |  |
+| 20 | 1_Divider Tides | `dividerPhoto` |  |
 | 21 | Divider Dark | `dividerDark` |  |
 | 22 | Table of contents | `tableOfContents` |  |
 | 23 | Content 01 | `content01` |  |

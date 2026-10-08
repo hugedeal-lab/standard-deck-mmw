@@ -342,7 +342,9 @@ Image-forward cover. Three picture placeholders: idx 21 is the image well, idx 2
 **Spacing:** the image well is `x:1.24 y:-0.87 w:15.54 h:8.68` at layout level — it bleeds off the top, right and bottom deliberately. Demo slide 10 tames it to `x:1.99 y:-0.02 w:11.43 h:7.57`. Either is valid; the layout value is the designed intent. The title column is only 6.48 wide (~15 characters per line at 54.5pt all-caps), so this layout needs a **short** title.
 ---
 
-## 7. Dividers — 8 layouts, one design
+## 7. Dividers — 9 layouts, one design
+
+> **`dividerPhoto` (template layout `1_Divider Tides`, slide 20)** is the ninth: the same tag + title geometry (#EEEEEE title) over a full-bleed photo. Despite its name it is not a Tides variant -- the layout's background is a CX-90 lifestyle photo at -20% brightness and slide 20 swaps in its own photo. The engine draws the photo as a replaceable well (`images[0]`), pre-filled from `assets/photos/divider_01.jpg` (slide 20's photo) and `divider_02.jpg` (the layout's, darkening baked in). Until 2026-10 the name resolved to `dividerTides` and the design was unreachable. The eight below are the original set.
 
 The eight divider layouts are **one composition in eight backgrounds**. Tag and title geometry are byte-identical across all eight; only the background and the title colour change. Build one layout with a `bgVariant` switch.
 

@@ -38,6 +38,8 @@ it measures its own list (prompt section 15.1).
 | `dividerAurora` | `title` | 24/70 |
 | `dividerTides` | `tag` | 50/600+ |
 | `dividerTides` | `title` | 24/75 |
+| `dividerPhoto` | `tag` | 50/600+ |
+| `dividerPhoto` | `title` | 24/75 |
 | `headlineLight` | `tag` | 32/350 |
 | `headlineLight` | `title` | 85 |
 | `headlineDark` | `tag` | 32/350 |

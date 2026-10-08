@@ -1970,6 +1970,23 @@ function layout_dividerAurora(cfg) {
 }
 
 // ==========================================================
+// LAYOUT: DIVIDER PHOTO  ->  cfg.layout = "dividerPhoto"
+// Template: "1_Divider Tides" (slide 20) -- despite the name, not a Tides
+// variant: a full-bleed photo behind the standard divider tag + title.
+// Until 2026-10 the name resolved to dividerTides and the design was lost.
+// The photo is a replaceable well (images[0]); deckInit pre-fills it from
+// PHOTO_DEFAULTS.dividerPhoto -- slide 20's own photo, then the layout's
+// built-in one with the layout's -20% brightness baked in.
+// ==========================================================
+function layout_dividerPhoto(cfg) {
+  var els = [];
+  ph(els, cfg, -0.01, -0.01, 13.35, 7.52, 0);
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:0.61, y:3, w:12.12, h:0.56, font:'B', size:15.5, color:'accent', bold:true, valign:'bottom', caps:true, lineSpacing:0.9, charSpacing:6.97, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:cfg.title || "", x:0.61, y:3.58, w:12.12, h:0.98, font:'H', size:54.5, color:'paper', caps:true, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  return els;
+}
+
+// ==========================================================
 // LAYOUT: DIVIDER TIDES  ->  cfg.layout = "dividerTides"
 // Template: "Divider Tides"
 // Source slide: 19   Background: solid #142A45
@@ -4826,7 +4843,9 @@ function chartBarEls(els, cfg, X, Y, W, H, dark) {
   // Category axis (left rule).
   els.push({ type:'ln', x:px, y:py, w:0, h:ph, color:axisCol, weight:1 });
 
-  var groupH = ph / nG, barH = (groupH * 0.74) / nS, pad = groupH * 0.13;
+  // Template slides 80/81/84/85 draw ~0.45in pills whatever the category
+  // count; a share of the row alone balloons them on short lists, so cap it.
+  var groupH = ph / nG, barH = Math.min(0.46, (groupH * 0.74) / nS), pad = (groupH - barH * nS) / 2;
   labels.forEach(function (lbl, gi) {
     els.push({ type:'t', text:String(lbl), x:X, y:py + gi * groupH, w:GL - 0.14, h:groupH,
       font:'B', size:9.5, color:axisCol, align:'right', valign:'middle',
@@ -4901,17 +4920,21 @@ function chartColEls(els, cfg, X, Y, W, H, dark) {
   // Baseline.
   els.push({ type:'ln', x:px, y:py + ph, w:pw, h:0, color:axisCol, weight:1 });
 
+  // Template slides 93/94: square-topped columns, gapWidth 219 / overlap -27.
+  // That spacing gives 0.27in columns at the template's 7 categories x 3
+  // series; with fewer categories or series it would balloon (4 x 1 -> 0.7in
+  // capsules), so the template's width is also the cap.
   var groupW = pw / nG;
-  var bw = groupW / (nS + 0.27 * (nS - 1) + 2.19), inner = bw * 0.27;
+  var bw = Math.min(0.27, groupW / (nS + 0.27 * (nS - 1) + 2.19)), inner = bw * 0.27;
   var clusterW = nS * bw + (nS - 1) * inner;
   labels.forEach(function (lbl, gi) {
     var gx = px + gi * groupW + (groupW - clusterW) / 2;
     data.forEach(function (s, si) {
       var v = +s.values[gi] || 0;
-      var bh = Math.max((v / axisMax) * ph, bw);   // never shorter than its own pill
+      var bh = v > 0 ? Math.max((v / axisMax) * ph, 0.02) : 0;
       var bx = gx + si * (bw + inner);
       var fill = (nS === 1) ? PAL[0] : PAL[si % PAL.length];
-      els.push({ type:'s', x:bx, y:py + ph - bh, w:bw, h:bh, fill:fill, radius:'pill' });
+      if (bh) els.push({ type:'s', x:bx, y:py + ph - bh, w:bw, h:bh, fill:fill });
       if (opts.showValue) {
         els.push({ type:'t', text:String(v), x:bx - 0.3, y:py + ph - bh - 0.22, w:bw + 0.6, h:0.2,
           font:'B', size:7.5, color:axisCol, align:'center', valign:'bottom', caps:false,
@@ -4976,12 +4999,14 @@ function chartWellEls(els, cfg, dark) {
   if (type === 'bar' && ch.opts && ch.opts.barDir === 'col') type = 'column';
   var X = 0.78, W = 11.5, top = 2.22, bottom = 6.58;
   if (ch.title && type !== 'doughnut') {
-    els.push({ type:'t', text:ch.title, x:X, y:top, w:W, h:0.24, font:'B', size:13, color:'bodyGray',
-      align:'center', valign:'bottom', caps:false, lineSpacing:1, insets:{l:0,t:0,r:0,b:0} });
+    // Slides 93/94: 13pt / 11pt, tracked +0.52 / +0.44pt, #808080 on the
+    // light chassis and #D5D5D5 on the dark; the note is #808080 / white.
+    els.push({ type:'t', text:ch.title, x:X, y:top, w:W, h:0.24, font:'B', size:13, color:dark ? 'lt2' : 'bodyGray',
+      align:'center', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0,t:0,r:0,b:0} });
     top += 0.26;
     if (ch.subtitle) {
-      els.push({ type:'t', text:ch.subtitle, x:X, y:top, w:W, h:0.2, font:'B', size:11, color:'bodyGray',
-        align:'center', valign:'top', caps:false, lineSpacing:1, insets:{l:0,t:0,r:0,b:0} });
+      els.push({ type:'t', text:ch.subtitle, x:X, y:top, w:W, h:0.2, font:'B', size:11, color:dark ? 'lt2' : 'bodyGray',
+        align:'center', valign:'top', caps:false, lineSpacing:1, charSpacing:0.44, insets:{l:0,t:0,r:0,b:0} });
       top += 0.22;
     }
     top += 0.08;
@@ -4991,7 +5016,7 @@ function chartWellEls(els, cfg, dark) {
     // down to just above it rather than stopping at the plain well's 6.58.
     var lines = String(ch.note).split('\n').length;
     var nh = 0.2 * lines + 0.04;
-    els.push({ type:'t', text:ch.note, x:X, y:6.49, w:W, h:nh, font:'B', size:10, color:'bodyGray',
+    els.push({ type:'t', text:ch.note, x:X, y:6.49, w:W, h:nh, font:'B', size:10, color:dark ? 'white' : 'bodyGray',
       align:'center', valign:'top', caps:false, lineSpacing:1.05, insets:{l:0,t:0,r:0,b:0} });
     bottom = 6.37;
   }
@@ -5331,7 +5356,8 @@ function layout_reportGrayTimeline(cfg) {
 var PHOTO_DEFAULTS = {
   coverPhoto:        { target:'bgImage',            pool:[A+'photos/cover_scenic_01.jpg', A+'photos/cover_scenic_02.jpg'] },
   coverPhoto2:       { target:'images', slot:0,     pool:[A+'photos/cover_hero_01.jpg',   A+'photos/cover_hero_02.jpg'] },
-  headlinePhotoWell: { target:'images', slot:0,     pool:[A+'photos/statement_01.jpg',    A+'photos/statement_02.jpg'] }
+  headlinePhotoWell: { target:'images', slot:0,     pool:[A+'photos/statement_01.jpg',    A+'photos/statement_02.jpg'] },
+  dividerPhoto:      { target:'images', slot:0,     pool:[A+'photos/divider_01.jpg',      A+'photos/divider_02.jpg'] }
 };
 
 
@@ -5374,6 +5400,7 @@ var LAYOUT_MAP = {
   dividerCanopy: layout_dividerCanopy,
   dividerAurora: layout_dividerAurora,
   dividerTides: layout_dividerTides,
+  dividerPhoto: layout_dividerPhoto,
   headlineLight: layout_headlineLight,
   headlineDark: layout_headlineDark,
   headlinePhotoWell: layout_headlinePhotoWell,
@@ -5498,7 +5525,7 @@ var TEMPLATE_NAMES = {
   "Divider Canopy": "dividerCanopy",
   "Divider Aurora": "dividerAurora",
   "Divider Tides": "dividerTides",
-  "1_Divider Tides": "dividerTides",
+  "1_Divider Tides": "dividerPhoto",
   "Content - Headline light": "headlineLight",
   "Content -headline dark": "headlineDark",
   "1_Content -headline photo copy": "headlinePhotoWell",
@@ -5596,7 +5623,7 @@ function resolve(name) {
 // Keys each layout actually reads. Anything else a deck supplies is content
 // that would vanish without trace -- e.g. `subhead` on a divider, which has only
 // an eyebrow and a title. Warn rather than fail: the slide is still valid.
-var VERSION = 'v2.2-20261008 (87 layouts; +2 map layouts in deck-maps.js; text fit)';
+var VERSION = 'v2.3-20261008 (88 layouts; +2 map layouts in deck-maps.js; text fit)';
 var LAYOUT_KEYS = {
   "canvasDark": ["els"], "canvasGrey": ["els"], "canvasLight": ["els"],
   "coverLight": [
@@ -5649,6 +5676,10 @@ var LAYOUT_KEYS = {
     "title"
   ],
   "dividerTides": [
+    "tag",
+    "title"
+  ],
+  "dividerPhoto": [
     "tag",
     "title"
   ],
@@ -7731,6 +7762,7 @@ var D=[
 {"layout":"dividerCanopy","bgColor":"#253724","dark":1,"tag":"NEXT SECTION","title":"Production Planning","notes":"dividerCanopy — template layout \"Divider Canopy\", source slide 17."},
 {"layout":"dividerAurora","bgColor":"#2C283B","dark":1,"tag":"NEXT SECTION","title":"Production Planning","notes":"dividerAurora — template layout \"Divider Aurora\", source slide 18."},
 {"layout":"dividerTides","bgColor":"#142A45","dark":1,"tag":"NEXT SECTION","title":"Production Planning","notes":"dividerTides — template layout \"Divider Tides\", source slide 19."},
+{"layout":"dividerPhoto","dark":1,"tag":"NEXT SECTION","title":"Production Planning","notes":"dividerPhoto — template layout \"1_Divider Tides\", source slide 20."},
 {"layout":"headlineLight","bgColor":"#D5D5D5","dark":0,"tag":"NEXT SECTION","title":"MOVEMENT","notes":"headlineLight — template layout \"Content - Headline light\", source slide 32."},
 {"layout":"headlineDark","bgColor":"#262626","dark":1,"tag":"NEXT SECTION","title":"MOVEMENT","notes":"headlineDark — template layout \"Content -headline dark\", source slide 33."},
 {"layout":"headlinePhotoWell","bgColor":"#262626","dark":1,"tag":"NEXT SECTION","title":"MOVEMENT","notes":"headlinePhotoWell — template layout \"1_Content -headline photo copy\", source slide 31."},

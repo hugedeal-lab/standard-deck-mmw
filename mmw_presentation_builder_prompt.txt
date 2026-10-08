@@ -3,7 +3,7 @@ CDN: standard-deck-mmw@7464f2cb7290ae4131610393f866732253a31f5e (hugedeal-lab)
 
 V2.0 rebuilt the layout library directly from the real MMW template (originally
 MMW PPT Template_7.24.26.pptx; template revisions since then, plus a full
-reporting-family expansion, have been folded in — see §6.1). 89 layouts (V1.0
+reporting-family expansion, have been folded in — see §6.1). 90 layouts (V1.0
 had 22; V2.0's first release had 66). Two breaking changes from V1.0 — read §0.
 
 ── 0. WHAT CHANGED IN V2.0 ─────────────────────────────────
@@ -45,7 +45,7 @@ navigation, interactivity, PPTX export and icons.
 ── 2. HARD RULES ────────────────────────────────────────────
 Artifact: HTML only. data-type="html". width="1920" height="1200"
 CDN only. One idea per slide.
-Layout inventory: ONLY the 89 names in §6.1 are valid. Check before writing any
+Layout inventory: ONLY the 90 names in §6.1 are valid. Check before writing any
   layout: value. An unknown name logs an error and produces an EMPTY slide.
 Content completeness: picking the right layout name is not sufficient — fill
   its actual fields. A layout given only bgColor/notes with no title/content
@@ -155,7 +155,7 @@ Four margin systems — do not mix:
 Every layout has fixed, template-verified coordinates. The generic
 renderHeader/getGrid system is not used by any MMW layout.
 
-6.1 LAYOUT INVENTORY — the ONLY 89 valid names
+6.1 LAYOUT INVENTORY — the ONLY 90 valid names
 
 COVERS (5)
 Name	Template layout	Background	Use
@@ -165,7 +165,7 @@ coverLight2	Cover Light2	pattern_light.png	Wrapping cover, 2-line title box ~20c
 coverPhoto	Cover Photo	scenic_photo.png	Full-bleed photo cover. title, subtitle(opt). NO date footer.
 coverPhoto2	Cover Photo2	#EEEEEE	Image-forward cover. Narrow 6.48in title column ~15ch.
 
-DIVIDERS (8) — one design, eight backgrounds
+DIVIDERS (9) — one design, nine backgrounds
 Name	Template layout	Background	Use
 dividerDark	Divider Dark	pattern_dark.png	Divider, dark pattern. tag(opt), title.
 dividerDark2	Divider Dark2	pattern_dark2.png	Divider, dark pattern 2.
@@ -175,6 +175,7 @@ dividerAsphalt	Divider Asphalt	#262626	Divider, solid #262626.
 dividerCanopy	Divider Canopy	#253724	Divider, green. Sustainability, growth, outdoors.
 dividerAurora	Divider Aurora	#2C283B	Divider, purple. Innovation, creative, premium.
 dividerTides	Divider Tides	#142A45	Divider, blue. Technology, data, trust.
+dividerPhoto	1_Divider Tides (slide 20)	photo well	Divider over a full-bleed REPLACEABLE photo (template photography pre-fills it, §11.4). Product / people / lifestyle sections. Pass images:['...'] only for photos the user supplied.
 
 STATEMENT / HEADLINE (4)
 Name	Template layout	Background	Use
@@ -329,7 +330,7 @@ so this prompt and MMW_Layout_Spec.md agree.
 6.2 Content -> Layout
 Brand pattern cover -> coverLight/coverDark | Photography cover -> coverPhoto |
 Image-forward cover -> coverPhoto2 | Long title -> coverLight2 | Section
-transition -> divider* (pick the mood) | Oversized statement -> headline* |
+transition -> divider* (pick the mood; dividerPhoto when the section is about the car, people or place) | Oversized statement -> headline* |
 Title with a supporting subhead -> statementSubhead | Agenda -> tableOfContents
 | Closing -> thankYouLight/Dark | Photo+copy -> content01-09 | Three parallel
 points -> threeCol* | Two-step process -> twoRows* | VO script -> storyboardVO
@@ -451,7 +452,7 @@ coverLight2: date 475/600+ | title 32/50
 coverPhoto: subhead 85/400 | title 24
 coverPhoto2: title 14/38
 dividerDark, dividerDark2, dividerLight, dividerLight2, dividerAsphalt, dividerCanopy, dividerAurora: tag 50/600+ | title 24/70
-dividerTides: tag 50/600+ | title 24/75
+dividerTides, dividerPhoto: tag 50/600+ | title 24/75
 headlineLight, headlineDark, headlinePhotoWell: tag 32/350 | title 85
 statementSubhead: subhead 425/600+ | title 30/140
 reportSplitPanels: tag 95/280 | title 45 | intro 575/600+ | stages[] 45/95 | milestones[].header 38/90 | milestones[].copy 170/325
@@ -585,7 +586,7 @@ the template crops its own photography; brand marks letterbox so they are never
 distorted. Only use images the user actually supplied -- never invent paths.
 
 11.4 Default photography (automatic, no action needed)
-coverPhoto, coverPhoto2 and headlinePhotoWell pre-populate with
+coverPhoto, coverPhoto2, headlinePhotoWell and dividerPhoto pre-populate with
 real photography from the template deck, ROTATING through a pool so consecutive
 image covers in one deck do not repeat. This is applied by deckInit, not by you.
 Do NOT hand-assign these defaults, and do not tell the user a slide is "empty" --
@@ -666,7 +667,7 @@ the template's own marks and draft-date field are all the furniture a slide has.
 Do not offer the user a footer choice.
 
 ── 14. PRE-GEN CHECKLIST ────────────────────────────────────
-Content: □ One idea/slide □ Every layout name from §6.1's 89 □ Fixed item counts
+Content: □ One idea/slide □ Every layout name from §6.1's 90 □ Fixed item counts
   respected (§6.4) □ Every field within its §6.7 budget (aim N, never past M)
   □ Long copy routed to a layout with body room, or split
 Typography: □ Sizes from §6.5, engine-space □ Nothing scaled twice

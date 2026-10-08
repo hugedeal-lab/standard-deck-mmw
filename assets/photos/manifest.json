@@ -66,5 +66,27 @@
    1024
   ],
   "kb": 189
+ },
+ {
+  "file": "photos/divider_01.jpg",
+  "source_media": "image40.png",
+  "source_slide": 20,
+  "for_layout": "dividerPhoto",
+  "px": [
+   1178,
+   786
+  ],
+  "kb": 231
+ },
+ {
+  "file": "photos/divider_02.jpg",
+  "source_media": "image10.png (layout 1_Divider Tides, -20% brightness baked in)",
+  "source_slide": 20,
+  "for_layout": "dividerPhoto",
+  "px": [
+   1170,
+   781
+  ],
+  "kb": 245
  }
 ]

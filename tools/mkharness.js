@@ -54,6 +54,13 @@ for(const [tpl,slug] of Object.entries(DL.TEMPLATE_NAMES)){
   d.notes=slug+' \u2014 template layout "'+tpl+'", source slide '+(L.spec_from_slide||'n/a')+'.';
   rows.push(d);
 }
+// "1_Divider Tides" (slide 20) is the photo divider; mmw_layouts.json has no
+// entry for it, so the loop above skips it. Slot it in after the Tides divider.
+if (DL.LAYOUT_MAP.dividerPhoto) {
+  const at = rows.findIndex(r => r.layout === 'dividerTides');
+  rows.splice(at + 1, 0, { layout:'dividerPhoto', dark:1, tag:'NEXT SECTION', title:'Production Planning',
+    notes:'dividerPhoto \u2014 template layout "1_Divider Tides", source slide 20.' });
+}
 // Derived variants have no template layout, so the loop above cannot find them.
 // Each needs real sample content or the well renders empty and tells you nothing.
 // Layouts with a structured API need real sample content -- a flat item array

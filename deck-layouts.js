@@ -535,6 +535,23 @@ function layout_dividerAurora(cfg) {
 }
 
 // ==========================================================
+// LAYOUT: DIVIDER PHOTO  ->  cfg.layout = "dividerPhoto"
+// Template: "1_Divider Tides" (slide 20) -- despite the name, not a Tides
+// variant: a full-bleed photo behind the standard divider tag + title.
+// Until 2026-10 the name resolved to dividerTides and the design was lost.
+// The photo is a replaceable well (images[0]); deckInit pre-fills it from
+// PHOTO_DEFAULTS.dividerPhoto -- slide 20's own photo, then the layout's
+// built-in one with the layout's -20% brightness baked in.
+// ==========================================================
+function layout_dividerPhoto(cfg) {
+  var els = [];
+  ph(els, cfg, -0.01, -0.01, 13.35, 7.52, 0);
+  if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:0.61, y:3, w:12.12, h:0.56, font:'B', size:15.5, color:'accent', bold:true, valign:'bottom', caps:true, lineSpacing:0.9, charSpacing:6.97, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  els.push({ type:'t', text:cfg.title || "", x:0.61, y:3.58, w:12.12, h:0.98, font:'H', size:54.5, color:'paper', caps:true, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  return els;
+}
+
+// ==========================================================
 // LAYOUT: DIVIDER TIDES  ->  cfg.layout = "dividerTides"
 // Template: "Divider Tides"
 // Source slide: 19   Background: solid #142A45
@@ -3904,7 +3921,8 @@ function layout_reportGrayTimeline(cfg) {
 var PHOTO_DEFAULTS = {
   coverPhoto:        { target:'bgImage',            pool:[A+'photos/cover_scenic_01.jpg', A+'photos/cover_scenic_02.jpg'] },
   coverPhoto2:       { target:'images', slot:0,     pool:[A+'photos/cover_hero_01.jpg',   A+'photos/cover_hero_02.jpg'] },
-  headlinePhotoWell: { target:'images', slot:0,     pool:[A+'photos/statement_01.jpg',    A+'photos/statement_02.jpg'] }
+  headlinePhotoWell: { target:'images', slot:0,     pool:[A+'photos/statement_01.jpg',    A+'photos/statement_02.jpg'] },
+  dividerPhoto:      { target:'images', slot:0,     pool:[A+'photos/divider_01.jpg',      A+'photos/divider_02.jpg'] }
 };
 
 
@@ -3947,6 +3965,7 @@ var LAYOUT_MAP = {
   dividerCanopy: layout_dividerCanopy,
   dividerAurora: layout_dividerAurora,
   dividerTides: layout_dividerTides,
+  dividerPhoto: layout_dividerPhoto,
   headlineLight: layout_headlineLight,
   headlineDark: layout_headlineDark,
   headlinePhotoWell: layout_headlinePhotoWell,
@@ -4071,7 +4090,7 @@ var TEMPLATE_NAMES = {
   "Divider Canopy": "dividerCanopy",
   "Divider Aurora": "dividerAurora",
   "Divider Tides": "dividerTides",
-  "1_Divider Tides": "dividerTides",
+  "1_Divider Tides": "dividerPhoto",
   "Content - Headline light": "headlineLight",
   "Content -headline dark": "headlineDark",
   "1_Content -headline photo copy": "headlinePhotoWell",
@@ -4169,7 +4188,7 @@ function resolve(name) {
 // Keys each layout actually reads. Anything else a deck supplies is content
 // that would vanish without trace -- e.g. `subhead` on a divider, which has only
 // an eyebrow and a title. Warn rather than fail: the slide is still valid.
-var VERSION = 'v2.2-20261008 (87 layouts; +2 map layouts in deck-maps.js; text fit)';
+var VERSION = 'v2.3-20261008 (88 layouts; +2 map layouts in deck-maps.js; text fit)';
 var LAYOUT_KEYS = {
   "canvasDark": ["els"], "canvasGrey": ["els"], "canvasLight": ["els"],
   "coverLight": [
@@ -4222,6 +4241,10 @@ var LAYOUT_KEYS = {
     "title"
   ],
   "dividerTides": [
+    "tag",
+    "title"
+  ],
+  "dividerPhoto": [
     "tag",
     "title"
   ],
