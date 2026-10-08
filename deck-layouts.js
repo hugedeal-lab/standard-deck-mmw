@@ -199,7 +199,14 @@ function _avail(el, els) {
     if (o.x >= x1 || o.x + o.w <= x0) return;
     var oh = o.h || 0;
     if ((o.type === 's' || o.type === 'o') && o.y <= el.y + 0.01 && o.y + oh >= yb - 0.01) {
-      if (o.w * oh < 13.33 * 7.5 * 0.6) { lo = Math.min(lo, o.y + oh); hi = Math.max(hi, o.y); }
+      // A label sitting on a photo well may not grow into it: the copy
+      // would cover the picture. (Was: the well counted as room, so a
+      // castingTalent frame label "held" 200+ characters.)
+      // (A full-bleed well is a background, not a frame -- ignored like any
+      // shape covering most of the slide.)
+      if (o.w * oh >= 13.33 * 7.5 * 0.6) return;
+      if (o._imgPlaceholder && o.x <= el.x + 0.01 && o.x + o.w >= el.x + el.w - 0.01) { lo = Math.min(lo, yb); hi = Math.max(hi, el.y); }
+      else { lo = Math.min(lo, o.y + oh); hi = Math.max(hi, o.y); }
       return;
     }
     var sp = _span(o);
@@ -263,7 +270,8 @@ function _sideways(els, slug) {
 function fitTexts(els, slug) {
   if (!Array.isArray(els)) return els;
   els.forEach(function (el) {
-    if (!el || el.type !== 't' || el.noFit || !el.size || el.rotation) return;
+    // Preview-only well labels (_skipExport) are never in the PPTX: leave them be.
+    if (!el || el.type !== 't' || el.noFit || el._skipExport || !el.size || el.rotation) return;
     var hasText = el.paras ? el.paras.length : (el.text != null && String(el.text).trim());
     if (!hasText) return;
     var room = _avail(el, els);
@@ -2722,7 +2730,10 @@ function layout_castingTalent(cfg) {
   ph(els, cfg, 9.87, 2.08, 2.69, 4.2, 3);
   // Frame-type captions ride the top-left corner of their well rather than
   // sitting centred over the (unfilled) placeholder text.
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:3.7, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  // Second well's label is fixed "Full body" like the fourth -- the source
+  // types it; it used to be read from cfg.subhead, which agents filled with
+  // a description that ran down over the photo well.
+  els.push({ type:'t', text:'Full body', x:3.7, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"Full body", x:9.96, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"Headshot", x:0.9, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"Headshot", x:7.16, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
@@ -3030,7 +3041,10 @@ function layout_redditCarousel(cfg) {
   els.push({ type:'s', x:-0.01, y:-0.01, w:13.35, h:2.73, fill:'#E2E2E2' });
   els.push({ type:'t', text:"Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:"Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 0.61, 0.44, 1.22, 0.68, 0);
+  // Reddit logo (template image25; asset misnamed reddit_brand_photo). It was
+  // a picture placeholder in the source and an empty photo well here, which
+  // left the sheet without its platform mark (1:1: covered it).
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_brand_photo.png']) || A+'social/reddit_brand_photo.png', x:0.44, y:0.23, w:1.75, h:0.98 });
   els.push({ type:'t', text:_socialCopy(cfg, 'alts', 0), x:8.9, y:0.52, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 1), x:4.74, y:0.55, w:2.67, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:_socialCopy(cfg, 'format', 2), x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:true, lineSpacing:1.15, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -3071,7 +3085,6 @@ function layout_redditVideoStatic1x1(cfg) {
   // fraction against the source's own placeholder geometry.
   deviceMock(els, cfg, { name:'reddit_video_frame.png', x:4.889, y:2.32, w:3.178, h:5.124, screen:[0.205,0.185,0.21,0.17], slot:1 });
   deviceMock(els, cfg, { name:'reddit_video_frame.png', x:8.289, y:2.32, w:3.178, h:5.124, screen:[0.205,0.185,0.21,0.17], slot:2 });
-  ph(els, cfg, 0.61, 0.44, 1.22, 0.62, 0); // was demo photo image114.png
   els.push({ type:'t', text:"1:1 STATIC", x:5.75, y:0.51, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"1:1 VIDEO", x:9.37, y:0.56, w:0.63, h:0.17, font:'B', size:7.5, color:'captionGray', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -3098,7 +3111,10 @@ function layout_redditVideoStatic1x1(cfg) {
 function layout_redditVideoStatic4x5(cfg) {
   var els = [];
   els.push({ type:'s', x:0, y:0, w:3.52, h:7.5, fill:'#E2E2E2' });
-  ph(els, cfg, 0.61, 0.44, 1.22, 0.62, 0);
+  // Reddit logo (template image25; asset misnamed reddit_brand_photo). It was
+  // a picture placeholder in the source and an empty photo well here, which
+  // left the sheet without its platform mark (1:1: covered it).
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_brand_photo.png']) || A+'social/reddit_brand_photo.png', x:0.44, y:0.23, w:1.75, h:0.98 });
   els.push({ type:'t', text:"1:1 STATIC", x:5.75, y:0.51, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"9:16 VIDEO", x:9.55, y:0.51, w:0.97, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -4047,6 +4063,9 @@ var LAYOUT_MAP = {
 // content03 IS "Content 03". A v1.0 deck reusing the key silently renders a
 // different layout, so these log loudly and render the v2.0 (template-correct)
 // meaning. Re-key old decks: v1 content03 -> content01, v1 content05 -> content03.
+// The console error this used to raise fired on every correct v2 use as well
+// (every deck since v2.0), so it was dropped in 2026-10; the map is kept as
+// documentation. v1 decks are pinned to v1 code and are unaffected.
 // ------------------------------------------------------------
 var AMBIGUOUS = { content03: 'content01', content05: 'content03' };
 
@@ -4168,11 +4187,6 @@ var TEMPLATE_NAMES = {
 
 function resolve(name) {
   if (!name) return null;
-  if (AMBIGUOUS[name]) {
-    console.error('[deck-layouts] "' + name + '" meant "' + AMBIGUOUS[name] +
-      '" in v1.0 but is a DIFFERENT layout in v2.0. Rendering the v2.0 meaning. ' +
-      'If this deck was authored against v1.0, change it to "' + AMBIGUOUS[name] + '".');
-  }
   if (LAYOUT_MAP[name]) return LAYOUT_MAP[name];
   if (RETIRED[name]) {
     console.warn('[deck-layouts] "' + name + '" was retired; rendering "' +
@@ -4533,8 +4547,7 @@ var LAYOUT_KEYS = {
     "title"
   ],
   "castingTalent": [
-    "subhead",
-    "subtitle",
+    "items",
     "tag",
     "title"
   ],

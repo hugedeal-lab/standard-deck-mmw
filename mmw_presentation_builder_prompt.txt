@@ -20,8 +20,8 @@ boxes overflowed. Cover title is 54.5pt, not 109pt. Headline is 140pt, not
 
 0.2 LAYOUT NAMES follow the template's own slide-layout names. V1.0's names
 were invented and had drifted — its "content03" was built from the template's
-"Content 01". Legacy names still resolve, with a console warning. Two are
-AMBIGUOUS and log an error: V1.0 content03 -> content01, content05 -> content03.
+"Content 01". Legacy names still resolve, with a console warning. content03
+and content05 are v2.0 names (Content 03 / Content 05) -- use them freely.
 
 0.3 NEW: 44 layouts V1.0 never had — all 16 social/paid-media spec sheets,
 Content 01-09, the 3-column and 2-row families, and the reporting chassis
@@ -281,7 +281,7 @@ storyboardGrid	Storyboard 02	#EEEEEE	6-panel numbered shot grid. items[] EXACTLY
 scriptsCompare	Scripts 01	#EEEEEE	Two VO script columns. title, subhead, text, text2.
 videoReference	Video Reference	#EEEEEE	Reference collage, 4-panel staggered mosaic.
 castingGrid	Casting	#FFFFFF	Uniform 4-up casting grid. items[] 4 {name}.
-castingTalent	Casting_Talent	#FFFFFF	Staggered headshot/full-body pairs, 2 talent.
+castingTalent	Casting_Talent	#FFFFFF	Staggered headshot/full-body pairs, 2 talent. tag, title, items[2] {name, height?, weight?} -> the "Name:" line under each pair. The Headshot / Full body frame labels are fixed; describe the talent in speaker notes, not on the frames.
 locationOverview	Location Overview	#FFFFFF	5-across location strip. items[] 5 {label}.
 locationDetail	Location Detail	#FFFFFF	Single-location deep dive, 3 photos + sun diagram.
 moodboardProps	Moodboard Props	#D5D5D5	Prop grid. captions[] 10 row-major, notes(opt).
@@ -489,7 +489,7 @@ storyboardGrid: items[].caption 475/600+ | subhead 280/400 | title 38
 scriptsCompare: subhead 400/600+ | text 600+ | text2 600+ | title 36
 videoReference: subhead 375/600+ | text 600+ | title 36/100
 castingGrid: items[].name 425/600+ | tag 55/150 | title 26/60
-castingTalent: subhead 210/450 | tag 55/150 | title 26/60
+castingTalent: items[].name 140/450 | items[].height 130/425 | tag 55/150 | title 26/60
 locationOverview: items[].label 120/260 | tag 55/150
 locationDetail: subhead 24/70 | tag 55/150 | text 600+ | title 24/60
 moodboardProps: captions[] 105 | tag 55/150 | title 26/60
@@ -501,7 +501,7 @@ metaVideoStatic, redditVideoStatic4x5, tiktokVideoStatic, pinterest1x1, youtubeV
 redditCarousel: copy.postCopy 180/600+ | copy.headline 60/130 | copy.alts 75/210 | copy.format 26/65 | copy.cta 30/100 | copy.destination 90/190 | text 40/45
 redditVideoStatic1x1: copy.postCopy 180/600+ | copy.headline 90/230 | copy.alts 75/210 | copy.format 30/80 | copy.cta 30/100 | copy.destination 55/140 | text 40/45
 tiktokCarousel: copy.postCopy 190/600+ | copy.headline 65/140 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 90/190 | text 40/45
-pinterest2x3: copy.postCopy 180/600+ | copy.headline 95/240 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 55/140 | text 40/45 | text2 22/45
+pinterest2x3: copy.postCopy 180/600+ | copy.headline 95/240 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 55/140 | text 40/45 | text2 10/16
 reportGrayChart, reportDarkChart: tag 95/280 | title 45 | intro 600+
 reportGrayTable, reportDarkTable: tag 95/280 | title 45 | intro 575/600+ | headers[] 50
 reportGrayTimeline: tag 95/280 | title 45 | intro 600+ | milestones[] 40/95

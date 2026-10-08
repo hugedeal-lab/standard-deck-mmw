@@ -1639,7 +1639,11 @@ function _avail(el, els) {
     if (o.x >= x1 || o.x + o.w <= x0) return;
     var oh = o.h || 0;
     if ((o.type === 's' || o.type === 'o') && o.y <= el.y + 0.01 && o.y + oh >= yb - 0.01) {
-      if (o.w * oh < 13.33 * 7.5 * 0.6) { lo = Math.min(lo, o.y + oh); hi = Math.max(hi, o.y); }
+      // A label sitting on a photo well may not grow into it: the copy
+      // would cover the picture. (Was: the well counted as room, so a
+      // castingTalent frame label "held" 200+ characters.)
+      if (o._imgPlaceholder && o.x <= el.x + 0.01 && o.x + o.w >= el.x + el.w - 0.01) { lo = Math.min(lo, yb); hi = Math.max(hi, el.y); }
+      else if (o.w * oh < 13.33 * 7.5 * 0.6) { lo = Math.min(lo, o.y + oh); hi = Math.max(hi, o.y); }
       return;
     }
     var sp = _span(o);
@@ -4162,7 +4166,10 @@ function layout_castingTalent(cfg) {
   ph(els, cfg, 9.87, 2.08, 2.69, 4.2, 3);
   // Frame-type captions ride the top-left corner of their well rather than
   // sitting centred over the (unfilled) placeholder text.
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:3.7, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  // Second well's label is fixed "Full body" like the fourth -- the source
+  // types it; it used to be read from cfg.subhead, which agents filled with
+  // a description that ran down over the photo well.
+  els.push({ type:'t', text:'Full body', x:3.7, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"Full body", x:9.96, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"Headshot", x:0.9, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"Headshot", x:7.16, y:2.15, w:1.9, h:0.24, font:'B', size:10, color:'ink', bold:true, caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
@@ -4470,7 +4477,10 @@ function layout_redditCarousel(cfg) {
   els.push({ type:'s', x:-0.01, y:-0.01, w:13.35, h:2.73, fill:'#E2E2E2' });
   els.push({ type:'t', text:"Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:"Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 0.61, 0.44, 1.22, 0.68, 0);
+  // Reddit logo (template image25; asset misnamed reddit_brand_photo). It was
+  // a picture placeholder in the source and an empty photo well here, which
+  // left the sheet without its platform mark (1:1: covered it).
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_brand_photo.png']) || A+'social/reddit_brand_photo.png', x:0.44, y:0.23, w:1.75, h:0.98 });
   els.push({ type:'t', text:_socialCopy(cfg, 'alts', 0), x:8.9, y:0.52, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 1), x:4.74, y:0.55, w:2.67, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:_socialCopy(cfg, 'format', 2), x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:true, lineSpacing:1.15, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -4511,7 +4521,6 @@ function layout_redditVideoStatic1x1(cfg) {
   // fraction against the source's own placeholder geometry.
   deviceMock(els, cfg, { name:'reddit_video_frame.png', x:4.889, y:2.32, w:3.178, h:5.124, screen:[0.205,0.185,0.21,0.17], slot:1 });
   deviceMock(els, cfg, { name:'reddit_video_frame.png', x:8.289, y:2.32, w:3.178, h:5.124, screen:[0.205,0.185,0.21,0.17], slot:2 });
-  ph(els, cfg, 0.61, 0.44, 1.22, 0.62, 0); // was demo photo image114.png
   els.push({ type:'t', text:"1:1 STATIC", x:5.75, y:0.51, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"1:1 VIDEO", x:9.37, y:0.56, w:0.63, h:0.17, font:'B', size:7.5, color:'captionGray', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -4538,7 +4547,10 @@ function layout_redditVideoStatic1x1(cfg) {
 function layout_redditVideoStatic4x5(cfg) {
   var els = [];
   els.push({ type:'s', x:0, y:0, w:3.52, h:7.5, fill:'#E2E2E2' });
-  ph(els, cfg, 0.61, 0.44, 1.22, 0.62, 0);
+  // Reddit logo (template image25; asset misnamed reddit_brand_photo). It was
+  // a picture placeholder in the source and an empty photo well here, which
+  // left the sheet without its platform mark (1:1: covered it).
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['reddit_brand_photo.png']) || A+'social/reddit_brand_photo.png', x:0.44, y:0.23, w:1.75, h:0.98 });
   els.push({ type:'t', text:"1:1 STATIC", x:5.75, y:0.51, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"9:16 VIDEO", x:9.55, y:0.51, w:0.97, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -5973,8 +5985,7 @@ var LAYOUT_KEYS = {
     "title"
   ],
   "castingTalent": [
-    "subhead",
-    "subtitle",
+    "items",
     "tag",
     "title"
   ],
@@ -7980,7 +7991,7 @@ var D=[
 {"layout":"scriptsCompare","bgColor":"#EEEEEE","dark":0,"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","text2":"Secondary body copy.","title":"Concept: Weekend Getaway","notes":"scriptsCompare — template layout \"Scripts 01\", source slide 37."},
 {"layout":"videoReference","bgColor":"#EEEEEE","dark":0,"subhead":"Supporting subhead","text":"Supporting body copy for layout verification.","title":"Concept: Weekend Getaway","notes":"videoReference — template layout \"Video Reference\", source slide 44."},
 {"layout":"castingGrid","bgColor":"#FFFFFF","dark":0,"items":[{"name":"Talent 1"},{"name":"Talent 2"},{"name":"Talent 3"},{"name":"Talent 4"}],"tag":"NEXT SECTION","title":"Concept: Weekend Getaway","notes":"castingGrid — template layout \"Casting\", source slide 45."},
-{"layout":"castingTalent","bgColor":"#FFFFFF","dark":0,"subhead":"Supporting subhead","tag":"NEXT SECTION","title":"Concept: Weekend Getaway","notes":"castingTalent — template layout \"Casting_Talent\", source slide 46."},
+{"layout":"castingTalent","bgColor":"#FFFFFF","dark":0,"items":[{"name":"Talent A","height":"5'8\""},{"name":"Talent B"}],"tag":"NEXT SECTION","title":"Concept: Weekend Getaway","notes":"castingTalent — template layout \"Casting_Talent\", source slide 46."},
 {"layout":"locationOverview","bgColor":"#FFFFFF","dark":0,"items":[{"label":"Location 1"},{"label":"Location 2"},{"label":"Location 3"},{"label":"Location 4"},{"label":"Location 5"}],"tag":"NEXT SECTION","notes":"locationOverview — template layout \"Location Overview\", source slide 47."},
 {"layout":"locationDetail","bgColor":"#FFFFFF","dark":0,"subhead":"Supporting subhead","tag":"NEXT SECTION","text":"Supporting body copy for layout verification.","title":"Concept: Weekend Getaway","notes":"locationDetail — template layout \"Location Detail\", source slide 48."},
 {"layout":"moodboardProps","bgColor":"#D5D5D5","dark":0,"captions":["Prop 1","Prop 2","Prop 3","Prop 4","Prop 5","Prop 6","Prop 7","Prop 8","Prop 9","Prop 10"],"tag":"NEXT SECTION","title":"Concept: Weekend Getaway","notes":"moodboardProps — template layout \"Moodboard Props\", source slide 49."},
@@ -7998,7 +8009,7 @@ var D=[
 {"layout":"tiktokCarousel","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Carousel","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","notes":"tiktokCarousel — template layout \"TikTok_Carousel\", source slide 64."},
 {"layout":"tiktokVideoStatic","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Single video & static","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","notes":"tiktokVideoStatic — template layout \"TikTok_Vid&Static\", source slide 63."},
 {"layout":"pinterestDivider","bgImage":"assets/social/divider_platform_reddit_pinterest.png","dark":0,"notes":"pinterestDivider — template layout \"Pinterest_Divider\", source slide 59."},
-{"layout":"pinterest2x3","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Single video & static","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","text2":"Secondary body copy.","notes":"pinterest2x3 — template layout \"Pinterest 2:3\", source slide 60."},
+{"layout":"pinterest2x3","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Single video & static","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","text2":"Learn more","notes":"pinterest2x3 — template layout \"Pinterest 2:3\", source slide 60."},
 {"layout":"pinterest1x1","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Single video & static","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","notes":"pinterest1x1 — template layout \"Pinterest 1:1\", source slide 61."},
 {"layout":"youtubeDivider","bgImage":"assets/backgrounds/pattern_dark.png","dark":1,"notes":"youtubeDivider — template layout \"Youtube_Divider\", source slide 69."},
 {"layout":"youtubeVideoAd","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Video ad","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","notes":"youtubeVideoAd — template layout \"Youtube_VideoAd\", source slide 70."},

@@ -240,7 +240,8 @@ it measures its own list (prompt section 15.1).
 | `castingGrid` | `items[].name` | 425/600+ |
 | `castingGrid` | `tag` | 55/150 |
 | `castingGrid` | `title` | 26/60 |
-| `castingTalent` | `subhead` | 210/450 |
+| `castingTalent` | `items[].name` | 140/450 |
+| `castingTalent` | `items[].height` | 130/425 |
 | `castingTalent` | `tag` | 55/150 |
 | `castingTalent` | `title` | 26/60 |
 | `locationOverview` | `items[].label` | 120/260 |
@@ -324,7 +325,7 @@ it measures its own list (prompt section 15.1).
 | `pinterest2x3` | `copy.cta` | 30/100 |
 | `pinterest2x3` | `copy.destination` | 55/140 |
 | `pinterest2x3` | `text` | 40/45 |
-| `pinterest2x3` | `text2` | 22/45 |
+| `pinterest2x3` | `text2` | 10/16 |
 | `pinterest1x1` | `copy.postCopy` | 180/600+ |
 | `pinterest1x1` | `copy.headline` | 95/240 |
 | `pinterest1x1` | `copy.alts` | 75/220 |
