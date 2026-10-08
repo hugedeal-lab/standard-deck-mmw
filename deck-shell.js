@@ -515,10 +515,15 @@ function exportElement(slide, el, isDark, accent, pptx) {
 }
 
 // PptxGenJS margin is in POINTS, ordered [top, right, bottom, left].
+// PptxGenJS 3.12 reads a text margin array as [left, right, bottom, top]
+// (gen-objects: lIns=margin[0], rIns=[1], bIns=[2], tIns=[3]) -- not CSS
+// order. This used to pass [t, r, b, l], which swapped top/left and kept
+// right/bottom: invisible for the many symmetric template insets, wrong
+// for every asymmetric one (corrected 2026-10).
 function insetMargin(el) {
   if (!el.insets) return [0, 0, 0, 0];
-  return [(el.insets.t || 0) * 72, (el.insets.r || 0) * 72,
-          (el.insets.b || 0) * 72, (el.insets.l || 0) * 72];
+  return [(el.insets.l || 0) * 72, (el.insets.r || 0) * 72,
+          (el.insets.b || 0) * 72, (el.insets.t || 0) * 72];
 }
 
 function exportText(slide, el, isDark) {

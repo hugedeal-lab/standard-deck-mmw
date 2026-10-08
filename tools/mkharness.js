@@ -92,8 +92,8 @@ const SPEND_BARS_SAMPLE = {
 const SAMPLE_OVERRIDE = {
   reportStrategyStack: {
     tag:'STRATEGY', title:'Lead with craft', intro:'How the plan earns consideration this year.',
-    badges:[{sub:'Consumer Reports', body:'Top pick, two years running'},
-            {sub:'IIHS', body:'Top Safety Pick+ across the line'}],
+    badges:[{sub:'Consumer Reports', body:'#1 Safest New-Car Brand'},
+            {sub:'2026 IIHS', body:'Top Safety Pick+'}],
     pointOne:'Proof, not promises', pointTwo:'Craft you can feel',
     pointBody:'Shoppers trust third-party validation over brand claims.',
     insightHead:'Insight', insightBody:'Intenders cross-shop on quality, then decide on feel.',

@@ -308,7 +308,12 @@ function enforceWidthRule(els) {
     return (e.type === 's' || e.type === 'o') && !e._imgPlaceholder;
   });
   els.forEach(function (el) {
-    if (el.type !== 't' || el._noWidthRule) return;
+    // MMW layout text (it always carries `caps`) is at the template's exact
+    // geometry; narrowing it to 80% of the card it sits in re-wrapped copy
+    // the template sets on one line (e.g. reportStrategyStack's "CONSUMER
+    // REPORTS" badge) and disagreed with fitTexts' measurements. The rule
+    // stays for legacy raw elements only.
+    if (el.type !== 't' || el._noWidthRule || el.caps !== undefined) return;
     for (var i = 0; i < shapes.length; i++) {
       var s = shapes[i];
       if (el.x >= s.x && el.y >= s.y && el.x + el.w <= s.x + s.w + 0.01 && el.y + el.h <= s.y + s.h + 0.01) {

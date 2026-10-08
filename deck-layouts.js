@@ -1092,7 +1092,11 @@ function layout_reportBrandPillars(cfg) {
   });
 
   // Two numbered sections across the top, split by a tan rule.
-  var SEC = [{ n:2.74, h:3.33, hw:3.64 }, { n:7.54, h:8.22, hw:2.94 }];
+  // Source box 1 is 3.64in wide and runs past the gold rule at x 6.82; in
+  // PowerPoint its copy wraps short of the rule. Without the old 80% width
+  // squeeze (enforceWidthRule, now off for MMW layouts) a one-line header
+  // reached the rule, so box 1 stops 0.1in before it.
+  var SEC = [{ n:2.74, h:3.33, hw:3.39 }, { n:7.54, h:8.22, hw:2.94 }];
   (cfg.sections || []).slice(0, 2).forEach(function (s, i) {
     var g = SEC[i];
     els.push({ type:'t', text:String(i + 1), x:g.n, y:1.83, w:1.35, h:0.93,
@@ -1703,40 +1707,36 @@ function layout_reportStrategyStack(cfg) {
   els.push({ type:'t', text:cfg.title || '', x:0.61, y:0.72, w:12.12, h:0.5, font:'H', size:24, color:'titleGray', caps:true, lineSpacing:1, charSpacing:2.64, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
   els.push({ type:'t', text:cfg.intro || '', x:0.61, y:1.33, w:4.95, h:0.39, font:'B', size:10, color:'bodyGray', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
 
-  // Top-right badges: tan caps sub-header + white body, one line each.
-  // Content should be kept to one line per field -- these boxes are fixed
-  // at 2-line capacity and do not grow with longer input. Font is sized
-  // down from the source's literal 10.5pt-equivalent because at the box's
-  // actual 2.18in width that size wrapped "CONSUMER REPORTS" to two lines,
-  // which the fixed-height box doesn't clip (text divs aren't nested inside
-  // their background shape, so an overflow just paints over the row below).
+  // Top-right badges: tan caps sub-header + white body, one line each, at
+  // the source's 10.5pt (sub tracked +1.17pt). Longer copy shrinks to fit
+  // (fitTexts) rather than the type being set small for everyone.
   var badges = cfg.badges || [];
   var badgeX = [7.82, 10.22];
   badgeX.forEach(function (x, i) {
     var b = badges[i] || {};
     els.push({ type:'s', x:x, y:1.26, w:2.22, h:0.6, fill:'#242424', stroke:STROKE, strokeWidth:0.75, radius:R, shadow:SHADOW });
-    els.push({ type:'t', text:b.sub || '', x:x+0.02, y:1.34, w:2.18, h:0.2, font:'B', size:9, color:'#D2B08D', bold:true, align:'center', valign:'middle', caps:true, lineSpacing:1, charSpacing:0.6 });
-    els.push({ type:'t', text:b.body || '', x:x+0.02, y:1.56, w:2.18, h:0.24, font:'B', size:9, color:'white', bold:true, align:'center', valign:'middle', caps:false, lineSpacing:1 });
+    els.push({ type:'t', text:b.sub || '', x:x+0.02, y:1.36, w:2.18, h:0.2, font:'B', size:10.5, color:'#D2B08D', bold:true, align:'center', valign:'middle', caps:true, lineSpacing:1, charSpacing:1.17 });
+    els.push({ type:'t', text:b.body || '', x:x+0.02, y:1.56, w:2.18, h:0.21, font:'B', size:10.5, color:'white', bold:true, align:'center', valign:'middle', caps:false, lineSpacing:1 });
   });
 
-  // Wide divider box: point/point headline (white, tan) + gray body on the
-  // left; caps tan insight header + gray body on the right.
-  // The source's insight bar carries a one-line proof point and a one-line
-  // insight header. Real copy wraps, so the bar is taller and the two headline
-  // texts step down + top-anchor so a 2-line wrap doesn't collide with the
-  // body copy beneath it.
+  // Wide insight bar, at the source's geometry (y 2.01, h 1.14; the panels
+  // start 0.13in below it). Left: point/point headline (white, tan; 24pt,
+  // bottom-anchored on its first line) with the grey body directly under it.
+  // Right, past the rule: tan tracked insight header + grey body. An earlier
+  // build grew the bar to 1.42in so long copy could wrap, which ran it into
+  // the panels; long copy is now handled by fitTexts (shrink / warn).
   var _psz = ((cfg.pointOne || '').length + (cfg.pointTwo || '').length <= 34) ? 24 : 17;
   var _isz = ((cfg.insightHead || '').length <= 22) ? 11 : 9;
-  els.push({ type:'s', x:0.54, y:2.01, w:11.89, h:1.42, fill:'#1F1F1F', stroke:STROKE, strokeWidth:0.75, radius:R+0.01, shadow:SHADOW });
-  els.push({ type:'t', x:0.8, y:2.14, w:6.02, h:0.62, font:'B', size:_psz, bold:true, valign:'top', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035},
+  els.push({ type:'s', x:0.54, y:2.01, w:11.89, h:1.14, fill:'#1F1F1F', stroke:STROKE, strokeWidth:0.75, radius:R+0.01, shadow:SHADOW });
+  els.push({ type:'t', x:0.8, y:2.18, w:6.02, h:0.44, font:'B', size:_psz, bold:true, valign:'bottom', caps:false, lineSpacing:1, insets:{l:0.035,t:0.035,r:0.035,b:0.035},
     paras:[{ runs:[
       { text:(cfg.pointOne || '') + ' ', color:'white' },
       { text:cfg.pointTwo || '', color:'#D2B08D' }
     ] }] });
-  els.push({ type:'s', x:7.05, y:2.18, w:0.01, h:1.08, fill:'ltGray' }); // divider rule
-  els.push({ type:'t', text:cfg.pointBody || '', x:0.8, y:2.82, w:6.02, h:0.5, font:'B', size:11, color:'ltGray', caps:false, lineSpacing:1.05, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
-  els.push({ type:'t', text:cfg.insightHead || '', x:7.23, y:2.14, w:4.95, h:0.4, font:'B', size:_isz, color:'#D2B08D', bold:true, valign:'top', caps:true, lineSpacing:1.05, charSpacing:2.44, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:cfg.insightBody || '', x:7.23, y:2.62, w:4.95, h:0.7, font:'B', size:10, color:'ltGray', caps:false, lineSpacing:1.05, insets:{l:0.104,t:0.035,r:0.104,b:0.104} });
+  els.push({ type:'s', x:7.05, y:2.22, w:0.01, h:0.71, fill:'ltGray' }); // divider rule
+  els.push({ type:'t', text:cfg.pointBody || '', x:0.8, y:2.59, w:6.02, h:0.5, font:'B', size:11, color:'#B9BDC4', caps:false, lineSpacing:1.05, insets:{l:0.035,t:0.035,r:0.035,b:0.035} });
+  els.push({ type:'t', text:cfg.insightHead || '', x:7.23, y:2.2, w:4.95, h:0.3, font:'B', size:_isz, color:'#D2B08D', bold:true, valign:'bottom', caps:true, lineSpacing:1.05, charSpacing:2.44, insets:{l:0.104,t:0.035,r:0.104,b:0.035} });
+  els.push({ type:'t', text:cfg.insightBody || '', x:7.23, y:2.5, w:4.95, h:0.6, font:'B', size:11, color:'#B9BDC4', caps:false, lineSpacing:1.05, insets:{l:0.104,t:0.035,r:0.104,b:0.035} });
 
   // Three-across panels. Each: tan "NEXT SECTION"-style tag, white caps
   // subhead, then either repeatable {head,body} sections or a bullet list
@@ -1752,32 +1752,34 @@ function layout_reportStrategyStack(cfg) {
     els.push({ type:'t', text:p.next || cfg.tag || '', x:x, y:3.49, w:3.29, h:0.36, font:'B', size:10, color:'accentDim', bold:true, valign:'bottom', caps:true, lineSpacing:0.9, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
     els.push({ type:'t', text:p.subhead || '', x:x, y:3.88, w:3.29, h:0.38, font:'B', size:11, color:'white', bold:true, valign:'middle', caps:true, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
 
+    // Body area y 4.34-5.39, content centred in it as in the source.
     if (p.bullets && p.bullets.length) {
-      els.push({ type:'t', x:x, y:4.34, w:3.29, h:1.04, font:'B', size:9, color:'ltGray', valign:'top', caps:false, lineSpacing:1.25,
+      els.push({ type:'t', x:x, y:4.34, w:3.29, h:1.04, font:'B', size:9, color:'#B9BDC4', valign:'middle', caps:false, lineSpacing:1.25,
         insets:{l:0.104,t:0.104,r:0.104,b:0.104},
         paras:p.bullets.map(function (b) { return { runs:[{ text:b }], bullet:true, marL:0.12, indent:-0.12 }; }) });
     } else {
       var sections = p.sections || [];
-      var sy = 4.34, availH = 1.04, rowH = availH / Math.max(sections.length, 1);
+      var HEAD_H = 0.17, GAP = 0.14, LH = 9 * 1.05 * 1.2 / 72;
+      var bodyH = sections.map(function (s) { return s.body ? _wrapLines(s.body, 9, 3.29 - 0.208, false, 1, 0) * LH : 0; });
+      var total = bodyH.reduce(function (t, h) { return t + HEAD_H + h; }, 0) + GAP * Math.max(0, sections.length - 1);
+      var sy = 4.34 + Math.max(0, (1.04 - total) / 2);
       sections.forEach(function (s, si) {
-        els.push({ type:'t', text:s.head || '', x:x, y:sy, w:3.29, h:Math.min(0.22, rowH * 0.4), font:'B', size:9, color:'#8A8E96', bold:true, valign:'top', caps:true, lineSpacing:1.05, charSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-        els.push({ type:'t', text:s.body || '', x:x, y:sy + Math.min(0.22, rowH * 0.4), w:3.29, h:rowH - Math.min(0.22, rowH * 0.4), font:'B', size:9, color:'ltGray', bold:false, valign:'top', caps:false, lineSpacing:1.05, insets:{l:0.104,t:0.028,r:0.104,b:0.104} });
-        sy += rowH;
+        els.push({ type:'t', text:s.head || '', x:x, y:sy, w:3.29, h:HEAD_H, font:'B', size:9, color:'#8A8E96', bold:true, valign:'top', caps:true, lineSpacing:1.05, charSpacing:1, insets:{l:0.104,t:0,r:0.104,b:0} });
+        els.push({ type:'t', text:s.body || '', x:x, y:sy + HEAD_H, w:3.29, h:Math.max(bodyH[si], LH), font:'B', size:9, color:'#B9BDC4', bold:false, valign:'top', caps:false, lineSpacing:1.05, insets:{l:0.104,t:0,r:0.104,b:0} });
+        sy += HEAD_H + bodyH[si] + GAP;
       });
     }
   });
 
-  // Supporting subhead + body, constrained to one full-width line. Per-run
-  // caps/letter-spacing aren't supported by the engine's paras renderer (only
-  // color/size/bold are), so the label's caps is forced in JS and the whole
-  // line shares one letter-spacing value -- the source's extra tracking on
-  // just the label vs. the body is too subtle a difference to be worth a
-  // second text element and manual width math to keep them flush.
-  els.push({ type:'t', x:0.56, y:5.74, w:11.85, h:0.39, font:'B', size:11.5, bold:false, valign:'middle', caps:false, lineSpacing:1, charSpacing:2.09, insets:{l:0.104,t:0.104,r:0.104,b:0.104},
-    paras:[{ runs:[
-      { text:(cfg.activationLabel || '').toUpperCase() + '   ', color:'accent', bold:true },
-      { text:cfg.activationBody || '', color:'nearBlack', bold:false }
-    ] }] });
+  // Activation line: tan caps label tracked +2.09pt, then the body in
+  // near-black at normal tracking (source: one box, two runs). The engine's
+  // paras can't track one run and not the other, so the label and body are
+  // separate boxes, the body starting where the label's measured width ends.
+  var _lab = (cfg.activationLabel || '').toUpperCase();
+  var _labEl = { type:'t', text:_lab, x:0.56, y:5.74, w:11.85, h:0.39, font:'B', size:11.5, color:'accent', bold:true, valign:'middle', caps:true, lineSpacing:1, charSpacing:2.09, insets:{l:0.104,t:0.104,r:0.104,b:0.104} };
+  if (_lab) els.push(_labEl);
+  var _bx = _lab ? 0.56 + 0.104 + _lineW(_labEl, _lab, 11.5) + 0.25 : 0.56;
+  if (cfg.activationBody) els.push({ type:'t', text:cfg.activationBody, x:_bx, y:5.74, w:Math.max(1, 12.41 - _bx), h:0.39, font:'B', size:11.5, color:'nearBlack', valign:'middle', caps:false, lineSpacing:1, insets:{l:0,t:0.104,r:0.104,b:0.104} });
 
   // Bottom three boxes: white bold header, gray 2-line body. Fixed tan
   // chevrons between each -- not content slots, matches the source's own
@@ -1790,7 +1792,7 @@ function layout_reportStrategyStack(cfg) {
   });
   footerTxtX.forEach(function (x, i) {
     var f = footers[i] || {};
-    els.push({ type:'t', text:f.head || '', x:x, y:6.28, w:3.37, h:0.24, font:'B', size:9, color:'white', bold:true, valign:'top', caps:false, lineSpacing:1.05, charSpacing:0.4 });
+    els.push({ type:'t', text:f.head || '', x:x, y:6.28, w:3.37, h:0.24, font:'B', size:9, color:'white', bold:true, valign:'top', caps:true, lineSpacing:1.05, charSpacing:0.4 });
     els.push({ type:'t', text:f.body || '', x:x, y:6.5, w:3.37, h:0.46, font:'B', size:9, color:'#8A8E96', bold:false, valign:'top', caps:false, lineSpacing:1.1 });
   });
   els.push({ type:'t', text:'\u203a', x:4.37, y:6.45, w:0.22, h:0.28, font:'B', size:17, color:'accent', bold:true, align:'center', valign:'middle', caps:false, lineSpacing:1 });
