@@ -117,7 +117,7 @@ const SAMPLE_OVERRIDE = {
   reportJourneyMap: {
     tag:'TIMELINE', title:'Campaign journey', hereLabel:'We are here',
     panels:['Discover','Define','Develop','Deliver'].map((h, i) => ({
-      tone: i === 1 ? 'tan' : 'dark', icon: ['search','target','pencil','send'][i], header:h,
+      tone: i === 1 ? 'tan' : 'dark', icon: ['ph-magnifying-glass','ph-target','ph-pencil-simple','ph-paper-plane-tilt'][i], header:h,
       date:['Jan \u2013 Feb','Mar \u2013 Apr','May \u2013 Jun','Jul \u2013 Aug'][i],
       sections:[{label:'Goals', items:['Align on objectives','Agree success metrics']},
                 {label:'Deliverables', items:['Brief','Plan']},
@@ -153,9 +153,9 @@ const SAMPLE_OVERRIDE = {
   moodboardWardrobe: { title:'Wardrobe' },
   reportEcosystemTree: {
     title:'Campaign ecosystem',
-    cornerLeft:{label:'BUSINESS GOAL', icon:'target',
+    cornerLeft:{label:'BUSINESS GOAL', icon:'ph-target',
                 text:'Grow consideration among in-market shoppers.'},
-    cornerRight:{label:'STRATEGY', icon:'compass',
+    cornerRight:{label:'STRATEGY', icon:'ph-compass',
                  text:'Lead with craft, convert with proof.'},
     root:{label:'CAMPAIGN TITLE', facts:[
       {key:'Car Models:', value:'CX-70, CX-90'},
@@ -163,14 +163,14 @@ const SAMPLE_OVERRIDE = {
       {key:'Media Budget:', value:'$14M'},
       {key:'Production Budget:', value:'$3M'}]},
     branches:[
-      {label:'Broadcast',    icon:'video',     items:[{text:'CTV:', subs:['15s and 30s','Live sport']}]},
-      {label:'OLA',          icon:'monitor',   items:[{text:'Display:', subs:['Standard IAB','High impact']}]},
-      {label:'Social',       icon:'share',     items:[{text:'Instagram:', subs:['Post 1','Post 2']},'Videos and carousels']},
-      {label:'CRM',          icon:'mail',      items:[{text:'Email:', subs:['Owner nurture','Win-back']}]},
-      {label:'Search',       icon:'search',    items:[{text:'SEM:', subs:['Brand terms','Conquest terms']}]},
-      {label:'PR',           icon:'file-text', items:[{text:'Earned:', subs:['Press drives','Reviews']}]},
-      {label:'Dealer',       icon:'store',     items:[{text:'Local:', subs:['Co-op assets','Radio']}]},
-      {label:'Partnerships', icon:'handshake', items:[{text:'Creators:', subs:['Long form','Shorts']}]}]
+      {label:'Broadcast',    icon:'ph-video-camera',     items:[{text:'CTV:', subs:['15s and 30s','Live sport']}]},
+      {label:'OLA',          icon:'ph-monitor',   items:[{text:'Display:', subs:['Standard IAB','High impact']}]},
+      {label:'Social',       icon:'ph-share-network',     items:[{text:'Instagram:', subs:['Post 1','Post 2']},'Videos and carousels']},
+      {label:'CRM',          icon:'ph-envelope',      items:[{text:'Email:', subs:['Owner nurture','Win-back']}]},
+      {label:'Search',       icon:'ph-magnifying-glass',    items:[{text:'SEM:', subs:['Brand terms','Conquest terms']}]},
+      {label:'PR',           icon:'ph-file-text', items:[{text:'Earned:', subs:['Press drives','Reviews']}]},
+      {label:'Dealer',       icon:'ph-storefront',     items:[{text:'Local:', subs:['Co-op assets','Radio']}]},
+      {label:'Partnerships', icon:'ph-handshake', items:[{text:'Creators:', subs:['Long form','Shorts']}]}]
   },
   reportPlatformMatrix: {
     title:'Marketing ecosystem',

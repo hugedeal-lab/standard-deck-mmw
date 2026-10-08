@@ -2205,9 +2205,11 @@ Phosphor (MIT; `licenses/phosphor-LICENSE.txt`), built by
 icon size) matches the MMW set's (3.4%); light/regular read heavier. Use for
 subjects the MMW set lacks (car, calendar, map pin, camera). One family per
 slide: MMW icons are small illustrations, Phosphor icons simple symbols.
-Names resolve exact -> `ph-` form -> legacy Lucide; an unknown name draws
-nothing and warns (it used to print its own text). Lucide stays in the bundle
-only so older decks keep rendering.
+Names resolve exact -> `ph-` form -> a legacy Lucide name's Phosphor
+equivalent (`search` -> `ph-magnifying-glass`; `LUCIDE_ALIAS` in deck-icons.js);
+an unknown name draws nothing and warns (it used to print its own text). The
+Lucide set itself was removed from the bundle in 2026-10 -- older decks are
+pinned to bundles that still carry it.
 
 ## 14. Build rules and pre-flight checklist
 

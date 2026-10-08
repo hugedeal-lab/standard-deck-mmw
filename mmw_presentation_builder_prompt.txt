@@ -368,7 +368,8 @@ Icons (type:'i'): kebab-case names. Icon color defaults 'accent'. TWO sets, same
      doesn't cover (car, steering wheel, calendar, map pin, camera...). Any Phosphor icon name
      works with the ph- prefix (phosphoricons.com); the common ones are listed below.
   Don't mix mmw-* and ph-* on one slide: MMW icons are small illustrations, Phosphor icons are
-  simple symbols -- one family per slide reads as a set. The old Lucide names are not offered.
+  simple symbols -- one family per slide reads as a set. (Old Lucide names are mapped to
+  Phosphor equivalents, but write mmw-* / ph-* names.)
   An unknown name renders nothing (and logs a warning) -- use only names from these lists.
 MMW set (prefix each with 'mmw-'): agreement, announcement, approved, area-chart, bar-horizontal, bar-line-combo,
 bar-steps, bars-rising, budget-calc, budget-plan, business-cycle, business-

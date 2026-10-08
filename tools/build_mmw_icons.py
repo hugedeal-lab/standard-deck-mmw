@@ -6,8 +6,8 @@ template package (MMW_Keynote Template_7.30.26/Data/ -- files named
 'Asset <n><FAMILY>-<id>.svg'). Names come from tools/mmw_icon_names.json.
 
 Each icon is single-stroke line art (one CSS class: fill none, stroke
-#262626). This rewrites it into the same shape deck-icons.js uses for
-Lucide: inline attributes, stroke="currentColor" so DeckIcons.get() can
+#262626). This rewrites it into the shape deck-icons.js uses for its
+icons: inline attributes, stroke="currentColor" so DeckIcons.get() can
 recolour it, a square viewBox (padded so strokes aren't clipped), and one
 stroke weight across the whole set. IDs and Illustrator data-names are
 dropped -- they're junk and would collide when icons are inlined.
@@ -62,10 +62,10 @@ def main(src):
         js = js[:js.index(BEGIN)] + block + js[js.index(END) + len(END):]
     else:
         i = js.index('\n};\nfunction get(')
-        # the last Lucide entry has no trailing comma requirement issue: JS object
-        # literals accept a trailing comma, and every generated entry carries one.
+        # JS object literals accept a trailing comma, and every generated entry
+        # carries one.
         js = js[:i] + ('' if js[:i].rstrip().endswith(',') else ',') + '\n' + block + js[i:]
-    js = re.sub(r'\| \d+ icons \*/', '| %d icons */' % (len(re.findall(r"^'[^']+':'<svg", js, re.M))), js, count=1)
+    js = re.sub(r'\| \d+ icons \*/', '| %d icons */' % (len(re.findall(r"^'[^']+':'(?:<svg|~[sf])", js, re.M))), js, count=1)
     open(p, 'w', encoding='utf-8').write(js)
     print('wrote %d MMW icons into deck-icons.js' % len(names))
 
