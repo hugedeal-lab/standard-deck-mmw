@@ -831,6 +831,7 @@ function exportPill(slide, el, isDark, accent, pptx) {
 function exportBar(slide, el, isDark, accent, pptx) { slide.addShape(pptx.shapes.RECTANGLE, { x:el.x, y:el.y, w:el.w, h:el.h, fill:{color:SD.colorForPptx(el.fill||'accent',isDark)} }); }
 
 function exportIcon(slide, el, isDark) {
+if (el.icon == null && el.name) el.icon = el.name;   // `name` accepted as `icon` (see standard-deck renderIcon)
 var color = SD.colorForPptx(el.color || 'accent', isDark);
 var sizePx = Math.round(Math.min(el.w, el.h) * 72 * 0.55);
 var key = el.icon + '_' + sizePx + '_#' + color;
@@ -1110,6 +1111,7 @@ if (window.DeckIcons) {
     if (slideData.layout && window.DeckLayouts) els = window.DeckLayouts.dispatch(slideData);
     else els = slideData.els || [];
     els.forEach(function(el) {
+      if (el.type === 'i' && el.icon == null && el.name) el.icon = el.name;
       if (el.type === 'i' && el.icon) {
         var isDark = !!slideData.dark;
         var color = SD.resolveColor(el.color || 'accent', isDark);

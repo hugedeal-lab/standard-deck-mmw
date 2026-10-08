@@ -361,7 +361,8 @@ grouped rows -> reportChannelMatrix | Campaign-progress flow art (slide 72
 specifically) -> reportGrayTimeline
 
 6.3 Raw element types: t | s | o | i | d | p | b | bl | chart | tbl | img
-Icons (type:'i'): kebab-case names. Icon color defaults 'accent'. TWO sets, same line weight:
+Icons (type:'i'): {type:'i', icon:'ph-car', x, y, w, h, color:'accent'} -- the name goes in
+  `icon` (kebab-case); w = h; colour defaults 'accent'. TWO sets, same line weight:
   1. PRIMARY -- the MMW brand set (mmw-*): the template's own illustrative line icons, for
      concepts (growth, strategy, analytics, retail, teamwork). Use one whenever it fits.
   2. FALLBACK -- Phosphor thin (ph-*): 1,500+ single-subject icons for everything the MMW set

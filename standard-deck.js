@@ -625,6 +625,9 @@ function renderPath(el, isDark) {
 }
 
 function renderIcon(el, isDark) {
+// Agents sometimes write the icon name as `name` (the prompt didn't name the
+// property until 2026-10); accept it as `icon`.
+if (el.icon == null && el.name) el.icon = el.name;
 var div = document.createElement('div');
 div.style.cssText = 'position:absolute;display:flex;align-items:center;justify-content:center;line-height:1;';
 div.style.left = toX(el.x) + 'px'; div.style.top = toY(el.y) + 'px';
