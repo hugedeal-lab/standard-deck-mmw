@@ -1,5 +1,5 @@
 MMW Presentation Builder — V2.0
-CDN: standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f (hugedeal-lab)
+CDN: standard-deck-mmw@5ae4293e40e1266d868bdab5fe9ebd1d191cc64d (hugedeal-lab)
 
 V2.0 rebuilt the layout library directly from the real MMW template (originally
 MMW PPT Template_7.24.26.pptx; template revisions since then, plus a full
@@ -626,10 +626,10 @@ Four hidden brand-mark images, each a plain img element with
 style="display:none", in this order. src is the full pinned CDN URL -- these
 img tags are read from the DOM by id and their src does NOT pass through
 MMW_ASSET_BASE, so it must be absolute:
-  id=gi0  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f/assets/logos/mmw_logo_black.png
-  id=gi0w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f/assets/logos/mmw_logo_white.png
-  id=gi1  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f/assets/logos/wpp_mazda_lockup_black.png
-  id=gi1w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f/assets/logos/wpp_mazda_lockup_white.png
+  id=gi0  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@5ae4293e40e1266d868bdab5fe9ebd1d191cc64d/assets/logos/mmw_logo_black.png
+  id=gi0w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@5ae4293e40e1266d868bdab5fe9ebd1d191cc64d/assets/logos/mmw_logo_white.png
+  id=gi1  src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@5ae4293e40e1266d868bdab5fe9ebd1d191cc64d/assets/logos/wpp_mazda_lockup_black.png
+  id=gi1w src=https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@5ae4293e40e1266d868bdab5fe9ebd1d191cc64d/assets/logos/wpp_mazda_lockup_white.png
 
 Then nine script elements, in this exact order and this exact order only.
 Each is either EXTERNAL (a src attribute pointing at a URL, empty body) or
@@ -637,21 +637,21 @@ INLINE (no src attribute, a JS body). Emit each as a real script element:
 opening tag with the src attribute if external, the stated body if inline,
 then the closing tag immediately after.
 
-1. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f/deck-icons.js
-2. INLINE    body: window.MMW_ASSET_BASE='https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f/assets/';var AH='#C4A584';var AL='#FFE0C0';var AD='#9C7C5C';
+1. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@5ae4293e40e1266d868bdab5fe9ebd1d191cc64d/deck-icons.js
+2. INLINE    body: window.MMW_ASSET_BASE='https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@5ae4293e40e1266d868bdab5fe9ebd1d191cc64d/assets/';var AH='#C4A584';var AL='#FFE0C0';var AD='#9C7C5C';
 3. EXTERNAL  src = https://cdn.jsdelivr.net/gh/gitbrent/pptxgenjs@3.12.0/dist/pptxgen.bundle.js
-4. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f/standard-deck.js
-5. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f/deck-layouts.js
-6. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f/map-data.js
-7. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f/deck-maps.js
-8. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f/deck-shell.js
+4. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@5ae4293e40e1266d868bdab5fe9ebd1d191cc64d/standard-deck.js
+5. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@5ae4293e40e1266d868bdab5fe9ebd1d191cc64d/deck-layouts.js
+6. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@5ae4293e40e1266d868bdab5fe9ebd1d191cc64d/map-data.js
+7. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@5ae4293e40e1266d868bdab5fe9ebd1d191cc64d/deck-maps.js
+8. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@5ae4293e40e1266d868bdab5fe9ebd1d191cc64d/deck-shell.js
 9. INLINE    body:
    var D=[__D_ARRAY__];
    deckInit({title:'[Title]'});
 
 Closing: </body></html>
 
-The commit ref (currently 0383ddf48c44e16ce65352e73f7c4af07c70355f) is a pin, not
+The commit ref (currently 5ae4293e40e1266d868bdab5fe9ebd1d191cc64d) is a pin, not
 a branch. It appears in script items 1, 4, 5, 6, 7 and 8, in script item 2's
 MMW_ASSET_BASE, and in all four brand-mark img src URLs above -- eleven places.
 Items 6 and 7 (map-data.js, deck-maps.js) are required in every artifact,
