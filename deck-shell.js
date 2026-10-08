@@ -27,6 +27,9 @@ var _imageCache = {};
 // Natural pixel dims per resolved image src, filled by prefetchImage()'s onload.
 // Used only for fit:'cover' center-crop math in exportImage().
 var _imageDims = {};
+// Images an export had to leave out (see exportImage); reported in its toast.
+var _exportMissing = {};
+function _linkImages() { return typeof location !== 'undefined' && location.protocol === 'file:'; }
 // Set by deckInit()'s prefetchDeckAssets(); exportPPTX() awaits it before
 // export. Declared here (module scope), not with `var` inside deckInit, so
 // exportPPTX -- a sibling top-level function, not a nested one -- can see it.
@@ -43,8 +46,76 @@ var _gradJobs = {}, _gradSeq = 0;
 // IMAGE PREFETCH CACHE
 // ============================================================
 
+// Images are embedded from their real bytes: fetched, checked to BE an image,
+// and turned into a data URI -- no canvas round trip. Two failures this
+// replaces, both seen in a real export (2026-10):
+//  - jsDelivr briefly answered one asset with a text error ("Failed to fetch
+//    the requested commit ..."). The old loader failed, export fell back to
+//    handing PptxGenJS the raw URL, and PptxGenJS embedded the error text as
+//    a .png -- PowerPoint drew "The picture can't be displayed" in a white
+//    box that blanked the whole Thank You slide.
+//  - Canvas re-encoding silently returns an empty image for anything over the
+//    browser's canvas size limit (Safari: 16.7 MP; some brand art is bigger).
+// Each URL is tried twice, then its GitHub raw mirror (same commit) twice.
+// The canvas path remains only as a last resort (e.g. no fetch / file://).
+var _imageFailed = {};
+function _imageMime(u8) {
+  if (u8.length < 12) return null;
+  if (u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4E && u8[3] === 0x47) return 'image/png';
+  if (u8[0] === 0xFF && u8[1] === 0xD8 && u8[2] === 0xFF) return 'image/jpeg';
+  if (u8[0] === 0x47 && u8[1] === 0x49 && u8[2] === 0x46) return 'image/gif';
+  if (u8[0] === 0x52 && u8[1] === 0x49 && u8[2] === 0x46 && u8[3] === 0x46 &&
+      u8[8] === 0x57 && u8[9] === 0x45 && u8[10] === 0x42 && u8[11] === 0x50) return 'image/webp';
+  return null;
+}
+// cdn.jsdelivr.net/gh/<owner>/<repo>@<ref>/<path> -> the same file on GitHub.
+function _mirrorUrl(url) {
+  var m = /^https:\/\/cdn\.jsdelivr\.net\/gh\/([^\/]+)\/([^@\/]+)@([^\/]+)\/(.+)$/.exec(url);
+  return m ? 'https://raw.githubusercontent.com/' + m[1] + '/' + m[2] + '/' + m[3] + '/' + m[4] : null;
+}
+function _fetchImageData(url) {
+  return fetch(url, { mode: 'cors' }).then(function (res) {
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    return res.arrayBuffer();
+  }).then(function (ab) {
+    var u8 = new Uint8Array(ab), mime = _imageMime(u8);
+    if (!mime) throw new Error('response is not an image');
+    var bin = '', CH = 0x8000;
+    for (var i = 0; i < u8.length; i += CH) bin += String.fromCharCode.apply(null, u8.subarray(i, i + CH));
+    return 'data:' + mime + ';base64,' + btoa(bin);
+  });
+}
+function _recordDims(url, dataUri) {
+  return new Promise(function (resolve) {
+    var img = new Image();
+    img.onload = function () {
+      if (img.naturalWidth && img.naturalHeight) _imageDims[url] = { w: img.naturalWidth, h: img.naturalHeight };
+      resolve();
+    };
+    img.onerror = function () { resolve(); };
+    img.src = dataUri;
+  });
+}
+function _wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
 function prefetchImage(url) {
-if (_imageCache[url]) return Promise.resolve();
+  if (_imageCache[url]) return Promise.resolve();
+  var canFetch = typeof fetch === 'function' && !(typeof location !== 'undefined' && location.protocol === 'file:');
+  var tries = [url, url, _mirrorUrl(url), _mirrorUrl(url)].filter(Boolean);
+  function attempt(i) {
+    if (!canFetch || i >= tries.length) return Promise.reject();
+    return (i ? _wait(400 * i) : Promise.resolve())
+      .then(function () { return _fetchImageData(tries[i]); })
+      .catch(function (e) {
+        console.warn('[deck-shell] image fetch ' + (i + 1) + '/' + tries.length + ' failed (' + (e && e.message) + '): ' + tries[i]);
+        return attempt(i + 1);
+      });
+  }
+  return attempt(0).then(function (dataUri) {
+    _imageCache[url] = dataUri;
+    return _recordDims(url, dataUri);
+  }, function () { return _prefetchViaCanvas(url); });
+}
+function _prefetchViaCanvas(url) {
 return new Promise(function (resolve) {
   var img = new Image();
   img.crossOrigin = 'anonymous';
@@ -57,7 +128,13 @@ return new Promise(function (resolve) {
     var canvas = document.createElement('canvas');
     canvas.width = img.naturalWidth; canvas.height = img.naturalHeight;
     var ctx = canvas.getContext('2d'); ctx.drawImage(img, 0, 0);
-    try { _imageCache[url] = canvas.toDataURL('image/png'); }
+    try {
+      var d = canvas.toDataURL('image/png');
+      // Over the canvas size limit the browser returns "data:," -- an empty
+      // image -- rather than throwing. Never cache that.
+      if (d && d.length > 64) _imageCache[url] = d;
+      else { _imageFailed[url] = 1; console.warn('[deck-shell] Image too large to re-encode: ' + url); }
+    }
     catch (e) {
       // Canvas is tainted. Under file:// every local image trips this, so the PPTX
       // links images instead of embedding them. Serve the folder over http
@@ -67,10 +144,9 @@ return new Promise(function (resolve) {
     resolve();
   };
   // Resolve (not reject) on failure -- one bad URL should not hang every other
-  // slide's export. exportImage's opts.path fallback still applies for this
-  // one image, same as before; the fix here is only for the images that WOULD
-  // have succeeded if export had waited for them.
-  img.onerror = function () { console.warn('[deck-shell] Failed to prefetch: ' + url); resolve(); };
+  // slide's export. exportImage leaves the image out (and says so) rather
+  // than embed an unverified response.
+  img.onerror = function () { _imageFailed[url] = 1; console.warn('[deck-shell] Failed to prefetch: ' + url); resolve(); };
   img.src = url;
 });
 }
@@ -377,7 +453,7 @@ function toggleLogoPanel() { var p = document.querySelector('.sd-logo-panel'); i
 
 function showToast(message, type) {
   var t = document.createElement('div'); t.className = 'sd-toast sd-toast-' + (type || 'ok'); t.textContent = message;
-  document.body.appendChild(t); setTimeout(function () { t.style.opacity = '0'; setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 300); }, 3000);
+  document.body.appendChild(t); setTimeout(function () { t.style.opacity = '0'; setTimeout(function () { if (t.parentNode) t.parentNode.removeChild(t); }, 300); }, type === 'bad' ? 8000 : 3000);
 }
 
 function setupKeyboard() {
@@ -430,6 +506,7 @@ await _prefetchPromise;
 // Mask tags are per-export: exportPPTX can run more than once in a session and
 // stale entries would renumber against the wrong pictures.
 _maskJobs = {}; _maskSeq = 0;
+_exportMissing = {};
 _gradJobs = {}; _gradSeq = 0;
 if (downloadBtn) { downloadBtn.textContent = '\u23F3 Exporting...'; }
 
@@ -490,7 +567,9 @@ try {
     if (slideData.bgImage) {
       var _bgData = (slideData.bgImage.indexOf('data:') === 0)
         ? slideData.bgImage : _imageCache[slideData.bgImage];
-      slide.background = _bgData ? { data: _bgData } : { path: slideData.bgImage };
+      if (_bgData) slide.background = { data: _bgData };
+      else if (_linkImages()) slide.background = { path: slideData.bgImage };
+      else _exportMissing[slideData.bgImage] = 1;
     }
     if (slideData.bgColor) {
       slide.background = { color: slideData.bgColor.replace('#', '') };
@@ -547,7 +626,13 @@ try {
   // rather than failing the export outright.
   var finish = function (msg) {
     if (downloadBtn) { downloadBtn.disabled = false; downloadBtn.textContent = '\u2B07 Download'; }
-    showToast(msg, 'ok');
+    var missing = Object.keys(_exportMissing);
+    if (missing.length) {
+      var names = missing.map(function (u) { return u.split('/').pop(); }).join(', ');
+      showToast('PPTX downloaded, but ' + missing.length + ' image' + (missing.length > 1 ? 's' : '') +
+        ' could not be loaded and ' + (missing.length > 1 ? 'were' : 'was') + ' left out (' + names +
+        '). Export again in a minute to include ' + (missing.length > 1 ? 'them' : 'it') + '.', 'bad');
+    } else showToast(msg, 'ok');
   };
   if (typeof JSZip === 'undefined') {
     console.warn('[SD] JSZip unavailable - exporting without the kerning fix.');
@@ -1011,14 +1096,14 @@ function exportImage(slide, el) {
   var opts = { x: el.x, y: el.y, w: el.w, h: el.h };
   var data = (src.indexOf('data:') === 0) ? src : _imageCache[src];
   if (data) opts.data = data;
+  else if (_linkImages()) opts.path = src;   // file:// QA decks: link, as before
   else {
-    // Should not happen now that exportPPTX awaits _prefetchPromise before
-    // this ever runs -- if it does, the URL genuinely failed to load (see
-    // prefetchImage's onerror), not just "hadn't loaded yet". Logged loudly
-    // because this is exactly the fallback that let a wrong-content response
-    // get silently embedded as if it were the real image.
-    console.warn('[deck-shell] No cached data for ' + src + ' at export time -- passing raw path to PptxGenJS, which does not validate the response is actually an image.');
-    opts.path = src;
+    // The image could not be loaded even after retries and the mirror. Leave
+    // it out: handing PptxGenJS the raw URL embeds whatever the server sent
+    // (an error page, once) as a broken picture that can blank the slide.
+    _exportMissing[src] = 1;
+    console.warn('[deck-shell] Left out of the PPTX (could not be loaded): ' + src);
+    return;
   }
   // alphaModFix -> PptxGenJS transparency (0 = opaque, 100 = invisible).
   if (typeof el.transparency === 'number') opts.transparency = el.transparency;
