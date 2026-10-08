@@ -31,7 +31,7 @@ The harness is deliberately a smoke test, not a design review — it feeds every
 
 ## Since v2.0
 
-- **Charts** (`reportGrayChart` / `reportDarkChart`): `type:'column'` (template slides 93/94) and a template-styled `'doughnut'` (82/88) join bar / line / area / pie; every chart takes a centred `title` / `subtitle` above and a `note` summary below. Bars and columns are real pill shapes, so the rounded ends survive in PowerPoint.
+- **Charts** (`reportGrayChart` / `reportDarkChart`): `type:'column'` (template slides 93/94) and a template-styled `'doughnut'` (82/88) join bar / line / area / pie; every chart takes a centred `title` / `subtitle` above and a `note` summary below. Both are drawn from real shapes: horizontal bars with the confirmed pill ends, columns square-topped like slides 93/94, each capped at the template's bar size.
 - **Maps** (`deck-maps.js`): `mapUS` — highlighted states and labelled cities in the template's solid or dot style, template pins, collision-aware labels, editable state shapes in the PPTX; `mapWorld` — the template's decorative world maps and globes. DMAs are pending a county-to-DMA list.
 - **Blank canvases**: `canvasDark` / `canvasGrey` / `canvasLight`. They, and the bare `reportGray` / `reportDark` chassis, draw raw `cfg.els` — the only five layouts that do.
 - **MMW icons**: 72 `mmw-*` line icons from the Keynote package's source SVGs (`tools/build_mmw_icons.py`).

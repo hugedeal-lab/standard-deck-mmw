@@ -3391,7 +3391,9 @@ function chartBarEls(els, cfg, X, Y, W, H, dark) {
   // Category axis (left rule).
   els.push({ type:'ln', x:px, y:py, w:0, h:ph, color:axisCol, weight:1 });
 
-  var groupH = ph / nG, barH = (groupH * 0.74) / nS, pad = groupH * 0.13;
+  // Template slides 80/81/84/85 draw ~0.45in pills whatever the category
+  // count; a share of the row alone balloons them on short lists, so cap it.
+  var groupH = ph / nG, barH = Math.min(0.46, (groupH * 0.74) / nS), pad = (groupH - barH * nS) / 2;
   labels.forEach(function (lbl, gi) {
     els.push({ type:'t', text:String(lbl), x:X, y:py + gi * groupH, w:GL - 0.14, h:groupH,
       font:'B', size:9.5, color:axisCol, align:'right', valign:'middle',
@@ -3466,17 +3468,21 @@ function chartColEls(els, cfg, X, Y, W, H, dark) {
   // Baseline.
   els.push({ type:'ln', x:px, y:py + ph, w:pw, h:0, color:axisCol, weight:1 });
 
+  // Template slides 93/94: square-topped columns, gapWidth 219 / overlap -27.
+  // That spacing gives 0.27in columns at the template's 7 categories x 3
+  // series; with fewer categories or series it would balloon (4 x 1 -> 0.7in
+  // capsules), so the template's width is also the cap.
   var groupW = pw / nG;
-  var bw = groupW / (nS + 0.27 * (nS - 1) + 2.19), inner = bw * 0.27;
+  var bw = Math.min(0.27, groupW / (nS + 0.27 * (nS - 1) + 2.19)), inner = bw * 0.27;
   var clusterW = nS * bw + (nS - 1) * inner;
   labels.forEach(function (lbl, gi) {
     var gx = px + gi * groupW + (groupW - clusterW) / 2;
     data.forEach(function (s, si) {
       var v = +s.values[gi] || 0;
-      var bh = Math.max((v / axisMax) * ph, bw);   // never shorter than its own pill
+      var bh = v > 0 ? Math.max((v / axisMax) * ph, 0.02) : 0;
       var bx = gx + si * (bw + inner);
       var fill = (nS === 1) ? PAL[0] : PAL[si % PAL.length];
-      els.push({ type:'s', x:bx, y:py + ph - bh, w:bw, h:bh, fill:fill, radius:'pill' });
+      if (bh) els.push({ type:'s', x:bx, y:py + ph - bh, w:bw, h:bh, fill:fill });
       if (opts.showValue) {
         els.push({ type:'t', text:String(v), x:bx - 0.3, y:py + ph - bh - 0.22, w:bw + 0.6, h:0.2,
           font:'B', size:7.5, color:axisCol, align:'center', valign:'bottom', caps:false,
@@ -3541,12 +3547,14 @@ function chartWellEls(els, cfg, dark) {
   if (type === 'bar' && ch.opts && ch.opts.barDir === 'col') type = 'column';
   var X = 0.78, W = 11.5, top = 2.22, bottom = 6.58;
   if (ch.title && type !== 'doughnut') {
-    els.push({ type:'t', text:ch.title, x:X, y:top, w:W, h:0.24, font:'B', size:13, color:'bodyGray',
-      align:'center', valign:'bottom', caps:false, lineSpacing:1, insets:{l:0,t:0,r:0,b:0} });
+    // Slides 93/94: 13pt / 11pt, tracked +0.52 / +0.44pt, #808080 on the
+    // light chassis and #D5D5D5 on the dark; the note is #808080 / white.
+    els.push({ type:'t', text:ch.title, x:X, y:top, w:W, h:0.24, font:'B', size:13, color:dark ? 'lt2' : 'bodyGray',
+      align:'center', valign:'bottom', caps:false, lineSpacing:1, charSpacing:0.52, insets:{l:0,t:0,r:0,b:0} });
     top += 0.26;
     if (ch.subtitle) {
-      els.push({ type:'t', text:ch.subtitle, x:X, y:top, w:W, h:0.2, font:'B', size:11, color:'bodyGray',
-        align:'center', valign:'top', caps:false, lineSpacing:1, insets:{l:0,t:0,r:0,b:0} });
+      els.push({ type:'t', text:ch.subtitle, x:X, y:top, w:W, h:0.2, font:'B', size:11, color:dark ? 'lt2' : 'bodyGray',
+        align:'center', valign:'top', caps:false, lineSpacing:1, charSpacing:0.44, insets:{l:0,t:0,r:0,b:0} });
       top += 0.22;
     }
     top += 0.08;
@@ -3556,7 +3564,7 @@ function chartWellEls(els, cfg, dark) {
     // down to just above it rather than stopping at the plain well's 6.58.
     var lines = String(ch.note).split('\n').length;
     var nh = 0.2 * lines + 0.04;
-    els.push({ type:'t', text:ch.note, x:X, y:6.49, w:W, h:nh, font:'B', size:10, color:'bodyGray',
+    els.push({ type:'t', text:ch.note, x:X, y:6.49, w:W, h:nh, font:'B', size:10, color:dark ? 'white' : 'bodyGray',
       align:'center', valign:'top', caps:false, lineSpacing:1.05, insets:{l:0,t:0,r:0,b:0} });
     bottom = 6.37;
   }

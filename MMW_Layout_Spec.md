@@ -1346,13 +1346,18 @@ a different table object entirely, confirmed against the source directly.)
     `'bar'` with `opts.barDir:'col'` is read as `'column'`.
   - `data` -- `[{name, labels:[...], values:[...]}, ...]`, one entry per series.
   - `title` / `subtitle` -- the small centred heading above the plot (slide
-    93's "QoQ GVS by Model / (m953)": 13pt / 11pt Arial, `#808080`). For
+    93's "QoQ GVS by Model / (m953)": 13pt / 11pt Arial tracked +0.52 /
+    +0.44pt, `#808080` light / `#D5D5D5` dark). For
     `'doughnut'` the title sits in the ring's centre instead (24pt display face).
   - `note` -- the centred summary under the plot (slide 93's "Q1 GVS: …";
-    10pt Arial `#808080`, at y 6.49); `'\n'` for a second line.
-  - **bar / column** are drawn from real shapes, not a native chart, so their
-    pill ends survive to PowerPoint (a native `<c:barChart>` can only draw
-    flat bars). Column spacing is the source's (gapWidth 219, overlap −27);
+    10pt Arial, `#808080` light / white dark, at y 6.49); `'\n'` for a second line.
+  - **bar / column** are drawn from real shapes, not a native chart. Bars
+    (horizontal, slides 80/81/84/85) have pill ends -- which a native
+    `<c:barChart>` cannot draw -- and are ~0.45in thick, capped there so a
+    short list doesn't balloon. Columns (slides 93/94) are **square-topped**
+    and use the source's spacing (gapWidth 219, overlap −27), capped at the
+    source's 0.27in width so few categories or series give thin template
+    columns, not wide capsules;
     series colours are the source's: ink (`#262626` light / `#EEEEEE` dark),
     `#808080`, Spark `#BFA588`, Canopy `#4A634D`, Tide `#416986`. Like the
     source, columns show no gridlines, value axis or value labels by default
@@ -2231,7 +2236,7 @@ Capacity is set by column width and point size, and it is tight in this template
 8. **Keep the statement white** on all four headline variants, including `light`. Flag the contrast in speaker notes rather than "fixing" it. §8.
 9. **Don't select `Title & Bullets`, or the retired `blankDark`/`blankGrey`/`blankLight` engine names.** Use `reportPlatformMatrix`, `reportStatRow`, `reportEcosystemTree`, `reportJourneyMap` respectively — the retired names still resolve but log a warning. §11.4.
 10. **Fixed counts:** `Storyboard 02` = 6 panels, `Casting` = 4 talent, `Location Overview` = 5 locations, `Moodboard Wardrobe` = 4 outfits, `Moodboard ` = 8 wells, `Moodboard Props` = 10 caption slots, `reportMetricTable` = 7 columns, `reportStrategyStack` = 2 badges / 3 panels / 3 footers, `reportJourneyMap` = 4 panels x 3 sections, `reportPlatformMatrix` = 8 spokes max, `reportEcosystemTree` = 8 branches max, `reportSplitPanels` = 4 milestones max, `reportGateStatus` = 6 gates / 5 dividers max, `reportNumberedSteps` = 6 steps (fixed, not a max -- the serpentine layout is hardcoded to 3x2). `reportChannelMatrix`'s group/row counts are the one exception in this family: read from `cfg.groups[].rows.length`, not fixed. None of the others has a spare cell or an overflow rule.
-11. **Chart and progress bars get rounded (pill) ends -- horizontal and vertical alike.** The template's native chart bars are square, but the Keynote original they derive from has full pill ends (confirmed against the Keynote source, 2026-09-08). Applies to `reportSplitPanels`, `reportSpendBars(Light/Dark)` (`radius:'pill'` on `type:'s'`) and to `reportGrayChart` / `reportDarkChart` bar and column charts, which are built from real pill shapes for exactly this reason (see §11.6). Superseded an earlier rule that kept vertical bars square.
+11. **Horizontal bars get pill ends; columns stay square.** The template's native horizontal chart bars are square, but the Keynote original has full pill ends (confirmed against the Keynote source, 2026-09-08) -- so `reportSplitPanels`, `reportSpendBars(Light/Dark)` and `reportGray/DarkChart` `type:'bar'` draw pills. The column charts (slides 93/94) are square-topped in the source, and `type:'column'` matches them (corrected 2026-10 after a test deck showed wide capsule columns; an interim rule had applied pills to columns too).
 
 ### 14.3 Pre-flight
 
