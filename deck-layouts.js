@@ -111,11 +111,206 @@ function fitStatement(text, opts) {
   return { size: size, charSpacing: +(size / 10).toFixed(1) };
 }
 
+// ------------------------------------------------------------
+// TEXT FIT. Every layout box is sized for the template's sample copy; real
+// copy is often longer and, in PowerPoint, spills out of the box over whatever
+// sits below it. fitTexts() runs on every dispatched slide: it estimates each
+// text box's wrapped height and
+//   - small type (<= 14pt): steps the size down in 0.5pt until it fits, to a
+//     floor of el.minSize or 70% of the design size (never below 6.5pt);
+//   - display type (> 14pt) and anything still over at the floor: leaves the
+//     design size alone and warns, naming the layout and the copy. The fix
+//     for those is shorter copy or a roomier layout (prompt section 6.7).
+// The estimate is deliberately on the generous side (PowerPoint's 1.2x line
+// box, Arial advance widths, Mazda Type ~8% wider) so it errs toward a
+// warning rather than a silent spill. Rich-paragraph boxes are warned only.
+// ------------------------------------------------------------
+var _ARW = { a:.556,b:.556,c:.5,d:.556,e:.556,f:.278,g:.556,h:.556,i:.222,j:.222,
+  k:.5,l:.222,m:.833,n:.556,o:.556,p:.556,q:.556,r:.333,s:.5,t:.278,u:.556,v:.5,
+  w:.722,x:.5,y:.5,z:.5 };
+function _charEm(ch) {
+  if (_ARW[ch] != null) return _ARW[ch];
+  if (_CAPW[ch] != null) return _CAPW[ch];
+  return 0.6;
+}
+// Lines a string wraps to in a box `wIn` wide at `pt`, greedy by word.
+function _wrapLines(text, pt, wIn, caps, k, trackPt) {
+  var lines = 0, perPt = pt / 72;
+  String(text).split('\n').forEach(function (para) {
+    var s = caps ? para.toUpperCase() : para;
+    var words = s.split(/\s+/).filter(Boolean);
+    if (!words.length) { lines++; return; }
+    var cur = 0, n = 1, space = _charEm(' ') * k * perPt + trackPt / 72;
+    words.forEach(function (wd) {
+      var ww = 0;
+      for (var i = 0; i < wd.length; i++) ww += _charEm(wd[i]) * k * perPt + trackPt / 72;
+      if (ww > wIn) { n += Math.ceil(ww / wIn) - (cur ? 0 : 1); cur = ww % wIn; return; }
+      if (cur && cur + space + ww > wIn) { n++; cur = ww; }
+      else cur = cur ? cur + space + ww : ww;
+    });
+    lines += n;
+  });
+  return lines;
+}
+// Height the copy needs at `pt`, insets included.
+function _needH(el, pt) {
+  var ins = el.insets || {};
+  var w = el.w - (ins.l || 0) - (ins.r || 0);
+  if (w <= 0.05) return 0;
+  var k = (el.font === 'H' || el.font === 'HR' ? 1.08 : 1) * (el.bold ? 1.05 : 1);
+  var ls = (el.lineSpacing != null ? el.lineSpacing : 1) * 1.2 / 72, need = 0;
+  if (el.paras && el.paras.length) {
+    el.paras.forEach(function (p) {
+      var txt = (p.runs || []).map(function (r) { return r.text || ''; }).join('');
+      var ps = p.size || (p.runs && p.runs[0] && p.runs[0].size) || pt;
+      need += _wrapLines(txt, ps, w - Math.abs(p.marL || 0), el.caps, k, el.charSpacing || 0) * ps * ls;
+    });
+  } else {
+    need = _wrapLines(el.text, pt, w, el.caps, k, el.charSpacing || 0) * pt * ls;
+  }
+  return need + (ins.t || 0) + (ins.b || 0);
+}
+function _hasText(o) {
+  return o.paras ? o.paras.length : (o.text != null && String(o.text).trim());
+}
+// Where an element's visible content sits vertically. For text that is the
+// copy itself, placed by its anchor -- a tall bottom-anchored box with one
+// line of copy only occupies its last line.
+function _span(o) {
+  if (o.type !== 't') return [o.y, o.y + (o.h || 0)];
+  var ins = o.insets || {}, t = ins.t || 0, b = ins.b || 0;
+  var nh = _needH(o, o.size) - t - b, ih = o.h - t - b;
+  var top = o.valign === 'bottom' ? o.y + t + ih - nh : o.valign === 'middle' ? o.y + t + (ih - nh) / 2 : o.y + t;
+  return [top, top + nh];
+}
+// The height a text box can actually use. Template boxes are sized to one
+// line of sample copy (many are auto-fit shapes), so the box alone is not
+// the limit: copy grows away from its anchor -- down from a top anchor, up
+// from a bottom anchor, both ways from middle -- until it meets the nearest
+// element that overlaps it horizontally, the edge of a card containing it,
+// or the slide edge.
+function _avail(el, els) {
+  var x0 = el.x + 0.02, x1 = el.x + el.w - 0.02, yb = el.y + el.h;
+  var lo = 7.5, hi = 0;
+  els.forEach(function (o) {
+    if (o === el || !o || o.x == null || o.w == null || o.y == null) return;
+    if (['t','s','o','img','i','chart','tbl','ln','path'].indexOf(o.type) < 0) return;
+    if (o.type === 't' && !_hasText(o)) return;
+    if (o.x >= x1 || o.x + o.w <= x0) return;
+    var oh = o.h || 0;
+    if ((o.type === 's' || o.type === 'o') && o.y <= el.y + 0.01 && o.y + oh >= yb - 0.01) {
+      if (o.w * oh < 13.33 * 7.5 * 0.6) { lo = Math.min(lo, o.y + oh); hi = Math.max(hi, o.y); }
+      return;
+    }
+    var sp = _span(o);
+    if (sp[0] >= el.y + el.h * 0.5) lo = Math.min(lo, sp[0]);
+    else if (sp[1] <= el.y + el.h * 0.5) hi = Math.max(hi, sp[1]);
+  });
+  var down = Math.max(0, lo - yb), up = Math.max(0, el.y - hi);
+  return el.h + (el.valign === 'bottom' ? up : el.valign === 'middle' ? 2 * Math.min(up, down) : down);
+}
+// Overflow at `pt` against the usable height. A single line always "fits"
+// (the template sets many one-line labels in boxes shorter than the line),
+// and 0.03in of slack absorbs estimate noise on two-line headers.
+function _overBy(el, pt, avail) {
+  var need = _needH(el, pt), ins = el.insets || {};
+  var oneLine = el.paras ? 0 : pt * (el.lineSpacing != null ? el.lineSpacing : 1) * 1.2 / 72 + (ins.t || 0) + (ins.b || 0);
+  return need > Math.max(avail * 1.04 + 0.03, oneLine * 1.01) ? need - avail : 0;
+}
+// Horizontal extent of the copy itself: a single line sits where its
+// alignment puts it; anything that wraps fills the box width.
+function _lineW(el, txt, pt) {
+  var k = (el.font === 'H' || el.font === 'HR' ? 1.08 : 1) * (el.bold ? 1.05 : 1);
+  var s = el.caps ? String(txt).toUpperCase() : String(txt), w = 0;
+  for (var i = 0; i < s.length; i++) w += _charEm(s[i]) * k * pt / 72 + (el.charSpacing || 0) / 72;
+  return w;
+}
+function _inkX(el) {
+  var ins = el.insets || {}, x0 = el.x + (ins.l || 0), iw = el.w - (ins.l || 0) - (ins.r || 0);
+  if (el.paras) return [x0, x0 + iw];
+  var w = 0;
+  String(el.text).split('\n').forEach(function (ln) { w = Math.max(w, _lineW(el, ln, el.size)); });
+  if (w >= iw) return [x0, x0 + iw];
+  var isCompact = el.w <= 0.80 && el.h <= 0.80;
+  var al = el.align || (isCompact ? 'center' : 'left');
+  return al === 'right' ? [x0 + iw - w, x0 + iw] : al === 'center' ? [x0 + (iw - w) / 2, x0 + (iw + w) / 2] : [x0, x0 + w];
+}
+var _fitWarned = {};
+// Copy that runs sideways into a neighbour on the same line -- a header into
+// its date, a label into its value. Boxes in the template often overlap by
+// design; only the copy itself colliding counts.
+function _sideways(els, slug) {
+  // Photo-well labels are preview-only (_skipExport) and sit under titles by design.
+  var ts = els.filter(function (e) { return e && e.type === 't' && !e.rotation && e.size && !e._skipExport && _hasText(e); });
+  for (var i = 0; i < ts.length; i++) for (var j = i + 1; j < ts.length; j++) {
+    var a = ts[i], b = ts[j], ya = _span(a), yb = _span(b);
+    var oy = Math.min(ya[1], yb[1]) - Math.max(ya[0], yb[0]);
+    if (oy < 0.4 * Math.min(ya[1] - ya[0], yb[1] - yb[0])) continue;
+    var xa = _inkX(a), xb = _inkX(b);
+    // The width estimate runs slightly wide of PowerPoint on small bold caps
+    // (checked against a LibreOffice render of the journey-map headers, which
+    // clear their dates by ~0.17in where the estimate says they touch), so
+    // only an overlap past 0.05in counts.
+    if (Math.min(xa[1], xb[1]) - Math.max(xa[0], xb[0]) <= 0.05) continue;
+    var sa = a.paras ? '' : String(a.text), sb = b.paras ? '' : String(b.text);
+    var key = slug + '|' + sa + '|' + sb;
+    if (_fitWarned[key]) continue;
+    _fitWarned[key] = 1;
+    console.warn('[deck-layouts] "' + slug + '": "' + sa.slice(0, 40) + '" runs into "' + sb.slice(0, 40) +
+      '" on the same line. Shorten one of them; see the copy budgets in prompt section 6.7.');
+  }
+}
+function fitTexts(els, slug) {
+  if (!Array.isArray(els)) return els;
+  els.forEach(function (el) {
+    if (!el || el.type !== 't' || el.noFit || !el.size || el.rotation) return;
+    var hasText = el.paras ? el.paras.length : (el.text != null && String(el.text).trim());
+    if (!hasText) return;
+    var room = _avail(el, els);
+    if (!_overBy(el, el.size, room)) return;
+    if (!el.paras && el.size <= 14) {
+      var floor = Math.max(6.5, el.minSize || el.size * 0.7), pt = el.size;
+      while (pt - 0.5 >= floor && _overBy(el, pt, room)) pt -= 0.5;
+      if (el.charSpacing) el.charSpacing = +(el.charSpacing * pt / el.size).toFixed(2);
+      el.size = pt;
+      if (!_overBy(el, pt, room)) return;
+    }
+    var snip = el.paras ? (el.paras[0].runs || []).map(function (r) { return r.text || ''; }).join('')
+                        : String(el.text);
+    var key = slug + '|' + snip;
+    if (_fitWarned[key]) return;
+    _fitWarned[key] = 1;
+    console.warn('[deck-layouts] "' + slug + '": text overflows its box -- "' +
+      snip.slice(0, 50) + (snip.length > 50 ? '...' : '') + '" (' + snip.length +
+      ' chars). Shorten it or use a roomier layout; see the copy budgets in prompt section 6.7.');
+  });
+  _sideways(els, slug);
+  return els;
+}
+
 // Photo well. Renders a replaceable placeholder by default; supply real
 // photography per well with cfg.images -- an array indexed by well order
 // (top-to-bottom, left-to-right within the layout), or an object keyed by index:
 //   { layout:'coverPhoto2', images:['photos/hero.jpg'] }
 // Wells left unspecified stay replaceable, so you can fill only the ones you have.
+// Social spec-sheet copy. The template's grey labels ("Post copy (500 ch):",
+// "Headline (100 ch):", "Alts:") are fixed; the copy goes in the box under
+// each. Named fields (cfg.copy.postCopy / headline / alts / format) are the
+// API; cfg.items[n] -- the old positional slots, whose order differs between
+// the carousel and video sheets -- still works as a fallback.
+function _socialCopy(cfg, key, n) {
+  var c = cfg.copy && cfg.copy[key];
+  return c != null && c !== '' ? String(c) : ((cfg.items && cfg.items[n]) || '');
+}
+// "Label: value" lines. A bare value gets the template's label prefixed, so
+// copy.cta:'Shop Now' and copy.cta:'CTA: Shop Now' render the same.
+function _socialLine(cfg, key, prefix, dflt) {
+  var v = cfg.copy && cfg.copy[key];
+  if (v == null || v === '') return dflt;
+  v = String(v);
+  return v.toLowerCase().indexOf(prefix.toLowerCase()) === 0 ? v : prefix + ' ' + v;
+}
+
 // Social spec-sheet device mockup. o.{x,y,w,h} is the frame image's ACTUAL
 // on-slide rectangle (already resolved -- no object-fit letterbox, fit:'fill'
 // maps it 1:1). o.screen is [left,top,right,bottom] as fractions of that
@@ -2687,25 +2882,25 @@ function layout_metaDivider(cfg) {
 function layout_metaCarousel1x1(cfg) {
   var els = [];
   els.push({ type:'s', x:-0.01, y:-0.01, w:13.35, h:2.73, fill:'#E2E2E2' });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:8.9, y:0.52, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:4.74, y:0.55, w:2.67, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'alts', 0), x:8.9, y:0.52, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 1), x:4.74, y:0.55, w:2.67, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_wordmark.png']) || A+'social/meta_wordmark.png', x:0.56, y:0.7, w:0.97, h:0.2 });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:8.9, y:1.13, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:8.9, y:1.54, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'format', 2), x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'super_', 'Super:', 'Super:'), x:8.9, y:1.13, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'cta', 'CTA:', 'CTA: Learn More'), x:8.9, y:1.54, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.6, y:1.56, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   // Fixed device chrome: the real "Facebook & Instagram Carousel MockUp"
   // asset (mazdausa header, dots, "Start customizing now" / "Shop now"
   // footer all baked in), positioned by matching its transparent
   // content-hole fraction against the source's own placeholder geometry --
   // not the old bezel-only overlay.
   deviceMock(els, cfg, { name:'meta_carousel_frame.png', x:0.68, y:2.64, w:2.142, h:3.259, screen:[0,0.275,0,0.067], slot:0 });
-  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'headline', 3), x:4.74, y:2.18, w:2.67, h:0.5, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text2 || '', x:0.77, y:3.5, w:1.97, h:0.51, font:'B', size:6.5, color:'black', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"1:1 Carousel", x:10.68, y:3.64, w:1.23, h:0.23, font:'B', size:11, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 2.97, 4.04, 2.14, 2.13, 1);
@@ -2724,23 +2919,23 @@ function layout_metaCarousel1x1(cfg) {
 function layout_metaCarousel4x5(cfg) {
   var els = [];
   els.push({ type:'s', x:-0.01, y:-0.01, w:13.35, h:2.73, fill:'#E2E2E2' });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:8.9, y:0.52, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:4.74, y:0.55, w:2.67, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'alts', 0), x:8.9, y:0.52, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 1), x:4.74, y:0.55, w:2.67, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['meta_wordmark.png']) || A+'social/meta_wordmark.png', x:0.56, y:0.7, w:0.97, h:0.2 });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:8.9, y:1.13, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:8.9, y:1.54, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'format', 2), x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'super_', 'Super:', 'Super:'), x:8.9, y:1.13, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'cta', 'CTA:', 'CTA: Learn More'), x:8.9, y:1.54, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.6, y:1.56, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   // Fixed device chrome: same real Meta Carousel MockUp asset as the 1x1
   // variant, repositioned for this format's own "main" content-well
   // geometry (index5 below, not the filmstrip cards).
   deviceMock(els, cfg, { name:'meta_carousel_frame.png', x:0.71, y:3.061, w:2.042, h:3.106, screen:[0,0.275,0,0.067], slot:5 });
-  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'headline', 3), x:4.74, y:2.18, w:2.67, h:0.5, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   ph(els, cfg, 0.68, 2.99, 2.14, 0.32, 0);
   els.push({ type:'t', text:"4:5 Carousel", x:10.78, y:3.21, w:1.23, h:0.23, font:'B', size:11, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:cfg.text2 || '', x:0.77, y:3.34, w:1.97, h:0.51, font:'B', size:6.5, color:'black', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
@@ -2769,20 +2964,20 @@ function layout_metaVideoStatic(cfg) {
   // bezel-only overlay used before.
   deviceMock(els, cfg, { name:'meta_reel_frame.png', x:5.13, y:1.667, w:2.465, h:5.254, screen:[0,0.05,0,0.085], slot:0 });
   deviceMock(els, cfg, { name:'meta_reel_frame.png', x:8.73, y:1.667, w:2.465, h:5.254, screen:[0,0.05,0,0.085], slot:1 });
-  els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:"9:16 STATIC REEL", x:5.63, y:1.02, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"9:16 STORY", x:9.44, y:1.02, w:0.97, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 0), x:0.47, y:2.71, w:2.65, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'headline', 1), x:0.47, y:4.34, w:2.65, h:0.62, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'alts', 2), x:0.47, y:5.42, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'super_', 'Super:', 'Super:'), x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'cta', 'CTA:', 'CTA: Learn More'), x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   return els;
 }
 
@@ -2814,25 +3009,25 @@ function layout_redditDivider(cfg) {
 function layout_redditCarousel(cfg) {
   var els = [];
   els.push({ type:'s', x:-0.01, y:-0.01, w:13.35, h:2.73, fill:'#E2E2E2' });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   ph(els, cfg, 0.61, 0.44, 1.22, 0.68, 0);
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:8.9, y:0.52, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:4.74, y:0.55, w:2.67, h:1.17, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:true, lineSpacing:1.15, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:8.9, y:1.13, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:8.9, y:1.54, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'alts', 0), x:8.9, y:0.52, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 1), x:4.74, y:0.55, w:2.67, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'format', 2), x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:true, lineSpacing:1.15, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'super_', 'Super:', 'Super:'), x:8.9, y:1.13, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'cta', 'CTA:', 'CTA: Learn More'), x:8.9, y:1.54, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.6, y:1.56, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', bold:true, caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', bold:true, caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   // Fixed device chrome around the first carousel card only (matches how
   // Reddit's real carousel ads render -- first card carries full post
   // context, the rest are plain swipeable thumbnails). Repositioned to the
   // real Reddit UI mockup's content-hole fraction; the previous overlay
   // pair didn't match this card's actual bounds.
   deviceMock(els, cfg, { name:'reddit_video_frame.png', x:1.321, y:3.304, w:1.962, h:3.164, screen:[0.205,0.185,0.21,0.17], slot:2 });
-  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'headline', 3), x:4.74, y:2.18, w:2.67, h:0.5, minSize:8, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:"4:5 Carousel", x:11.45, y:3.3, w:0.83, h:0.16, font:'B', size:7, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   ph(els, cfg, 3.53, 3.56, 2.1, 2.62, 1);
   ph(els, cfg, 5.72, 3.57, 2.1, 2.62, 3);
@@ -2860,18 +3055,18 @@ function layout_redditVideoStatic1x1(cfg) {
   ph(els, cfg, 0.61, 0.44, 1.22, 0.62, 0); // was demo photo image114.png
   els.push({ type:'t', text:"1:1 STATIC", x:5.75, y:0.51, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"1:1 VIDEO", x:9.37, y:0.56, w:0.63, h:0.17, font:'B', size:7.5, color:'captionGray', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 0), x:0.47, y:2.71, w:2.65, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'headline', 1), x:0.47, y:4.34, w:2.65, h:0.62, minSize:8, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'alts', 2), x:0.47, y:5.42, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'super_', 'Super:', 'Super:'), x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'cta', 'CTA:', 'CTA: Learn More'), x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   return els;
 }
 
@@ -2887,23 +3082,23 @@ function layout_redditVideoStatic4x5(cfg) {
   ph(els, cfg, 0.61, 0.44, 1.22, 0.62, 0);
   els.push({ type:'t', text:"1:1 STATIC", x:5.75, y:0.51, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"9:16 VIDEO", x:9.55, y:0.51, w:0.97, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   // Fixed device chrome: the real Reddit UI mockup, positioned per column by
   // matching its checkerboard content-hole fraction against each column's
   // own placeholder geometry (the two columns aren't the same height).
   deviceMock(els, cfg, { name:'reddit_video_frame.png', x:4.885, y:1.475, w:3.215, h:5.184, screen:[0.205,0.185,0.21,0.17], slot:1 });
   deviceMock(els, cfg, { name:'reddit_video_frame.png', x:8.748, y:1.981, w:2.649, h:4.272, screen:[0.205,0.185,0.21,0.17], slot:2 });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 0), x:0.47, y:2.71, w:2.65, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'headline', 1), x:0.47, y:4.34, w:2.65, h:0.62, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'alts', 2), x:0.47, y:5.42, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'super_', 'Super:', 'Super:'), x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'cta', 'CTA:', 'CTA: Learn More'), x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   return els;
 }
 
@@ -2934,19 +3129,19 @@ function layout_tiktokDivider(cfg) {
 function layout_tiktokCarousel(cfg) {
   var els = [];
   els.push({ type:'s', x:-0.01, y:-0.01, w:13.35, h:2.73, fill:'#E2E2E2' });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:8.9, y:0.52, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:4.74, y:0.55, w:2.67, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Post copy (500 ch):", x:4.74, y:0.11, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Alts:", x:8.9, y:0.11, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'alts', 0), x:8.9, y:0.52, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 1), x:4.74, y:0.55, w:2.67, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['tiktok_chrome.png']) || A+'social/tiktok_chrome.png', x:0.54, y:0.6, w:1.23, h:0.36 });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:8.9, y:1.13, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:8.9, y:1.54, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'format', 2), x:0.6, y:1.07, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'super_', 'Super:', 'Super:'), x:8.9, y:1.13, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'cta', 'CTA:', 'CTA: Learn More'), x:8.9, y:1.54, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.6, y:1.56, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:4.74, y:2.18, w:2.67, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Headline (100 ch):", x:4.74, y:1.74, w:2.67, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'headline', 3), x:4.74, y:2.18, w:2.67, h:0.5, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   // The 5 filmstrip cards are plain, unframed image wells in the source --
   // confirmed directly, no device chrome around any of them (matching the
   // same pattern Meta's carousel filmstrip uses). Removed 5 oversized
@@ -2979,18 +3174,18 @@ function layout_tiktokVideoStatic(cfg) {
   deviceMock(els, cfg, { name:'tiktok_video_frame.png', x:8.83, y:1.519, w:2.432, h:5.135, screen:[0,0.06,0,0.075], slot:1 });
   els.push({ type:'t', text:"9:16 STATIC", x:5.44, y:0.86, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"9:16 VIDEO", x:9.35, y:0.86, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 0), x:0.47, y:2.71, w:2.65, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'headline', 1), x:0.47, y:4.34, w:2.65, h:0.62, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'alts', 2), x:0.47, y:5.42, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'super_', 'Super:', 'Super:'), x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'cta', 'CTA:', 'CTA: Learn More'), x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   return els;
 }
 
@@ -3031,24 +3226,24 @@ function layout_pinterest2x3(cfg) {
   // needed. That also confirms index2 (the actual swappable ad card, 5.92,
   // 2.97, 1.17, 2.00) already lines up with the mockup's real content hole.
   deviceMock(els, cfg, { name:'pinterest_2x3_frame.jpg', x:4.71, y:1.36, w:2.4, h:5.2, screen:[0.52,0.31,0.02,0.36], slot:2 });
-  els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   ph(els, cfg, 8.76, 1.88, 2.44, 4.18, 1);
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 0), x:0.47, y:2.71, w:2.65, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'headline', 1), x:0.47, y:4.34, w:2.65, h:0.62, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'alts', 2), x:0.47, y:5.42, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_wordmark.png']) || A+'social/pinterest_wordmark.png', x:8.77, y:5.54, w:2.42, h:0.51 });
   // Button background drawn BEFORE its label -- was pushed after, so the
   // black button covered the white "Follow"-style text completely.
   els.push({ type:'s', x:8.77, y:5.69, w:1.37, h:0.31, fill:'black' });
   els.push({ type:'t', text:cfg.text2 || '', x:8.89, y:5.68, w:0.91, h:0.23, font:'B', size:11, color:'white', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'super_', 'Super:', 'Super:'), x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'cta', 'CTA:', 'CTA: Learn More'), x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   return els;
 }
 
@@ -3068,18 +3263,18 @@ function layout_pinterest1x1(cfg) {
   // Replaces two overlapping overlays (a generic bezel + a partial Pinterest
   // asset) with one correctly-positioned frame.
   deviceMock(els, cfg, { name:'pinterest_1x1_frame.png', x:6.566, y:0.826, w:2.902, h:6.051, screen:[0.04,0.32,0.04,0.24], slot:0 });
-  els.push({ type:'t', text:cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 0), x:0.47, y:2.71, w:2.65, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'headline', 1), x:0.47, y:4.34, w:2.65, h:0.62, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'alts', 2), x:0.47, y:5.42, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'super_', 'Super:', 'Super:'), x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'cta', 'CTA:', 'CTA: Learn More'), x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   return els;
 }
 
@@ -3124,19 +3319,19 @@ function layout_youtubeVideoAd(cfg) {
   els.push({ type:'img', src:(cfg.assets && cfg.assets['youtube_logo.png']) || A+'social/youtube_logo.png', x:0.52, y:0.66, w:1.27, h:0.3 });
   // Fixed player chrome, drawn first so the video well sits on top of it.
   deviceMock(els, cfg, { name:'youtube_video_frame.png', x:4.35, y:0.99, w:7.65, h:5.98, screen:[0,0,0,0.28], slot:0 });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'format', 0), x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.size) || "Size: 4:5", x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.postCopy) || "Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:0.47, y:2.71, w:2.65, h:1.17, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.headline) || "Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:0.47, y:4.34, w:2.65, h:0.38, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.alts) || "Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:0.47, y:5.42, w:2.65, h:0.58, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 1), x:0.47, y:2.71, w:2.65, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Headline (100 ch):", x:0.47, y:3.9, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'headline', 2), x:0.47, y:4.34, w:2.65, h:0.62, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:"Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialCopy(cfg, 'alts', 3), x:0.47, y:5.42, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.title || "", x:5.49, y:5.56, w:4.45, h:0.7, font:'B', size:20.5, color:'white', bold:true, caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.super_) || "Super:", x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.cta) || "CTA: Learn More", x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'t', text:(cfg.copy && cfg.copy.destination) || "Destination: VLP", x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'super_', 'Super:', 'Super:'), x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'cta', 'CTA:', 'CTA: Learn More'), x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
+  els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   return els;
 }
 
@@ -3966,7 +4161,7 @@ function resolve(name) {
 // Keys each layout actually reads. Anything else a deck supplies is content
 // that would vanish without trace -- e.g. `subhead` on a divider, which has only
 // an eyebrow and a title. Warn rather than fail: the slide is still valid.
-var VERSION = 'v2.1-20261008 (87 layouts; +2 map layouts in deck-maps.js)';
+var VERSION = 'v2.2-20261008 (87 layouts; +2 map layouts in deck-maps.js; text fit)';
 var LAYOUT_KEYS = {
   "canvasDark": ["els"], "canvasGrey": ["els"], "canvasLight": ["els"],
   "coverLight": [
@@ -4509,7 +4704,7 @@ function dispatch(slideData) {
       slug = RETIRED[slideData.layout] || LEGACY_ALIASES[slideData.layout] || TEMPLATE_NAMES[slideData.layout] || slug;
     }
     warnUnusedKeys(slideData, slug);
-    return fn(slideData);
+    return fitTexts(fn(slideData), slug);
   }
   if (slideData.els) return slideData.els;
   console.error('[deck-layouts] Unknown layout: "' + slideData.layout + '". ' +
@@ -4523,6 +4718,8 @@ function dispatch(slideData) {
 window.DeckLayouts = {
   VERSION: VERSION,
   dispatch: dispatch,
+  // Text-fit internals, exposed for tools/copy_budgets.js.
+  TEXT_FIT: { needH: _needH, overBy: _overBy },
   LAYOUT_KEYS: LAYOUT_KEYS,
   PHOTO_DEFAULTS: PHOTO_DEFAULTS,
   resolve: resolve,

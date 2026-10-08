@@ -113,12 +113,15 @@ E: "Hi! What's this for — storyboard/production planning, casting, location
 
 4.2 Phase 1: Analyze & Outline
 Silent: count sections, estimate words, apply §5, select layouts from §6.1 ONLY,
-verify item counts, COPY-FIT titles against §6.9 before choosing a cover.
+verify item counts, check every slide's copy against its budgets in §6.7
+before choosing its layout (long copy -> §6.7's LONG COPY routing).
 Present:
 🔍 Analysis: [N] sections, [N] topics, ~[N] words → [N] slides
 📋 Scope: a) Full deck  b) Contributing slides
 🔒 Footer: a) Company Confidential  b) Strictly Confidential  c) Custom  d) None
 📊 Structure: # | Layout | Bg | Content | Expect
+   (Expect: when a layout was picked for copy length, say so -- "long copy,
+   ~450 chars". Otherwise the usual one-line expectation.)
 ⚙️ Settings: 🖼️ Placeholders on (always) | 🎙️ On | 🎯 [Type] | 🔒 [Footer]
 For <=8: "⏳ Building now..." For 9+: "Proceed or adjust?"
 
@@ -126,6 +129,12 @@ For <=8: "⏳ Building now..." For 9+: "Proceed or adjust?"
 4.4 Phase 3: Tour — ✅ COMPLETE: [N] Slides, tour table, customize/edit options.
 ⚠️ Preview is an approximation; the PPTX is definitive.
 ⚠️ Every photo well is right-click replaceable in the exported PPTX — say so.
+📝 Copy notes: ONE line per affected slide, only when you (a) chose a different
+layout than the content's shape suggests because of copy length, (b) trimmed or
+paraphrased the user's copy to fit, (c) split copy across slides, or (d) let
+copy run between a field's two budget numbers (it renders smaller or wraps).
+Say what and why, e.g. "Slide 6 uses twoRowsLight rather than content05: the
+420-character rationale needs its body room." No note for slides that fit.
 
 ── 5. CONTENT ANALYSIS ──────────────────────────────────────
 5.1 Words ÷ 175 x 0.90 = target | Sections x 4 + structural = target
@@ -279,6 +288,19 @@ moodboardWardrobe	Moodboard Wardrobe	#FFFFFF	Wardrobe board. 4 outfit wells + 3 
 moodboardToneManner	Moodboard 	#FFFFFF	Tone & manner mosaic, 8 wells, no captions.
 
 SOCIAL / PAID MEDIA (16)
+Spec-sheet fields -- every carousel, video&static and videoAd sheet takes the
+same named fields (dividers take none):
+  text               the asset name, rail headline (~26 chars, e.g. 'CX-5 Crafted With Care')
+  copy.format        rail line under the logo ('Carousel', 'Single video & static', 'Video ad')
+  copy.postCopy      the post copy itself
+  copy.headline      the headline itself
+  copy.alts          the alt text
+  copy.super_ / copy.cta / copy.destination / copy.size   bare values ('Learn More',
+                     'VLP', '4:5'); the template's "CTA:" etc. label is added for you
+The grey labels "Post copy (500 ch):", "Headline (100 ch):", "Alts:" are fixed
+template text -- never pass them. Full 500-character post copy and 100-character
+headlines fit (the type shrinks); see §6.7 for where it stays at design size.
+(cfg.items[n] is the old positional API -- still accepted, never use it.)
 Name	Template layout	Background	Use
 metaDivider	Meta_Divider	#000000	Meta platform divider.
 metaCarousel1x1	Meta_Carousel 1x1	#FFFFFF	Meta 1:1 carousel spec sheet.
@@ -401,21 +423,90 @@ Section title 35pt        -0.70   (tightened, not expanded)
 Cover / divider title 54.5pt and TOC list 30pt carry NO tracking.
 Kerning is on for all sizes from 1pt up.
 
-6.7 COPY-FIT before choosing a layout
-Cover title (coverLight/Dark) 12.56in @54.5pt -> ~26 chars, 1 line
-Cover title (coverLight2)      9.65in @54.5pt -> ~20 chars, 2 lines
-Cover title (coverPhoto2)      6.48in @54.5pt -> ~15 chars, 1 line
-Divider title                 12.12in @54.5pt -> ~25 chars, 1 line
-Statement (headline*/          13.09in. 140pt is the MAX and the look for a
-  statementSubhead)            terse line (~10 chars / one word). The engine now
-                              auto-steps the size down (to ~64pt floor, then a
-                              2-line wrap) as the line gets longer -- so a
-                              longer statement renders cleanly instead of
-                              oversetting, but it also renders SMALLER. Keep
-                              statements brief to hold the hero size.
-Report title                  12.12in @24pt   -> ~65 chars
-TOC entry                      7.58in @30pt   -> ~31 chars, 9 entries
-A title over its limit oversets — pick coverLight2 or shorten. Check FIRST.
+6.7 COPY BUDGETS -- check copy length BEFORE choosing a layout
+Every text field's capacity, measured from the engine (COPY_BUDGETS.md has the
+same table). Read each entry as N/M characters, per item for [] fields:
+  N  keeps the template's look -- small type at its design size, titles inside
+     their own box. AIM HERE.
+  M  hard limit. Between N and M the slide still renders cleanly but changes:
+     small type shrinks to fit, titles wrap into free space. Past M the copy
+     collides with other content or spills in PowerPoint (the engine logs a
+     console warning). NEVER exceed M.
+  A single number means N = M. 600+ means effectively unlimited for one slide.
+Budgets assume the slide's other fields carry typical copy.
+Statements (headline*, statementSubhead) step their size down automatically:
+140pt holds ~10 characters; longer lines render smaller. tableOfContents: §15.1.
+
+LONG COPY. When a slide's copy is long (a paragraph or more), choose a layout
+with body room instead of squeezing it into a short field:
+  twoRows* text/text2, threeCol* items[], content01-09 text, storyboardVO and
+  scriptsCompare text (VO), videoReference/locationDetail text, reportGray/
+  reportDark intro + els, reportChapterOpener items[], reportPlatformMatrix
+  spokes[].copy, reportModelCompare entries[].copy -- all 600+.
+Still too long: split it across two slides, or tighten it (summarise, keep the
+facts, never invent). Flag either in the tour (§4.4 Copy notes).
+
+-- BEGIN COPY BUDGETS (generated by tools/copy_budgets.js) --
+coverLight, coverDark: date 475/600+ | title 24/70
+coverLight2: date 475/600+ | title 32/50
+coverPhoto: subhead 85/400 | title 24
+coverPhoto2: title 14/38
+dividerDark, dividerDark2, dividerLight, dividerLight2, dividerAsphalt, dividerCanopy, dividerAurora: tag 50/600+ | title 24/70
+dividerTides: tag 50/600+ | title 24/75
+headlineLight, headlineDark, headlinePhotoWell: tag 32/350 | title 85
+statementSubhead: subhead 425/600+ | title 30/140
+reportSplitPanels: tag 95/280 | title 45 | intro 575/600+ | stages[] 45/95 | milestones[].header 38/90 | milestones[].copy 170/325
+reportStatRow, reportStatRowLight: title 60/115 | columns[] 85/150 | sections[].label 20/60 | sections[].cells[] 60/180
+reportSpendBarsLight, reportSpendBarsDark: tag 95/280 | title 45 | intro 575/600+ | bars[].label 14/20 | bars[].value 22/45 | bars[].points[] 60
+reportModelCompare: tag 100/200 | title 60 | stages[].label 105/160 | entries[].label 280 | entries[].copy 600+
+reportBrandPillars: title 50/150 | channels[] 70/90 | rowLabels[] 95/170 | sections[].header 55 | sections[].sub 600+ | pillars[].header 32/40 | pillars[].copy 325/400 | targets[] 105/190 | pivot.label 160 | pivot.copy 190 | outcomes[] 170/300
+reportPlatformMatrix: title 90 | hub.label 90 | hub.name 600+ | spokes[].label 170 | spokes[].header 400 | spokes[].copy 600+ | categories[].text 150
+reportEcosystemTree: title 90/130 | cornerLeft.label 16/34 | cornerLeft.text 400/500 | cornerRight.label 16/34 | cornerRight.text 400/500 | root.label 85/100 | root.facts[].key 90 | root.facts[].value 90 | branches[].label 32/55 | branches[].items[].text 475 | branches[].items[].subs[] 600+ | branches[].items[] 600+
+reportMetricTable: date 45/85 | tag 95/280
+reportChannelMatrix: tag 95/280 | title 45 | intro 375/600+ | headerTotals.basePlanOnly 60 | headerTotals.basePlanIncremental 70 | groups[].label 140 | groups[].rows[].channel 65 | groups[].rows[].base 250 | groups[].rows[].incremental 270 | groups[].rows[].baseValue 60 | groups[].rows[].incValue 70 | groups[].subtotal.baseValue 60 | groups[].subtotal.incValue 70 | grandTotal.baseValue 60 | grandTotal.incValue 70
+reportQuotePanel: items[] 55/85 | subhead 55/160 | tag 65/160 | title 65/220
+reportChapterOpener: items[] 300/600+ | subhead 110/140 | tag 95/280 | text 45 | text2 150/230 | text3 200/230
+reportStrategyStack: title 45 | intro 230/550 | badges[].sub 38/100 | badges[].body 70/150 | pointOne 90 | pointTwo 85 | pointBody 170/350 | insightHead 75/160 | insightBody 230/525 | panels[].next 36/90 | panels[].subhead 60/120 | panels[].sections[].head 34/45 | panels[].sections[].body 105/150 | panels[].bullets[] 105 | activationLabel 60 | activationBody 100 | footers[].head 50/140 | footers[].body 170/325
+reportJourneyMap: tag 95/280 | title 45 | panels[].header 8 | panels[].date 8 | panels[].sections[].label 24/65 | panels[].sections[].items[] 70 | panels[].sections[].items[].text 130
+reportGateStatus: gates[].title 40/110 | gates[].subhead 38/50 | gates[].bullets[] 230 | dividers[].label 600+
+reportNumberedSteps: tag 95/280 | title 45/90 | steps[].label 16/38 | steps[].subhead 65/95 | steps[].intro 180 | steps[].bullets[] 600+
+thankYouLight, thankYouDark: date 475/600+ | title 24/75
+content01: text 600+ | title 60/90
+content02: text 600+ | title 65/250
+content03: text 575/600+ | title 85
+content05, content06: subhead 70/200 | text 600+ | title 10/40
+content07: subhead 65/190 | text 600+ | title 10/36
+content08: subhead 90/150 | text 600+ | title 20/50
+content09: subhead 75/200 | text 600+ | title 20/50
+threeColDark, threeColLight: items[] 600+ | subhead 90/160 | title 38/170
+twoRowsDark, twoRowsLightAlt: items[] 600+ | subhead 325/600+ | text 600+ | text2 600+ | title 12/70
+twoRowsLight: items[] 600+ | subhead 325/600+ | text 375/600+ | text2 600+ | title 12/70
+reportGray: tag 95/280 | text 600+ | title 45 | intro 600+
+reportDark: tag 95/280 | text 600+ | title 45
+storyboardVO: subhead 170/375 | text 600+ | title 16/105
+storyboardGrid: items[].caption 475/600+ | subhead 280/400 | title 38
+scriptsCompare: subhead 400/600+ | text 600+ | text2 600+ | title 36
+videoReference: subhead 375/600+ | text 600+ | title 36/100
+castingGrid: items[].name 425/600+ | tag 55/150 | title 26/60
+castingTalent: subhead 210/450 | tag 55/150 | title 26/60
+locationOverview: items[].label 120/260 | tag 55/150
+locationDetail: subhead 24/70 | tag 55/150 | text 600+ | title 24/60
+moodboardProps: captions[] 105 | tag 55/150 | title 26/60
+moodboardWardrobe: accessoryCaption 200/375 | subtitle 75/200 | tag 95/280 | text 600+ | title 10
+moodboardToneManner: tag 45/90 | title 18/34
+metaCarousel1x1: copy.postCopy 190/600+ | copy.headline 65/140 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 90/190 | text 40/45 | text2 350
+metaCarousel4x5: copy.postCopy 190/600+ | copy.headline 65/140 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 90/190 | text 40/45 | text2 180
+metaVideoStatic, redditVideoStatic4x5, tiktokVideoStatic, pinterest1x1, youtubeVideoAd: copy.postCopy 180/600+ | copy.headline 95/240 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 55/140 | text 40/45
+redditCarousel: copy.postCopy 180/600+ | copy.headline 60/130 | copy.alts 75/210 | copy.format 26/65 | copy.cta 30/100 | copy.destination 90/190 | text 40/45
+redditVideoStatic1x1: copy.postCopy 180/600+ | copy.headline 90/230 | copy.alts 75/210 | copy.format 30/80 | copy.cta 30/100 | copy.destination 55/140 | text 40/45
+tiktokCarousel: copy.postCopy 190/600+ | copy.headline 65/140 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 90/190 | text 40/45
+pinterest2x3: copy.postCopy 180/600+ | copy.headline 95/240 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 55/140 | text 40/45 | text2 22/45
+reportGrayChart, reportDarkChart: tag 95/280 | title 45 | intro 600+
+reportGrayTable, reportDarkTable: tag 95/280 | title 45 | intro 575/600+ | headers[] 50
+reportGrayTimeline: tag 95/280 | title 45 | intro 600+ | milestones[] 40/95
+mapUS: tag 95/280 | title 45/90
+mapWorld: tag 95/280 | title 45/90 | captions[] 36
+-- END COPY BUDGETS --
 
 ── 7. BRAND SYSTEM ──────────────────────────────────────────
 7.0 Default accent: Spark. AH='#C4A584'; AL='#FFE0C0'; AD='#9C7C5C';
@@ -458,6 +549,8 @@ scripts*, casting*, location*, moodboard*) — these are shoot-planning document
 forcing brand voice onto a prop list produces the wrong register.
 Social spec sheets: copy must respect the platform limits printed on the layout
 — post copy 500 characters, headline 100. These are contractual, not decorative.
+Both fit on the sheet; past ~180 / ~65-95 characters the type shrinks (§6.7), so
+mention in the tour when a sheet carries long copy.
 
 ── 9. SPEAKER NOTES ─ On by default. 2-4 sentences. Never repeat slide text.
 Flag the headlineLight contrast exception here when you use it (§12).
@@ -572,7 +665,8 @@ deckInit options: title (REQUIRED) | contentFooter string|false | noLogo true
 
 ── 14. PRE-GEN CHECKLIST ────────────────────────────────────
 Content: □ One idea/slide □ Every layout name from §6.1's 89 □ Fixed item counts
-  respected (§6.4) □ Titles copy-fitted (§6.7) BEFORE layout choice
+  respected (§6.4) □ Every field within its §6.7 budget (aim N, never past M)
+  □ Long copy routed to a layout with body room, or split
 Typography: □ Sizes from §6.5, engine-space □ Nothing scaled twice
 Color: □ Tokens only □ 'paper'/'asphalt' not 'white'/'black' for MMW neutrals
   □ AH/AL/AD = Spark unless deliberately overridden with correct setAccent order
@@ -646,9 +740,10 @@ locationOverview:
         {label:'Vintage Car Show'}]}
 
 metaCarousel4x5:
-{layout:'metaCarousel4x5', bgColor:'#FFFFFF',
- copy:{postCopy:'...(<=500 chars)', headline:'Crafted with Care',
-       cta:'CTA: Learn More', destination:'Destination: VLP'}}
+{layout:'metaCarousel4x5', bgColor:'#FFFFFF', text:'CX-5 Crafted With Care',
+ copy:{format:'Carousel', postCopy:'...(<=500 chars)', headline:'Crafted with Care',
+       alts:'The Mazda CX-5, Takiminuri paint', cta:'Learn More',
+       destination:'VLP', size:'4:5'}}
 
 reportGray:
 {layout:'reportGray', bgColor:'#EEEEEE', tag:'Q3 PERFORMANCE',

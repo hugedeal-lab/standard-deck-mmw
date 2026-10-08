@@ -31,9 +31,11 @@ for(const [tpl,slug] of Object.entries(DL.TEMPLATE_NAMES)){
   let keys=(DL.LAYOUT_KEYS[slug]||[]).slice();
   if(keys.includes('subhead')&&keys.includes('subtitle')) keys=keys.filter(k=>k!=='subtitle');
   for(const k of keys){
-    if(k==='title') d.title = slug==='tableOfContents' ? 'Table of contents'
+    if(k==='title' && keys.includes('copy')) continue;   // social rail line comes from copy.format
+    else if(k==='title') d.title = slug==='tableOfContents' ? 'Table of contents'
                             : (TITLE[L.family]||'Section Heading');
     else if(k==='subtitle'&&slug==='tableOfContents') d.subtitle='Agenda';
+    else if(k==='items' && keys.includes('copy')) continue;
     else if(k==='items') d.items = slug==='storyboardGrid'?[1,2,3,4,5,6].map(i=>({number:'0'+i,caption:'Shot '+i+' description'}))
       : slug==='castingGrid'?[1,2,3,4].map(i=>({name:'Talent '+i}))
       : slug==='locationOverview'?[1,2,3,4,5].map(i=>({label:'Location '+i}))
@@ -42,9 +44,11 @@ for(const [tpl,slug] of Object.entries(DL.TEMPLATE_NAMES)){
           'Production timeline','Budget','Next steps']
       : ['Item one','Item two','Item three'];
     else if(k==='captions') d.captions=Array.from({length:10},(_,i)=>'Prop '+(i+1));
-    else if(k==='copy') d.copy={postCopy:'Post copy sample.',headline:'Crafted with Care',
-      alts:'The Mazda CX-5',cta:'CTA: Learn More',destination:'Destination: VLP',size:'Size: 4:5'};
+    else if(k==='copy') d.copy={postCopy:'You don\u2019t just see the Mazda CX-5\u2014you feel it. Color crafted to hold your gaze. There\u2019s more to a Mazda.',
+      headline:'Crafted with Care',alts:'The Mazda CX-5, Takiminuri paint technology',
+      format:/Carousel/.test(slug)?'Carousel':/youtube/.test(slug)?'Video ad':'Single video & static',cta:'Learn More',destination:'VLP',size:'4:5'};
     else if(k==='text'&&slug==='tableOfContents') d.text='Prepared for the MMW brand team, July 2026.';
+    else if(k==='text' && keys.includes('copy')) d.text='CX-5 Crafted With Care';
     else if(SAMPLE[k]!==undefined) d[k]=SAMPLE[k];
   }
   d.notes=slug+' \u2014 template layout "'+tpl+'", source slide '+(L.spec_from_slide||'n/a')+'.';
@@ -79,6 +83,57 @@ const SPEND_BARS_SAMPLE = {
 };
 
 const SAMPLE_OVERRIDE = {
+  reportStrategyStack: {
+    tag:'STRATEGY', title:'Lead with craft', intro:'How the plan earns consideration this year.',
+    badges:[{sub:'Consumer Reports', body:'Top pick, two years running'},
+            {sub:'IIHS', body:'Top Safety Pick+ across the line'}],
+    pointOne:'Proof, not promises', pointTwo:'Craft you can feel',
+    pointBody:'Shoppers trust third-party validation over brand claims.',
+    insightHead:'Insight', insightBody:'Intenders cross-shop on quality, then decide on feel.',
+    panels:[
+      {next:'Next', subhead:'Awareness', sections:[{head:'Video', body:'CTV and online video.'},{head:'Social', body:'Paid reach.'}]},
+      {next:'Next', subhead:'Consideration', bullets:['Owner stories','Review roundups','Test-drive offers']},
+      {next:'Next', subhead:'Conversion', bullets:['Dealer search','Build and price','Retargeting']}],
+    activationLabel:'Activation', activationBody:'Always-on social with quarterly tentpoles.',
+    footers:[{head:'Reach', body:'85% of intenders'},{head:'Lift', body:'+6 pts consideration'},{head:'Efficiency', body:'-12% CPA'}]
+  },
+  reportJourneyMap: {
+    tag:'TIMELINE', title:'Campaign journey', hereLabel:'We are here',
+    panels:['Discover','Define','Develop','Deliver'].map((h, i) => ({
+      tone: i === 1 ? 'tan' : 'dark', icon: ['search','target','pencil','send'][i], header:h,
+      date:['Jan \u2013 Feb','Mar \u2013 Apr','May \u2013 Jun','Jul \u2013 Aug'][i],
+      sections:[{label:'Goals', items:['Align on objectives','Agree success metrics']},
+                {label:'Deliverables', items:['Brief','Plan']},
+                {label:'Review timeline', items:[{text:'Approval: week 2', bold:true}]}]}))
+  },
+  reportGateStatus: {
+    gates:[1,2,3,4,5,6].map((n) => ({ number:String(n),
+      title:['Brief','Strategy','Concept','Production','Launch','Optimize'][n - 1],
+      subhead:'Gate ' + n, bullets:['Scope agreed','Owners named'] })),
+    dividers:[{label:'Cleared'},{label:'Cleared'},{label:'Cleared'}]
+  },
+  reportNumberedSteps: {
+    tag:'PROCESS', title:'How we work',
+    steps:[1,2,3,4,5,6].map((n) => ({ number:String(n),
+      label:['Listen','Define','Explore','Make','Launch','Learn'][n - 1],
+      subhead:'Step ' + n, intro:'What happens here.', bullets:['Key activity','Output'] }))
+  },
+  reportChannelMatrix: {
+    tag:'BUDGET', title:'Channel roles', intro:'Base plan and incremental investment by funnel stage.',
+    headerTotals:{basePlanOnly:'$12.0M', basePlanIncremental:'$15.5M'},
+    groups:[
+      {label:'Awareness', rows:[
+        {channel:'CTV', base:'Reach', incremental:'Frequency', baseValue:'$4.0M', incValue:'$1.5M'},
+        {channel:'Online video', base:'Reach', incremental:'Extend', baseValue:'$2.0M', incValue:'$0.5M'}],
+       subtotal:{baseValue:'$6.0M', incValue:'$2.0M'}},
+      {label:'Consideration', rows:[
+        {channel:'Paid social', base:'Engage', incremental:'Retarget', baseValue:'$3.0M', incValue:'$1.0M'},
+        {channel:'Search', base:'Capture', incremental:'Conquest', baseValue:'$3.0M', incValue:'$0.5M'}]}],
+    grandTotal:{baseValue:'$12.0M', incValue:'$3.5M'}
+  },
+  // Its section title sits in a narrow column directly above the subhead: a
+  // one-word title, like the template's own sample.
+  moodboardWardrobe: { title:'Wardrobe' },
   reportEcosystemTree: {
     title:'Campaign ecosystem',
     cornerLeft:{label:'BUSINESS GOAL', icon:'target',

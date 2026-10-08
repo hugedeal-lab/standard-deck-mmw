@@ -55,6 +55,10 @@ template geometry).
   differences by hand.
 - `mkharness.js` → `mkstandalone.js` build the QA decks (`test-deck.html`,
   `test-deck-standalone.html`) from the **real** `deck-layouts.js`.
+- `copy_budgets.js` measures every field's character budget from the QA deck
+  through the engine's own text fit, writes `COPY_BUDGETS.md` and regenerates
+  the budget block in the prompt's §6.7. Re-run it after changing a layout's
+  geometry or the harness samples (rebuild `test-deck.html` first).
 - `3_build_deck_layouts.py` + `overrides.py` are **frozen archives** (last in
   sync 2026-09-04). The script writes only to `tools/build/`; never copy its
   output over the root `deck-layouts.js`. It can still be useful for seeing
@@ -67,6 +71,7 @@ python 1_extract_template.py     # PPTX  -> build/resolved.json   (needs python-
 python 2_build_layout_data.py    #       -> build/mmw_layouts.json  (reference geometry)
 node   mkharness.js              # real ../deck-layouts.js -> build/test-deck.html
 node   mkstandalone.js           #       -> build/test-deck-standalone.html
+node   copy_budgets.js           # test-deck.html -> COPY_BUDGETS.md + prompt §6.7 block
 ```
 
 ## How to test
@@ -75,6 +80,7 @@ node   mkstandalone.js           #       -> build/test-deck-standalone.html
 cd tests
 node smoke.js        # every layout in deck-layouts.js dispatches, both dark modes
 node mapstest.js     # mapUS / mapWorld: projection, markers, labels, assets
+node fittest.js      # text fit: QA deck clean, social copy API, overflow warnings
 node covertest.js    # 5 cover variants, asset resolution
 node divtest.js      # 8 divider variants
 node rotatetest.js   # photo rotation + determinism across 4 dispatch passes
@@ -86,6 +92,7 @@ In a browser: **serve over http, not `file://`** (`python -m http.server 8000`) 
 
 ## Non-obvious things that will bite
 
+- **`dispatch()` ends in `fitTexts()`**, which can lower a small text element's `size` (and scale its `charSpacing`) when its copy would collide in PowerPoint. Compare a layout function's raw output with `dispatch()` output when chasing a font size. The browser preview is *not* the reference for fit -- it lays text out shorter than PowerPoint, which is why the check models PowerPoint's 1.2x line box. After moving or resizing a text box, rebuild the QA deck and re-run `tools/copy_budgets.js`.
 - **`dispatch()` runs 4× per slide** (preview, prefetch, icon pre-render, export). Never put stateful logic in a layout function — the photo rotation lives in `deckInit` for exactly this reason.
 - **`white`/`black` tokens are pure #FFFFFF/#000000.** For MMW Paper and Asphalt use `paper` / `asphalt`. `resolveColor()` checks its semantics map before PALETTE.
 - **`caps` present on a text element = "typography fully specified"** — the engine then skips `getTextStyle()`'s guesswork. That heuristic uppercases anything ≤10pt, which would wrongly capitalise 161 elements.

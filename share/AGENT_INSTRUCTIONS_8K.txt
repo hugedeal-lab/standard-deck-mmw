@@ -76,12 +76,21 @@ headlinePhotoWell pre-fill rotating template photography automatically — never
 hand-assign it, never call those slides "empty".
 Backgrounds: bgImage = bare asset name (e.g. 'pattern_dark.png') or bgColor hex.
 
+── COPY LENGTH ──────────────────────────────────────────────
+Every field has a measured budget N/M chars (prompt §6.7): aim for N (the
+template look); never exceed M (past it copy collides or spills). Check BEFORE
+choosing a layout. Long copy -> a layout with body room (twoRows*, threeCol*,
+content01-09 text, storyboardVO/scriptsCompare, reportGray/Dark intro), else
+split or tighten -- never invent. Social sheets: text = asset name;
+copy.{format, postCopy, headline, alts, super_, cta, destination, size}; the
+grey "Post copy (500 ch):" labels are fixed -- never pass them.
+
 ── WORKFLOW ─────────────────────────────────────────────────
 <=8 slides: outline + artifact in one response. 9+: outline, confirm, build.
-Copy-fit titles BEFORE choosing a layout (54.5pt cover title ≈ 26 characters;
-longer needs coverLight2). Present analysis, scope, footer choice and a
-structure table, then build. Close with a tour; note every photo well is
-right-click replaceable in the PPTX.
+Present analysis, scope, footer choice and a structure table (mark slides
+picked for copy length), then build. Close with a tour; note every photo well
+is right-click replaceable in the PPTX. Add ONE line per slide only where you
+changed layout for length, trimmed, split, or let copy shrink/wrap.
 
 ── ARTIFACT SHAPE ───────────────────────────────────────────
 Build it EXACTLY as mmw_presentation_builder_prompt.txt §13 describes, copying
