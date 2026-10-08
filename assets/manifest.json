@@ -145,12 +145,6 @@
   "note": "Real Instagram/Facebook Reel chrome, replaces device_frame_9x16.png."
  },
  {
-  "file": "social/divider_platform_reddit_pinterest.png",
-  "bytes": 1415643,
-  "md5": "902346af9754",
-  "note": "Reddit/Pinterest platform-divider background photo, 1178x785. Replaces the stale device_frame_meta_carousel.png reference mmw_layouts.json carried for the Reddit_Divider/Pinterest_Divider masters (a mis-extraction) -- newly re-extracted under its own correct name."
- },
- {
   "file": "social/meta_carousel_frame.png",
   "note": "Real Meta carousel chrome (mazdausa header, dots, footer CTA), replaces device_frame_meta_carousel.png."
  },
@@ -249,5 +243,41 @@
   "bytes": 988528,
   "md5": "47791eb80693",
   "note": "Campaign-progress flow art for reportGrayTimeline (replaced report_timeline_flow.png, which rendered pixelated). White keyed to transparent."
+ },
+ {
+  "file": "social/divider_bg_dark.jpg",
+  "bytes": 128003,
+  "md5": "052fb2b87156",
+  "note": "Meta/TikTok/YouTube platform-divider background: template image15 (red Mazda headlight), -40% brightness baked in, centre-cropped to 16:9 (source fillRect -9% top/bottom)."
+ },
+ {
+  "file": "social/divider_bg_light.jpg",
+  "bytes": 66692,
+  "md5": "d5df47830654",
+  "note": "Reddit/Pinterest platform-divider background: template image21, -40% brightness baked in, 16:9. Replaces divider_platform_reddit_pinterest.png (undarkened)."
+ },
+ {
+  "file": "social/divider_lines.png",
+  "bytes": 58561,
+  "md5": "d96a80ee2e56",
+  "note": "Transparent line-pattern overlay on the right half of every platform divider (template image16, downscaled to 2400px)."
+ },
+ {
+  "file": "social/meta_logo_white.png",
+  "bytes": 16581,
+  "md5": "5a9d301e0c22",
+  "note": "White Meta logo for metaDivider (template image17; layout crops t/b 39.9%)."
+ },
+ {
+  "file": "social/tiktok_logo_white.png",
+  "bytes": 66579,
+  "md5": "3b8274ed4304",
+  "note": "White TikTok logo for tiktokDivider (template image103, 1600px)."
+ },
+ {
+  "file": "social/youtube_logo_white.png",
+  "bytes": 69051,
+  "md5": "1b586162ed50",
+  "note": "YouTube logo sprite for youtubeDivider (template image109; layout crops to the white top logo, b 71.6%)."
  }
 ]

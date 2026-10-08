@@ -2895,12 +2895,27 @@ function layout_moodboardToneManner(cfg) {
 // slot 1 below, matching how the rest of the deck treats an author-fillable
 // image well.
 // ==========================================================
-function layout_metaDivider(cfg) {
+// Platform dividers (template slides 55/59/62/65/69). Source: a darkened
+// car photo background (LAYOUT_BG), the transparent line-pattern overlay on
+// the right half (image16, cropped), and the platform's logo on the left.
+// The engine used to draw the overlay's position and the logo as empty
+// photo wells -- a 2026-10 showcase deck showed big grey "Right-click"
+// panels and no platform mark. The corner "place your own image" slot
+// (new in 7/30/26) is drawn only when the deck supplies images[0].
+function platformDivider(cfg, logo) {
   var els = [];
-  ph(els, cfg, 0.52, 3, 3.52, 0.71, 0); // Meta logo well, unchanged
-  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 1); // "place your own image" corner well, new in 7/30/26
-  els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['divider_lines.png']) || A + 'social/divider_lines.png',
+    x:5.48, y:-0.02, w:7.89, h:7.53, crop:{ t:0.13471, r:0.47412, b:0.15564 } });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets[logo.name]) || A + 'social/' + logo.name,
+    x:logo.x, y:logo.y, w:logo.w, h:logo.h, crop:logo.crop || undefined });
+  var corner = cfg.images && cfg.images[0];
+  if (corner) els.push({ type:'img', src:corner, x:11.13, y:6.65, w:1.85, h:0.55, fit:'cover' });
+  els.push({ type:'s', x:logo.ruleX || 10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
   return els;
+}
+
+function layout_metaDivider(cfg) {
+  return platformDivider(cfg, { name:'meta_logo_white.png', x:0.52, y:3, w:3.52, h:0.71, crop:{ t:0.39919, b:0.39919 } });
 }
 
 // ==========================================================
@@ -3022,12 +3037,7 @@ function layout_metaVideoStatic(cfg) {
 // metaDivider's comment for why.
 // ==========================================================
 function layout_redditDivider(cfg) {
-  var els = [];
-  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // side photo, unchanged
-  ph(els, cfg, 1.01, 3.28, 3.28, 1.85, 1); // Reddit logo well, unchanged
-  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 2); // "place your own image" corner well, new in 7/30/26
-  els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
-  return els;
+  return platformDivider(cfg, { name:'reddit_brand_photo.png', x:1.01, y:3.28, w:3.28, h:1.85 });
 }
 
 // ==========================================================
@@ -3147,12 +3157,7 @@ function layout_redditVideoStatic4x5(cfg) {
 // the new "place your own image" corner well -- see metaDivider's comment.
 // ==========================================================
 function layout_tiktokDivider(cfg) {
-  var els = [];
-  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // side photo, unchanged
-  ph(els, cfg, 0.72, 2.99, 3.35, 0.99, 1); // TikTok logo well, unchanged
-  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 2); // "place your own image" corner well, new in 7/30/26
-  els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
-  return els;
+  return platformDivider(cfg, { name:'tiktok_logo_white.png', x:0.72, y:2.99, w:3.35, h:0.99 });
 }
 
 // ==========================================================
@@ -3235,11 +3240,7 @@ function layout_tiktokVideoStatic(cfg) {
 // corner well -- see metaDivider's comment.
 // ==========================================================
 function layout_pinterestDivider(cfg) {
-  var els = [];
-  ph(els, cfg, 0.98, 3.71, 3.23, 0.78, 0); // Pinterest logo well, unchanged
-  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 1); // "place your own image" corner well, new in 7/30/26
-  els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
-  return els;
+  return platformDivider(cfg, { name:'pinterest_logo.png', x:0.98, y:3.71, w:3.23, h:0.78 });
 }
 
 // ==========================================================
@@ -3324,12 +3325,7 @@ function layout_pinterest1x1(cfg) {
 // metaDivider's comment.
 // ==========================================================
 function layout_youtubeDivider(cfg) {
-  var els = [];
-  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // side photo, unchanged
-  ph(els, cfg, 0.92, 3.14, 3.14, 0.73, 1); // Youtube logo well, unchanged
-  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 2); // "place your own image" corner well, new in 7/30/26
-  els.push({ type:'s', x:11.78, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
-  return els;
+  return platformDivider(cfg, { name:'youtube_logo_white.png', x:0.92, y:3.14, w:3.14, h:0.73, crop:{ b:0.71619 }, ruleX:11.78 });
 }
 
 // ==========================================================
@@ -3556,6 +3552,12 @@ function chartDoughnutEls(els, cfg, X, Y, W, H, dark) {
                chartColors: cols, dataLabelColor: '#FFFFFF', dataLabelFontSize: 10, pieScale: 0.49 };
   for (k in base) opts[k] = base[k];
   for (k in (ch.opts || {})) opts[k] = ch.opts[k];
+  // Source slices carry category + percent only (10pt). The 75% hole leaves a
+  // thin ring: a third line for the raw value ("Capture / 45 / 45%") can't fit
+  // and repeats the percent anyway, and a legend repeats the category. Both
+  // are dropped while the slice labels show (a 2026-10 deck turned them on).
+  if (opts.showPercent !== false) opts.showValue = false;
+  if (opts.showLabel !== false) opts.showLegend = false;
   var D = Math.min(W, H);                      // square frame, centred in the well
   var fx = X + (W - D) / 2, fy = Y + (H - D) / 2;
   els.push({ type:'chart', x:fx, y:fy, w:D, h:D, chartType:'doughnut', data:ch.data || [], opts:opts });
@@ -3607,8 +3609,14 @@ function chartWellEls(els, cfg, dark) {
   if (type === 'bar') chartBarEls(els, cfg, X, top, W, H, dark);
   else if (type === 'column') chartColEls(els, cfg, X, top, W, H, dark);
   else if (type === 'doughnut') chartDoughnutEls(els, cfg, X, top, W, H, dark);
-  else els.push({ type:'chart', x:X, y:top, w:W, h:H, chartType:type,
-    data:ch.data || [], opts:ch.opts || {} });
+  else {
+    var o = {}, kk;
+    for (kk in (ch.opts || {})) o[kk] = ch.opts[kk];
+    // Pie labels show the percent; the raw value on top of it is the same
+    // number twice ("40 / 40%"), so it's dropped while percent shows.
+    if (type === 'pie' && o.showPercent !== false) o.showValue = false;
+    els.push({ type:'chart', x:X, y:top, w:W, h:H, chartType:type, data:ch.data || [], opts:o });
+  }
 }
 
 function layout_reportGrayChart(cfg) {
@@ -4800,21 +4808,21 @@ var LAYOUT_BG = {
   moodboardProps: {bgColor:'#D5D5D5', dark:0},
   moodboardWardrobe: {bgColor:'#FFFFFF', dark:0},
   moodboardToneManner: {bgColor:'#FFFFFF', dark:0},
-  metaDivider: {bgImage:'pattern_dark.png', dark:1},
+  metaDivider: {bgImage:'social/divider_bg_dark.jpg', dark:1},
   metaCarousel1x1: {bgColor:'#FFFFFF', dark:0},
   metaCarousel4x5: {bgColor:'#FFFFFF', dark:0},
   metaVideoStatic: {bgColor:'#FFFFFF', dark:0},
-  redditDivider: {bgImage:'social/divider_platform_reddit_pinterest.png', dark:0},
+  redditDivider: {bgImage:'social/divider_bg_light.jpg', dark:1},
   redditCarousel: {bgColor:'#FFFFFF', dark:0},
   redditVideoStatic1x1: {bgColor:'#FFFFFF', dark:0},
   redditVideoStatic4x5: {bgColor:'#FFFFFF', dark:0},
-  tiktokDivider: {bgImage:'pattern_dark.png', dark:1},
+  tiktokDivider: {bgImage:'social/divider_bg_dark.jpg', dark:1},
   tiktokCarousel: {bgColor:'#FFFFFF', dark:0},
   tiktokVideoStatic: {bgColor:'#FFFFFF', dark:0},
-  pinterestDivider: {bgImage:'social/divider_platform_reddit_pinterest.png', dark:0},
+  pinterestDivider: {bgImage:'social/divider_bg_light.jpg', dark:1},
   pinterest2x3: {bgColor:'#FFFFFF', dark:0},
   pinterest1x1: {bgColor:'#FFFFFF', dark:0},
-  youtubeDivider: {bgImage:'pattern_dark.png', dark:1},
+  youtubeDivider: {bgImage:'social/divider_bg_dark.jpg', dark:1},
   youtubeVideoAd: {bgColor:'#FFFFFF', dark:0},
   reportGrayChart: {bgColor:'#EEEEEE', dark:0},
   reportDarkChart: {bgColor:'#262626', dark:1},

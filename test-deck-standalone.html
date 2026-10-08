@@ -1642,8 +1642,11 @@ function _avail(el, els) {
       // A label sitting on a photo well may not grow into it: the copy
       // would cover the picture. (Was: the well counted as room, so a
       // castingTalent frame label "held" 200+ characters.)
+      // (A full-bleed well is a background, not a frame -- ignored like any
+      // shape covering most of the slide.)
+      if (o.w * oh >= 13.33 * 7.5 * 0.6) return;
       if (o._imgPlaceholder && o.x <= el.x + 0.01 && o.x + o.w >= el.x + el.w - 0.01) { lo = Math.min(lo, yb); hi = Math.max(hi, el.y); }
-      else if (o.w * oh < 13.33 * 7.5 * 0.6) { lo = Math.min(lo, o.y + oh); hi = Math.max(hi, o.y); }
+      else { lo = Math.min(lo, o.y + oh); hi = Math.max(hi, o.y); }
       return;
     }
     var sp = _span(o);
@@ -1707,7 +1710,8 @@ function _sideways(els, slug) {
 function fitTexts(els, slug) {
   if (!Array.isArray(els)) return els;
   els.forEach(function (el) {
-    if (!el || el.type !== 't' || el.noFit || !el.size || el.rotation) return;
+    // Preview-only well labels (_skipExport) are never in the PPTX: leave them be.
+    if (!el || el.type !== 't' || el.noFit || el._skipExport || !el.size || el.rotation) return;
     var hasText = el.paras ? el.paras.length : (el.text != null && String(el.text).trim());
     if (!hasText) return;
     var room = _avail(el, els);
@@ -4331,12 +4335,27 @@ function layout_moodboardToneManner(cfg) {
 // slot 1 below, matching how the rest of the deck treats an author-fillable
 // image well.
 // ==========================================================
-function layout_metaDivider(cfg) {
+// Platform dividers (template slides 55/59/62/65/69). Source: a darkened
+// car photo background (LAYOUT_BG), the transparent line-pattern overlay on
+// the right half (image16, cropped), and the platform's logo on the left.
+// The engine used to draw the overlay's position and the logo as empty
+// photo wells -- a 2026-10 showcase deck showed big grey "Right-click"
+// panels and no platform mark. The corner "place your own image" slot
+// (new in 7/30/26) is drawn only when the deck supplies images[0].
+function platformDivider(cfg, logo) {
   var els = [];
-  ph(els, cfg, 0.52, 3, 3.52, 0.71, 0); // Meta logo well, unchanged
-  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 1); // "place your own image" corner well, new in 7/30/26
-  els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
+  els.push({ type:'img', src:(cfg.assets && cfg.assets['divider_lines.png']) || A + 'social/divider_lines.png',
+    x:5.48, y:-0.02, w:7.89, h:7.53, crop:{ t:0.13471, r:0.47412, b:0.15564 } });
+  els.push({ type:'img', src:(cfg.assets && cfg.assets[logo.name]) || A + 'social/' + logo.name,
+    x:logo.x, y:logo.y, w:logo.w, h:logo.h, crop:logo.crop || undefined });
+  var corner = cfg.images && cfg.images[0];
+  if (corner) els.push({ type:'img', src:corner, x:11.13, y:6.65, w:1.85, h:0.55, fit:'cover' });
+  els.push({ type:'s', x:logo.ruleX || 10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
   return els;
+}
+
+function layout_metaDivider(cfg) {
+  return platformDivider(cfg, { name:'meta_logo_white.png', x:0.52, y:3, w:3.52, h:0.71, crop:{ t:0.39919, b:0.39919 } });
 }
 
 // ==========================================================
@@ -4458,12 +4477,7 @@ function layout_metaVideoStatic(cfg) {
 // metaDivider's comment for why.
 // ==========================================================
 function layout_redditDivider(cfg) {
-  var els = [];
-  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // side photo, unchanged
-  ph(els, cfg, 1.01, 3.28, 3.28, 1.85, 1); // Reddit logo well, unchanged
-  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 2); // "place your own image" corner well, new in 7/30/26
-  els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
-  return els;
+  return platformDivider(cfg, { name:'reddit_brand_photo.png', x:1.01, y:3.28, w:3.28, h:1.85 });
 }
 
 // ==========================================================
@@ -4583,12 +4597,7 @@ function layout_redditVideoStatic4x5(cfg) {
 // the new "place your own image" corner well -- see metaDivider's comment.
 // ==========================================================
 function layout_tiktokDivider(cfg) {
-  var els = [];
-  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // side photo, unchanged
-  ph(els, cfg, 0.72, 2.99, 3.35, 0.99, 1); // TikTok logo well, unchanged
-  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 2); // "place your own image" corner well, new in 7/30/26
-  els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
-  return els;
+  return platformDivider(cfg, { name:'tiktok_logo_white.png', x:0.72, y:2.99, w:3.35, h:0.99 });
 }
 
 // ==========================================================
@@ -4671,11 +4680,7 @@ function layout_tiktokVideoStatic(cfg) {
 // corner well -- see metaDivider's comment.
 // ==========================================================
 function layout_pinterestDivider(cfg) {
-  var els = [];
-  ph(els, cfg, 0.98, 3.71, 3.23, 0.78, 0); // Pinterest logo well, unchanged
-  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 1); // "place your own image" corner well, new in 7/30/26
-  els.push({ type:'s', x:10.83, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
-  return els;
+  return platformDivider(cfg, { name:'pinterest_logo.png', x:0.98, y:3.71, w:3.23, h:0.78 });
 }
 
 // ==========================================================
@@ -4760,12 +4765,7 @@ function layout_pinterest1x1(cfg) {
 // metaDivider's comment.
 // ==========================================================
 function layout_youtubeDivider(cfg) {
-  var els = [];
-  ph(els, cfg, 5.48, -0.02, 7.89, 7.53, 0); // side photo, unchanged
-  ph(els, cfg, 0.92, 3.14, 3.14, 0.73, 1); // Youtube logo well, unchanged
-  ph(els, cfg, 11.13, 6.65, 1.85, 0.55, 2); // "place your own image" corner well, new in 7/30/26
-  els.push({ type:'s', x:11.78, y:7.15, w:0.9, h:0.01, fill:'ltGray' }); // rule
-  return els;
+  return platformDivider(cfg, { name:'youtube_logo_white.png', x:0.92, y:3.14, w:3.14, h:0.73, crop:{ b:0.71619 }, ruleX:11.78 });
 }
 
 // ==========================================================
@@ -4992,6 +4992,12 @@ function chartDoughnutEls(els, cfg, X, Y, W, H, dark) {
                chartColors: cols, dataLabelColor: '#FFFFFF', dataLabelFontSize: 10, pieScale: 0.49 };
   for (k in base) opts[k] = base[k];
   for (k in (ch.opts || {})) opts[k] = ch.opts[k];
+  // Source slices carry category + percent only (10pt). The 75% hole leaves a
+  // thin ring: a third line for the raw value ("Capture / 45 / 45%") can't fit
+  // and repeats the percent anyway, and a legend repeats the category. Both
+  // are dropped while the slice labels show (a 2026-10 deck turned them on).
+  if (opts.showPercent !== false) opts.showValue = false;
+  if (opts.showLabel !== false) opts.showLegend = false;
   var D = Math.min(W, H);                      // square frame, centred in the well
   var fx = X + (W - D) / 2, fy = Y + (H - D) / 2;
   els.push({ type:'chart', x:fx, y:fy, w:D, h:D, chartType:'doughnut', data:ch.data || [], opts:opts });
@@ -5043,8 +5049,14 @@ function chartWellEls(els, cfg, dark) {
   if (type === 'bar') chartBarEls(els, cfg, X, top, W, H, dark);
   else if (type === 'column') chartColEls(els, cfg, X, top, W, H, dark);
   else if (type === 'doughnut') chartDoughnutEls(els, cfg, X, top, W, H, dark);
-  else els.push({ type:'chart', x:X, y:top, w:W, h:H, chartType:type,
-    data:ch.data || [], opts:ch.opts || {} });
+  else {
+    var o = {}, kk;
+    for (kk in (ch.opts || {})) o[kk] = ch.opts[kk];
+    // Pie labels show the percent; the raw value on top of it is the same
+    // number twice ("40 / 40%"), so it's dropped while percent shows.
+    if (type === 'pie' && o.showPercent !== false) o.showValue = false;
+    els.push({ type:'chart', x:X, y:top, w:W, h:H, chartType:type, data:ch.data || [], opts:o });
+  }
 }
 
 function layout_reportGrayChart(cfg) {
@@ -5499,6 +5511,9 @@ var LAYOUT_MAP = {
 // content03 IS "Content 03". A v1.0 deck reusing the key silently renders a
 // different layout, so these log loudly and render the v2.0 (template-correct)
 // meaning. Re-key old decks: v1 content03 -> content01, v1 content05 -> content03.
+// The console error this used to raise fired on every correct v2 use as well
+// (every deck since v2.0), so it was dropped in 2026-10; the map is kept as
+// documentation. v1 decks are pinned to v1 code and are unaffected.
 // ------------------------------------------------------------
 var AMBIGUOUS = { content03: 'content01', content05: 'content03' };
 
@@ -5620,11 +5635,6 @@ var TEMPLATE_NAMES = {
 
 function resolve(name) {
   if (!name) return null;
-  if (AMBIGUOUS[name]) {
-    console.error('[deck-layouts] "' + name + '" meant "' + AMBIGUOUS[name] +
-      '" in v1.0 but is a DIFFERENT layout in v2.0. Rendering the v2.0 meaning. ' +
-      'If this deck was authored against v1.0, change it to "' + AMBIGUOUS[name] + '".');
-  }
   if (LAYOUT_MAP[name]) return LAYOUT_MAP[name];
   if (RETIRED[name]) {
     console.warn('[deck-layouts] "' + name + '" was retired; rendering "' +
@@ -6238,21 +6248,21 @@ var LAYOUT_BG = {
   moodboardProps: {bgColor:'#D5D5D5', dark:0},
   moodboardWardrobe: {bgColor:'#FFFFFF', dark:0},
   moodboardToneManner: {bgColor:'#FFFFFF', dark:0},
-  metaDivider: {bgImage:'pattern_dark.png', dark:1},
+  metaDivider: {bgImage:'social/divider_bg_dark.jpg', dark:1},
   metaCarousel1x1: {bgColor:'#FFFFFF', dark:0},
   metaCarousel4x5: {bgColor:'#FFFFFF', dark:0},
   metaVideoStatic: {bgColor:'#FFFFFF', dark:0},
-  redditDivider: {bgImage:'social/divider_platform_reddit_pinterest.png', dark:0},
+  redditDivider: {bgImage:'social/divider_bg_light.jpg', dark:1},
   redditCarousel: {bgColor:'#FFFFFF', dark:0},
   redditVideoStatic1x1: {bgColor:'#FFFFFF', dark:0},
   redditVideoStatic4x5: {bgColor:'#FFFFFF', dark:0},
-  tiktokDivider: {bgImage:'pattern_dark.png', dark:1},
+  tiktokDivider: {bgImage:'social/divider_bg_dark.jpg', dark:1},
   tiktokCarousel: {bgColor:'#FFFFFF', dark:0},
   tiktokVideoStatic: {bgColor:'#FFFFFF', dark:0},
-  pinterestDivider: {bgImage:'social/divider_platform_reddit_pinterest.png', dark:0},
+  pinterestDivider: {bgImage:'social/divider_bg_light.jpg', dark:1},
   pinterest2x3: {bgColor:'#FFFFFF', dark:0},
   pinterest1x1: {bgColor:'#FFFFFF', dark:0},
-  youtubeDivider: {bgImage:'pattern_dark.png', dark:1},
+  youtubeDivider: {bgImage:'social/divider_bg_dark.jpg', dark:1},
   youtubeVideoAd: {bgColor:'#FFFFFF', dark:0},
   reportGrayChart: {bgColor:'#EEEEEE', dark:0},
   reportDarkChart: {bgColor:'#262626', dark:1},
@@ -7997,21 +8007,21 @@ var D=[
 {"layout":"moodboardProps","bgColor":"#D5D5D5","dark":0,"captions":["Prop 1","Prop 2","Prop 3","Prop 4","Prop 5","Prop 6","Prop 7","Prop 8","Prop 9","Prop 10"],"tag":"NEXT SECTION","title":"Concept: Weekend Getaway","notes":"moodboardProps — template layout \"Moodboard Props\", source slide 49."},
 {"layout":"moodboardWardrobe","bgColor":"#FFFFFF","dark":0,"accessoryCaption":"Silver wedding ring","subtitle":"Supporting subhead","tag":"NEXT SECTION","text":"Supporting body copy for layout verification.","title":"Wardrobe","notes":"moodboardWardrobe — template layout \"Moodboard Wardrobe\", source slide 50."},
 {"layout":"moodboardToneManner","bgColor":"#FFFFFF","dark":0,"tag":"NEXT SECTION","title":"Concept: Weekend Getaway","notes":"moodboardToneManner — template layout \"Moodboard \", source slide 51."},
-{"layout":"metaDivider","bgImage":"assets/backgrounds/pattern_dark.png","dark":1,"notes":"metaDivider — template layout \"Meta_Divider\", source slide 55."},
+{"layout":"metaDivider","bgImage":"assets/social/divider_bg_dark.jpg","dark":1,"notes":"metaDivider — template layout \"Meta_Divider\", source slide 55."},
 {"layout":"metaCarousel1x1","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Carousel","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","text2":"Secondary body copy.","notes":"metaCarousel1x1 — template layout \"Meta_Carousel 1x1\", source slide 57."},
 {"layout":"metaCarousel4x5","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Carousel","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","text2":"Secondary body copy.","notes":"metaCarousel4x5 — template layout \"Meta_Carousel 4x5\", source slide 58."},
 {"layout":"metaVideoStatic","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Single video & static","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","notes":"metaVideoStatic — template layout \"Meta_Video&Static\", source slide 56."},
-{"layout":"redditDivider","bgImage":"assets/social/divider_platform_reddit_pinterest.png","dark":0,"notes":"redditDivider — template layout \"Reddit_Divider\", source slide 65."},
+{"layout":"redditDivider","bgImage":"assets/social/divider_bg_light.jpg","dark":1,"notes":"redditDivider — template layout \"Reddit_Divider\", source slide 65."},
 {"layout":"redditCarousel","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Carousel","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","notes":"redditCarousel — template layout \"Reddit_Carousel\", source slide 68."},
 {"layout":"redditVideoStatic1x1","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Single video & static","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","notes":"redditVideoStatic1x1 — template layout \"Reddit_Vid&Static1:1\", source slide 67."},
 {"layout":"redditVideoStatic4x5","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Single video & static","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","notes":"redditVideoStatic4x5 — template layout \"Reddit_Vid&Static4:5\", source slide 66."},
-{"layout":"tiktokDivider","bgImage":"assets/backgrounds/pattern_dark.png","dark":1,"notes":"tiktokDivider — template layout \"TikTok_Divider\", source slide 62."},
+{"layout":"tiktokDivider","bgImage":"assets/social/divider_bg_dark.jpg","dark":1,"notes":"tiktokDivider — template layout \"TikTok_Divider\", source slide 62."},
 {"layout":"tiktokCarousel","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Carousel","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","notes":"tiktokCarousel — template layout \"TikTok_Carousel\", source slide 64."},
 {"layout":"tiktokVideoStatic","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Single video & static","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","notes":"tiktokVideoStatic — template layout \"TikTok_Vid&Static\", source slide 63."},
-{"layout":"pinterestDivider","bgImage":"assets/social/divider_platform_reddit_pinterest.png","dark":0,"notes":"pinterestDivider — template layout \"Pinterest_Divider\", source slide 59."},
+{"layout":"pinterestDivider","bgImage":"assets/social/divider_bg_light.jpg","dark":1,"notes":"pinterestDivider — template layout \"Pinterest_Divider\", source slide 59."},
 {"layout":"pinterest2x3","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Single video & static","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","text2":"Learn more","notes":"pinterest2x3 — template layout \"Pinterest 2:3\", source slide 60."},
 {"layout":"pinterest1x1","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Single video & static","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","notes":"pinterest1x1 — template layout \"Pinterest 1:1\", source slide 61."},
-{"layout":"youtubeDivider","bgImage":"assets/backgrounds/pattern_dark.png","dark":1,"notes":"youtubeDivider — template layout \"Youtube_Divider\", source slide 69."},
+{"layout":"youtubeDivider","bgImage":"assets/social/divider_bg_dark.jpg","dark":1,"notes":"youtubeDivider — template layout \"Youtube_Divider\", source slide 69."},
 {"layout":"youtubeVideoAd","bgColor":"#FFFFFF","dark":0,"copy":{"postCopy":"You don’t just see the Mazda CX-5—you feel it. Color crafted to hold your gaze. There’s more to a Mazda.","headline":"Crafted with Care","alts":"The Mazda CX-5, Takiminuri paint technology","format":"Video ad","cta":"Learn More","destination":"VLP","size":"4:5"},"text":"CX-5 Crafted With Care","notes":"youtubeVideoAd — template layout \"Youtube_VideoAd\", source slide 70."},
 {"layout":"reportGray","bgColor":"#EEEEEE","dark":0,"tag":"SECTION","title":"Bare canvas","intro":"Chassis only — compose the body yourself via els.","notes":"reportGray — derived variant of the report canvas chassis."},
 {"layout":"reportGrayChart","bgColor":"#EEEEEE","dark":0,"tag":"PERFORMANCE","title":"Media spend by quarter","intro":"Chart well, template slides 83/84/85/88.","chart":{"type":"bar","data":[{"name":"Spend ($k)","labels":["Q1","Q2","Q3","Q4"],"values":[42,58,35,64]}]},"notes":"reportGrayChart — derived variant of the report canvas chassis."},

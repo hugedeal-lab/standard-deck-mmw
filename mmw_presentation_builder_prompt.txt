@@ -303,21 +303,21 @@ template text -- never pass them. Full 500-character post copy and 100-character
 headlines fit (the type shrinks); see §6.7 for where it stays at design size.
 (cfg.items[n] is the old positional API -- still accepted, never use it.)
 Name	Template layout	Background	Use
-metaDivider	Meta_Divider	#000000	Meta platform divider.
+metaDivider	Meta_Divider	car photo (auto)	Meta platform divider. Complete on its own: template car photo, line pattern and the Meta logo are built in -- pass no content. images:['...'] only for an optional co-brand mark in the bottom-right corner.
 metaCarousel1x1	Meta_Carousel 1x1	#FFFFFF	Meta 1:1 carousel spec sheet.
 metaCarousel4x5	Meta_Carousel 4x5	#FFFFFF	Meta 4:5 carousel spec sheet.
 metaVideoStatic	Meta_Video&Static	#FFFFFF	Meta single video + static, 9:16.
-redditDivider	Reddit_Divider	#000000	Reddit platform divider.
+redditDivider	Reddit_Divider	car photo (auto)	Reddit platform divider. Complete on its own: template car photo, line pattern and the Reddit logo are built in -- pass no content. images:['...'] only for an optional co-brand mark in the bottom-right corner.
 redditCarousel	Reddit_Carousel	#FFFFFF	Reddit carousel spec sheet.
 redditVideoStatic1x1	Reddit_Vid&Static1:1	#FFFFFF	Reddit video + static, 1:1.
 redditVideoStatic4x5	Reddit_Vid&Static4:5	#FFFFFF	Reddit video + static, 4:5.
-tiktokDivider	TikTok_Divider	#000000	TikTok platform divider.
+tiktokDivider	TikTok_Divider	car photo (auto)	TikTok platform divider. Complete on its own: template car photo, line pattern and the TikTok logo are built in -- pass no content. images:['...'] only for an optional co-brand mark in the bottom-right corner.
 tiktokCarousel	TikTok_Carousel	#FFFFFF	TikTok carousel spec sheet.
 tiktokVideoStatic	TikTok_Vid&Static	#FFFFFF	TikTok video + static, 9:16.
-pinterestDivider	Pinterest_Divider	#000000	Pinterest platform divider.
+pinterestDivider	Pinterest_Divider	car photo (auto)	Pinterest platform divider. Complete on its own: template car photo, line pattern and the Pinterest logo are built in -- pass no content. images:['...'] only for an optional co-brand mark in the bottom-right corner.
 pinterest2x3	Pinterest 2:3	#FFFFFF	Pinterest 2:3 spec sheet.
 pinterest1x1	Pinterest 1:1	#FFFFFF	Pinterest 1:1 spec sheet.
-youtubeDivider	Youtube_Divider	#000000	YouTube platform divider.
+youtubeDivider	Youtube_Divider	car photo (auto)	YouTube platform divider. Complete on its own: template car photo, line pattern and the YouTube logo are built in -- pass no content. images:['...'] only for an optional co-brand mark in the bottom-right corner.
 youtubeVideoAd	Youtube_VideoAd	#FFFFFF	YouTube video ad, 16:9.
 
 MAPS (2) — styled after the template's map slide; report chassis (tag/title/intro)

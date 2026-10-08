@@ -36,7 +36,7 @@ check(s.bgColor === '#253724' && s.dark === 1, 'missing bgColor on dividerCanopy
 s = run({ layout: 'dividerDark2', title: 'y' });
 check(/backgrounds\/pattern_dark2\.png$/.test(s.bgImage) && s.dark === 1, 'dividerDark2 -> pattern_dark2.png, dark (QA deck used to give it thankyou_texture)');
 s = run({ layout: 'redditDivider' });
-check(/social\/divider_platform_reddit_pinterest\.png$/.test(s.bgImage), 'redditDivider -> social/ asset path');
+check(/social\/divider_bg_light\.jpg$/.test(s.bgImage), 'redditDivider -> social/ asset path');
 s = run({ layout: 'twoRowsLight', bgColor: '#123456' });
 check(s.bgColor === '#123456' && s.dark === 1, 'a valid explicit bgColor is kept; dark follows its luminance');
 
