@@ -24,7 +24,13 @@ for(const [tpl,slug] of Object.entries(DL.TEMPLATE_NAMES)){
   if(seen.has(slug)) continue;
   seen.add(slug);
   const bg=L.background, d={layout:slug};
-  if(bg.kind==='image'){
+  // The engine's own per-layout template background (DeckLayouts.LAYOUT_BG)
+  // is authoritative; mmw_layouts.json's asset names went stale for the
+  // Dark2 / Light2 dividers. Fall back to the JSON only for a layout the
+  // table doesn't cover.
+  const LB=DL.LAYOUT_BG&&DL.LAYOUT_BG[slug];
+  if(LB){ if(LB.bgColor)d.bgColor=LB.bgColor; if(LB.bgImage)d.bgImage='assets/'+(LB.bgImage.includes('/')?'':'backgrounds/')+LB.bgImage; d.dark=LB.dark; }
+  else if(bg.kind==='image'){
     const sub=/pattern|photo|texture|mark/.test(bg.asset)?'backgrounds':'social';
     d.bgImage='assets/'+sub+'/'+bg.asset; d.dark=/dark|scenic|headline_photo/.test(bg.asset)?1:0;
   } else { const h=(bg.hex||'#EEEEEE').toUpperCase(); d.bgColor=h; d.dark=DARK.has(h)?1:0; }

@@ -420,7 +420,11 @@ try {
       else _exportMissing[slideData.bgImage] = 1;
     }
     if (slideData.bgColor) {
-      slide.background = { color: slideData.bgColor.replace('#', '') };
+      // Layout slides arrive normalised (applyLayoutBg); a raw-els slide may
+      // still carry a token, which PptxGenJS would export as black.
+      var _bgc = String(slideData.bgColor);
+      if (!/^#?[0-9a-f]{6}$/i.test(_bgc) && SD.resolveColor) _bgc = String(SD.resolveColor(_bgc, isDark));
+      if (/^#?[0-9a-f]{6}$/i.test(_bgc)) slide.background = { color: _bgc.replace('#', '') };
     }
 
     // STEP 4: Export elements
@@ -1002,6 +1006,9 @@ _totalSlides = _D.length; _imageMode = !!config.imageMode;
 // belongs under backgrounds/; anything already carrying a path separator (the
 // build harness writes full 'assets/backgrounds/x.png' paths) or a data: URI
 // is left untouched.
+// Template backgrounds first: a missing or non-hex bgColor ('paper') would
+// otherwise reach PptxGenJS, which exports it as #000000 (see LAYOUT_BG).
+if (window.DeckLayouts && window.DeckLayouts.normalizeBackground) _D.forEach(window.DeckLayouts.normalizeBackground);
 var _assetBase = (typeof window !== 'undefined' && window.MMW_ASSET_BASE) || 'assets/';
 if (_assetBase && _assetBase.slice(-1) !== '/') _assetBase += '/';
 _D.forEach(function (sd) {
@@ -1084,8 +1091,8 @@ _prefetchPromise = (function prefetchDeckAssets() {
   function want(u) { if (u && u.indexOf('data:') !== 0) urls[u] = 1; }
   _D.forEach(function (sd) {
     if (!sd) return;
-    want(sd.bgImage);
     var els = (sd.layout && window.DeckLayouts) ? window.DeckLayouts.dispatch(sd) : (sd.els || []);
+    want(sd.bgImage);   // after dispatch, which may have filled the template background
     els.forEach(function (el) {
       if (el && el.type === 'img') want(SD.resolveImgSrc ? SD.resolveImgSrc(el) : el.src);
     });

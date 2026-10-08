@@ -1033,7 +1033,7 @@ function renderSlide(slideData, index) {
   isDark = !!slideData.dark;
 
   if (slideData.bgColor) {
-    slide.style.background = slideData.bgColor;
+    slide.style.background = resolveColor(slideData.bgColor, isDark);   // tokens ('paper') as well as hex
   }
   if (slideData.bgImage) {
     var _cache = (window.StandardShell && window.StandardShell._imageCache) || {};

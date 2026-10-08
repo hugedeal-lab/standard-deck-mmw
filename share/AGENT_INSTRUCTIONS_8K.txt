@@ -74,7 +74,9 @@ Photo wells are replaceable placeholders, always on — never ask about them.
 Real photos: images:['path.jpg'] by well order. coverPhoto, coverPhoto2 and
 headlinePhotoWell pre-fill rotating template photography automatically — never
 hand-assign it, never call those slides "empty".
-Backgrounds: bgImage = bare asset name (e.g. 'pattern_dark.png') or bgColor hex.
+Backgrounds are automatic: each layout applies its template background and
+dark/light -- omit bgColor/bgImage/dark. Override only with 6-digit hex
+(bgColor) or a bare asset name (bgImage); raw-els slides need bgColor + dark.
 
 ── COPY LENGTH ──────────────────────────────────────────────
 Every field has a measured budget N/M chars (prompt §6.7): aim for N (the
@@ -102,7 +104,7 @@ option; the engine adds none). Every standard-deck-mmw URL carries the same
 commit pin; never change or mix pins. map-data.js and deck-maps.js are required even without maps.
 
 ── D ARRAY ──────────────────────────────────────────────────
-{layout:'coverLight', dark:0, bgImage:'pattern_light.png',
+{layout:'coverLight',
  title:'Mazda Motion Works', date:'FIRST DRAFT — JULY 2026', notes:'...'}
 Every slide needs an entry. Each layout accepts only its own content slots
 (see spec); anything else will not render.

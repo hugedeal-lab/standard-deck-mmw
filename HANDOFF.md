@@ -81,6 +81,7 @@ cd tests
 node smoke.js        # every layout in deck-layouts.js dispatches, both dark modes
 node mapstest.js     # mapUS / mapWorld: projection, markers, labels, assets
 node fittest.js      # text fit: QA deck clean, social copy API, overflow warnings
+node bgtest.js       # template backgrounds: tokens, missing, junk, asset paths
 node covertest.js    # 5 cover variants, asset resolution
 node divtest.js      # 8 divider variants
 node rotatetest.js   # photo rotation + determinism across 4 dispatch passes
@@ -96,6 +97,7 @@ In a browser: **serve over http, not `file://`** (`python -m http.server 8000`) 
 - **Export embeds images from verified bytes only.** `prefetchImage()` fetches each image, checks its magic bytes, retries, then tries the same commit on raw.githubusercontent.com; an image that still fails is left out of the PPTX and named in the export toast. Never reintroduce PptxGenJS's `path:` fallback outside `file://` -- in a 2026-10 test run jsDelivr briefly answered `thankyou_texture.png` with an error string, PptxGenJS embedded it as a .png, and PowerPoint's broken-picture box blanked four slides (TOC, both Thank Yous, Two Rows Light).
 - **PptxGenJS text margins are `[left, right, bottom, top]`**, not CSS order (`insetMargin()` in deck-shell.js). Until 2026-10 the exporter sent `[t, r, b, l]`, so every asymmetric inset was swapped in the PPTX while the preview was right.
 - **`enforceWidthRule()` (standard-deck.js) skips MMW layout text** (anything carrying `caps`). It narrows text inside a card to 80% of the card -- a v1 heuristic that silently re-wrapped template copy in 10 report layouts. It still applies to legacy raw elements.
+- **Slide backgrounds come from `LAYOUT_BG`** (deck-layouts.js), applied by `applyLayoutBg()` in dispatch and by `normalizeBackground()` in deckInit's pre-pass. A valid hex `bgColor` / `bgImage` wins; a palette token is translated; anything else (missing, junk) gets the layout's template background and dark flag. PptxGenJS writes any non-hex colour as #000000 -- that is how a 2026-10 test deck's grey slides came out black. When a layout's background changes, update its header comment and `LAYOUT_BG` together (bgtest.js checks every image exists).
 - **`dispatch()` runs 4× per slide** (preview, prefetch, icon pre-render, export). Never put stateful logic in a layout function — the photo rotation lives in `deckInit` for exactly this reason.
 - **`white`/`black` tokens are pure #FFFFFF/#000000.** For MMW Paper and Asphalt use `paper` / `asphalt`. `resolveColor()` checks its semantics map before PALETTE.
 - **`caps` present on a text element = "typography fully specified"** — the engine then skips `getTextStyle()`'s guesswork. That heuristic uppercases anything ≤10pt, which would wrongly capitalise 161 elements.

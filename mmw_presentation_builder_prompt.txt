@@ -57,7 +57,8 @@ Content completeness: picking the right layout name is not sufficient — fill
   even more than in normal use: supply realistic sample values for every
   field a layout documents in §6.1, not just enough to avoid a console error.
 Coordinates: INCHES (13.33x7.5). Font sizes: POINTS, engine-space (§6.6).
-Colors: semantic tokens only (§7.2). Never hardcode hex in the D array.
+Colors: semantic tokens only (§7.2) for element colours. Never hardcode hex in
+  els. Slide backgrounds are the exception -- see §11.3 (usually: omit them).
 Safe area: x 0.50-12.92, y 0.75-7.00 — but MMW layouts intentionally bleed past
   it (~41% of source content slides do). The engine no longer clamps. Full bleed
   is correct; do not "fix" it. For hand-built raw 'els', treat 6.80 as real.
@@ -578,7 +579,7 @@ reporting-family expansion, so treat "every layout has some" as the safe
 assumption rather than a specific total).
 To place REAL photography at build time, pass `images` -- an array indexed by
 well order (top-to-bottom, left-to-right within that layout):
-  {layout:'coverPhoto2', dark:0, bgColor:'#EEEEEE', title:'...',
+  {layout:'coverPhoto2', title:'...',
    images:['photos/hero.jpg']}
 Wells left unspecified stay replaceable, so fill only the ones you have real
 assets for. Supplied photos fill the frame and crop (fit:'cover'), matching how
@@ -594,13 +595,16 @@ it is not. Anything you set explicitly (bgImage or images[n]) overrides the
 default for that slide. Only pass deckInit({defaultPhotos:false}) if the user
 explicitly asks for blank replaceable wells throughout.
 
-11.3 Backgrounds: set slideData.bgImage (bare asset name, e.g. 'pattern_dark.png')
-or slideData.bgColor (hex). A bare bgImage name is resolved at runtime against
-MMW_ASSET_BASE + 'backgrounds/', so do NOT write a full path or URL there.
-Each layout's header comment in deck-layouts.js names which it needs.
-Available: pattern_light, pattern_dark, pattern_light2, pattern_dark2,
-scenic_photo, headline_photo, thankyou_texture, headline_dark_mark, plus the
-social platform chrome. Solid-fill layouts need bgColor only.
+11.3 Backgrounds: AUTOMATIC. Every layout applies its own template background
+(the Background column of §6.1) and the matching dark/light setting when the
+slide gives none. DEFAULT: omit bgColor, bgImage and dark on layout slides.
+Override only deliberately: bgColor as 6-digit hex ('#EEEEEE'), or bgImage as a
+bare asset name ('pattern_dark.png', resolved against MMW_ASSET_BASE +
+'backgrounds/' -- never a full path or URL). A bgColor that is not a colour is
+replaced by the template background with a console warning. Available images:
+pattern_light, pattern_dark, pattern_light2, pattern_dark2, scenic_photo,
+headline_photo, thankyou_texture, headline_dark_mark. Raw-els slides (no
+layout) have no template background: give them bgColor (hex) and dark.
 
 ── 12. KNOWN SOURCE EXCEPTIONS — match the source, flag in notes
 headlineLight: 140pt statement is #FFFFFF on #D5D5D5, ~1.5:1 contrast. This is
@@ -689,7 +693,7 @@ Never: □ No #CB297B content □ No retired names selected (§6.1 RETIRED block
 
 ── 15. D ARRAY SCHEMA ───────────────────────────────────────
 15.1 tableOfContents in detail (its structure is unlike any other layout)
-{layout:'tableOfContents', bgColor:'#FFFFFF',
+{layout:'tableOfContents',
  subtitle:'Agenda',            // GRAY line, sits ABOVE the title
  title:'Table of contents',    // BLACK line, same 17pt bold ALL CAPS box
  items:[
@@ -704,30 +708,30 @@ black with a bullet glyph at 80% of text size.
 CAPACITY: 4.16in of list height. An item costs 0.46in, a sub-bullet 0.23in --
 so 9 plain items, fewer with subs. Overflow is dropped with a console warning.
 
-Type A: {layout:'content05', dark:0, title:'Title', text:'Body.', notes:'...'}
-Type B: {dark:0, els:[{type:'t',...}], notes:'...'}
+Type A: {layout:'content05', title:'Title', text:'Body.', notes:'...'}
+Type B: {dark:0, bgColor:'#EEEEEE', els:[{type:'t',...}], notes:'...'}   (raw els: give bg + dark)
 
 coverLight:
-{layout:'coverLight', dark:0, bgImage:'pattern_light.png',
+{layout:'coverLight',
  title:'Mazda Motion Works', date:'FIRST DRAFT — JULY 2026'}
 
 coverDark:
-{layout:'coverDark', dark:1, bgImage:'pattern_dark.png', title:'Title'}
+{layout:'coverDark', title:'Title'}
 
 dividerCanopy:
-{layout:'dividerCanopy', dark:1, bgColor:'#253724',
+{layout:'dividerCanopy',
  tag:'NEXT SECTION', title:'Production Planning'}
 
 headlinePhotoWell:
-{layout:'headlinePhotoWell', dark:1, tag:'THE BIG IDEA', title:'MOVEMENT'}
+{layout:'headlinePhotoWell', tag:'THE BIG IDEA', title:'MOVEMENT'}
 
 tableOfContents:
-{layout:'tableOfContents', bgColor:'#FFFFFF', subtitle:'Agenda',
+{layout:'tableOfContents', subtitle:'Agenda',
  items:['01 Introduce the concept','02 Present the approach','03 Timeline'],
  text:'Optional footer note.'}
 
 storyboardGrid:
-{layout:'storyboardGrid', bgColor:'#EEEEEE', title:'STORYBOARD',
+{layout:'storyboardGrid', title:'STORYBOARD',
  subhead:'Concept: Weekend Getaway',
  items:[{number:'01',caption:'Wide establishing, golden hour'},
         {number:'02',caption:'Close on driver'},
@@ -737,20 +741,20 @@ storyboardGrid:
         {number:'06',caption:'Wide hero, sunset'}]}
 
 locationOverview:
-{layout:'locationOverview', bgColor:'#FFFFFF', tag:'LOCATION: OVERVIEW',
+{layout:'locationOverview', tag:'LOCATION: OVERVIEW',
  items:[{label:'Work Scenario'},{label:'Boutique Sports Club'},
         {label:'Weekend Getaway'},{label:'Running Footage'},
         {label:'Vintage Car Show'}]}
 
 metaCarousel4x5:
-{layout:'metaCarousel4x5', bgColor:'#FFFFFF', text:'CX-5 Crafted With Care',
+{layout:'metaCarousel4x5', text:'CX-5 Crafted With Care',
  copy:{format:'Carousel', postCopy:'...(<=500 chars)', headline:'Crafted with Care',
        alts:'The Mazda CX-5, Takiminuri paint', cta:'Learn More',
        destination:'VLP', size:'4:5'}}
 
 reportGray:
-{layout:'reportGray', bgColor:'#EEEEEE', tag:'Q3 PERFORMANCE',
+{layout:'reportGray', tag:'Q3 PERFORMANCE',
  title:'Regional Summary', text:'Optional sub-deck line.'}
 
 thankYouDark:
-{layout:'thankYouDark', dark:1, title:'THANK YOU'}
+{layout:'thankYouDark', title:'THANK YOU'}

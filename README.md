@@ -545,7 +545,7 @@ Full detail in `MMW_Layout_Spec.md` §15.
 ## Regression testing
 
 ```bash
-cd tests && node smoke.js && node mapstest.js && node fittest.js   # plus covertest / divtest / rotatetest / cp2test / imgtest
+cd tests && node smoke.js && node mapstest.js && node fittest.js && node bgtest.js   # plus covertest / divtest / rotatetest / cp2test / imgtest
 cd tools && node export_node.js out.pptx           # real PPTX export, headless (see "Exporting without a browser")
 ```
 

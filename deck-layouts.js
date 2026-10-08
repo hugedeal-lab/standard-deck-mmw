@@ -4714,6 +4714,157 @@ function errorSlide(msg, detail) {
   ];
 }
 
+// ------------------------------------------------------------
+// TEMPLATE BACKGROUNDS. Each layout's own background (from its header
+// comment above; the platform dividers use the template's imagery). The
+// agent is told to pass bgColor / bgImage, but a test deck (2026-10) passed
+// colour tokens ('paper', 'asphalt') and omitted others -- PptxGenJS turns
+// any non-hex colour into #000000, so grey and white slides exported black.
+// applyLayoutBg() now: keeps a valid bgColor / bgImage; turns a token or
+// 3-digit hex into 6-digit hex; otherwise (missing or unusable) applies the
+// layout's template background and its light/dark setting.
+// ------------------------------------------------------------
+var LAYOUT_BG = {
+  coverLight: {bgImage:'pattern_light.png', dark:0},
+  coverDark: {bgImage:'pattern_dark.png', dark:1},
+  coverLight2: {bgImage:'pattern_light.png', dark:0},
+  coverPhoto: {bgImage:'scenic_photo.png', dark:1},
+  coverPhoto2: {bgColor:'#EEEEEE', dark:0},
+  dividerDark: {bgImage:'pattern_dark.png', dark:1},
+  dividerDark2: {bgImage:'pattern_dark2.png', dark:1},
+  dividerLight: {bgColor:'#F5F5F5', dark:0},
+  dividerLight2: {bgImage:'pattern_light2.png', dark:0},
+  dividerAsphalt: {bgColor:'#262626', dark:1},
+  dividerCanopy: {bgColor:'#253724', dark:1},
+  dividerAurora: {bgColor:'#2C283B', dark:1},
+  dividerTides: {bgColor:'#142A45', dark:1},
+  headlineLight: {bgColor:'#D5D5D5', dark:0},
+  headlineDark: {bgColor:'#262626', dark:1},
+  headlinePhotoWell: {bgColor:'#262626', dark:1},
+  statementSubhead: {bgColor:'#262626', dark:1},
+  reportSplitPanels: {bgColor:'#FFFFFF', dark:0},
+  reportStatRow: {bgColor:'#262626', dark:1},
+  reportStatRowLight: {bgColor:'#EEEEEE', dark:0},
+  reportSpendBarsLight: {bgColor:'#EEEEEE', dark:0},
+  reportSpendBarsDark: {bgColor:'#262626', dark:1},
+  reportModelCompare: {bgColor:'#262626', dark:1},
+  reportBrandPillars: {bgColor:'#262626', dark:1},
+  reportPlatformMatrix: {bgColor:'#EFF0F3', dark:0},
+  reportEcosystemTree: {bgColor:'#EFF0F3', dark:0},
+  reportMetricTable: {bgColor:'#262626', dark:1},
+  reportQuotePanel: {bgColor:'#EFF0F3', dark:0},
+  reportChapterOpener: {bgColor:'#EEEEEE', dark:0},
+  reportStrategyStack: {bgColor:'#EEEEEE', dark:0},
+  reportJourneyMap: {bgColor:'#F2F2F2', dark:0},
+  reportGateStatus: {bgColor:'#FFFFFF', dark:0},
+  reportNumberedSteps: {bgColor:'#FFFFFF', dark:0},
+  tableOfContents: {bgColor:'#FFFFFF', dark:0},
+  thankYouLight: {bgColor:'#FFFFFF', dark:0},
+  thankYouDark: {bgColor:'#262626', dark:1},
+  content01: {bgColor:'#EEEEEE', dark:0},
+  content02: {bgColor:'#EEEEEE', dark:0},
+  content03: {bgColor:'#EEEEEE', dark:0},
+  content05: {bgColor:'#EEEEEE', dark:0},
+  content06: {bgColor:'#EEEEEE', dark:0},
+  content07: {bgColor:'#EEEEEE', dark:0},
+  content08: {bgColor:'#EEEEEE', dark:0},
+  content09: {bgColor:'#EEEEEE', dark:0},
+  threeColDark: {bgColor:'#262626', dark:1},
+  threeColLight: {bgColor:'#EEEEEE', dark:0},
+  twoRowsDark: {bgColor:'#262626', dark:1},
+  twoRowsLight: {bgColor:'#FFFFFF', dark:0},
+  twoRowsLightAlt: {bgColor:'#EEEEEE', dark:0},
+  reportGray: {bgColor:'#EEEEEE', dark:0},
+  reportDark: {bgColor:'#262626', dark:1},
+  storyboardVO: {bgColor:'#EEEEEE', dark:0},
+  storyboardGrid: {bgColor:'#EEEEEE', dark:0},
+  scriptsCompare: {bgColor:'#EEEEEE', dark:0},
+  videoReference: {bgColor:'#EEEEEE', dark:0},
+  castingGrid: {bgColor:'#FFFFFF', dark:0},
+  castingTalent: {bgColor:'#FFFFFF', dark:0},
+  locationOverview: {bgColor:'#FFFFFF', dark:0},
+  locationDetail: {bgColor:'#FFFFFF', dark:0},
+  moodboardProps: {bgColor:'#D5D5D5', dark:0},
+  moodboardWardrobe: {bgColor:'#FFFFFF', dark:0},
+  moodboardToneManner: {bgColor:'#FFFFFF', dark:0},
+  metaDivider: {bgImage:'pattern_dark.png', dark:1},
+  metaCarousel1x1: {bgColor:'#FFFFFF', dark:0},
+  metaCarousel4x5: {bgColor:'#FFFFFF', dark:0},
+  metaVideoStatic: {bgColor:'#FFFFFF', dark:0},
+  redditDivider: {bgImage:'social/divider_platform_reddit_pinterest.png', dark:0},
+  redditCarousel: {bgColor:'#FFFFFF', dark:0},
+  redditVideoStatic1x1: {bgColor:'#FFFFFF', dark:0},
+  redditVideoStatic4x5: {bgColor:'#FFFFFF', dark:0},
+  tiktokDivider: {bgImage:'pattern_dark.png', dark:1},
+  tiktokCarousel: {bgColor:'#FFFFFF', dark:0},
+  tiktokVideoStatic: {bgColor:'#FFFFFF', dark:0},
+  pinterestDivider: {bgImage:'social/divider_platform_reddit_pinterest.png', dark:0},
+  pinterest2x3: {bgColor:'#FFFFFF', dark:0},
+  pinterest1x1: {bgColor:'#FFFFFF', dark:0},
+  youtubeDivider: {bgImage:'pattern_dark.png', dark:1},
+  youtubeVideoAd: {bgColor:'#FFFFFF', dark:0},
+  reportGrayChart: {bgColor:'#EEEEEE', dark:0},
+  reportDarkChart: {bgColor:'#262626', dark:1},
+  reportGrayTable: {bgColor:'#EEEEEE', dark:0},
+  reportDarkTable: {bgColor:'#262626', dark:1},
+  reportChannelMatrix: {bgColor:'#EEEEEE', dark:0},
+  reportGrayTimeline: {bgColor:'#EEEEEE', dark:0},
+  dividerPhoto: {dark:1}
+};
+function _hex6(c) {
+  if (c == null) return null;
+  var s = String(c).trim();
+  var m = /^#?([0-9a-f]{6})$/i.exec(s);
+  if (m) return '#' + m[1].toUpperCase();
+  m = /^#?([0-9a-f])([0-9a-f])([0-9a-f])$/i.exec(s);
+  if (m) return ('#' + m[1] + m[1] + m[2] + m[2] + m[3] + m[3]).toUpperCase();
+  // A named palette colour ('paper', 'asphalt', 'lt2'). Only real palette
+  // names: resolveColor() answers unknown words with a text colour, which
+  // would make a typo a dark background.
+  var SD = window.StandardDeck;
+  if (SD && SD.PALETTE && SD.PALETTE[s] && SD.PALETTE[s] !== s) return _hex6(SD.PALETTE[s]);
+  return null;
+}
+function _isDarkHex(h) {
+  var r = parseInt(h.substr(1, 2), 16), g = parseInt(h.substr(3, 2), 16), b = parseInt(h.substr(5, 2), 16);
+  return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.5;
+}
+var _bgWarned = {};
+function applyLayoutBg(slideData, slug, prePass) {
+  var def = LAYOUT_BG[slug];
+  if (slideData.bgColor != null && slideData.bgColor !== '') {
+    var h = _hex6(slideData.bgColor);
+    if (h) {
+      slideData.bgColor = h;
+      if (slideData.dark === undefined) slideData.dark = _isDarkHex(h) ? 1 : 0;
+      return;
+    }
+    if (!_bgWarned[slug + slideData.bgColor]) {
+      _bgWarned[slug + slideData.bgColor] = 1;
+      console.warn('[deck-layouts] "' + slug + '": bgColor "' + slideData.bgColor + '" is not a colour -- using the layout\'s template background.');
+    }
+    delete slideData.bgColor;
+  }
+  if (slideData.bgImage) return;
+  if (!def) return;
+  // deckInit's pre-pass leaves photo-pool layouts (coverPhoto) to the pool;
+  // the dispatch-time pass fills them only if the pool was switched off.
+  var pool = PHOTO_DEFAULTS[slug];
+  if (prePass && pool && pool.target === 'bgImage') return;
+  if (def.bgColor) slideData.bgColor = def.bgColor;
+  // Table entries are relative to the asset base; a bare name is a backgrounds/ file.
+  if (def.bgImage) slideData.bgImage = A + (def.bgImage.indexOf('/') > -1 ? '' : 'backgrounds/') + def.bgImage;
+  slideData.dark = def.dark;
+}
+// For deckInit: the same normalisation before rendering, prefetch and the
+// bare-asset-name resolution, using dispatch()'s own name resolution.
+function normalizeBackground(slideData) {
+  if (!slideData || !slideData.layout || !resolve(slideData.layout)) return;
+  var slug = slideData.layout;
+  if (!LAYOUT_KEYS[slug]) slug = RETIRED[slug] || LEGACY_ALIASES[slug] || TEMPLATE_NAMES[slug] || slug;
+  applyLayoutBg(slideData, slug, true);
+}
+
 function dispatch(slideData) {
   // Agents sometimes nest a layout's parameters under `cfg:` -- a misreading of
   // this system's "cfg.foo" shorthand, which means "the slide object's foo",
@@ -4737,6 +4888,7 @@ function dispatch(slideData) {
       slug = RETIRED[slideData.layout] || LEGACY_ALIASES[slideData.layout] || TEMPLATE_NAMES[slideData.layout] || slug;
     }
     warnUnusedKeys(slideData, slug);
+    applyLayoutBg(slideData, slug);
     return fitTexts(fn(slideData), slug);
   }
   if (slideData.els) return slideData.els;
@@ -4751,6 +4903,8 @@ function dispatch(slideData) {
 window.DeckLayouts = {
   VERSION: VERSION,
   dispatch: dispatch,
+  normalizeBackground: normalizeBackground,
+  LAYOUT_BG: LAYOUT_BG,
   // Text-fit internals, exposed for tools/copy_budgets.js.
   TEXT_FIT: { needH: _needH, overBy: _overBy },
   LAYOUT_KEYS: LAYOUT_KEYS,
