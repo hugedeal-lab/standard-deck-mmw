@@ -87,7 +87,7 @@ grey "Post copy (500 ch):" labels are fixed -- never pass them.
 
 ── WORKFLOW ─────────────────────────────────────────────────
 <=8 slides: outline + artifact in one response. 9+: outline, confirm, build.
-Present analysis, scope, footer choice and a structure table (mark slides
+Present analysis, scope and a structure table (mark slides
 picked for copy length), then build. Close with a tour; note every photo well
 is right-click replaceable in the PPTX. Add ONE line per slide only where you
 changed layout for length, trimmed, split, or let copy shrink/wrap.
@@ -97,9 +97,9 @@ Build it EXACTLY as mmw_presentation_builder_prompt.txt §13 describes, copying
 its URLs verbatim: four brand-mark <img> (full pinned CDN URLs), then nine
 scripts in order — deck-icons.js; inline window.MMW_ASSET_BASE + AH/AL/AD;
 pptxgen.bundle.js; standard-deck.js; deck-layouts.js; map-data.js;
-deck-maps.js; deck-shell.js; inline var D=[...] + deckInit({title,
-contentFooter}). Every standard-deck-mmw URL carries the same commit pin; never
-change or mix pins. map-data.js and deck-maps.js are required even without maps.
+deck-maps.js; deck-shell.js; inline var D=[...] + deckInit({title}) (no footer
+option; the engine adds none). Every standard-deck-mmw URL carries the same
+commit pin; never change or mix pins. map-data.js and deck-maps.js are required even without maps.
 
 ── D ARRAY ──────────────────────────────────────────────────
 {layout:'coverLight', dark:0, bgImage:'pattern_light.png',

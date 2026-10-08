@@ -37,6 +37,7 @@ The harness is deliberately a smoke test, not a design review — it feeds every
 - **MMW icons**: 72 `mmw-*` line icons from the Keynote package's source SVGs (`tools/build_mmw_icons.py`).
 - **Text fit**: every slide's copy is checked against the room it actually has in PowerPoint. Small type that would collide shrinks to fit; anything that still collides — or runs sideways into its neighbour — logs a console warning. Per-field budgets are measured from that same check (`COPY_BUDGETS.md`), and the agent routes long copy to layouts with body room and tells the user when it did.
 - **Social spec sheets**: named copy fields (`copy.postCopy` / `headline` / `alts` / `format` …) fill the copy boxes; the template's labels stay fixed. Full 500-character post copy fits.
+- **No engine footer, simpler preview**: the generic "Company Confidential" footer (and its `contentFooter` option) is gone — it collided with the template's lockup and date. The preview toolbar is Notes + Download; the Color and Logo tools are removed.
 - **Workflow**: `deck-layouts.js` is now edited directly; the generator (`tools/3_build_deck_layouts.py` + `overrides.py`) is a frozen archive.
 - **Export validated**: PPTX export is exercised end to end with PptxGenJS (`tools/export_node.js`, headless) and checked by rendering the result.
 

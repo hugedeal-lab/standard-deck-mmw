@@ -56,7 +56,7 @@ ${read('deck-shell.js')}
 var D=[
 ${D}
 ];
-deckInit({title:'MMW Layout Test Harness', contentFooter:'Internal — Layout QA'});
+deckInit({title:'MMW Layout Test Harness'});
 console.log('[standalone] rendered with deck-layouts ' + window.DeckLayouts.VERSION);
 </script>
 </body></html>

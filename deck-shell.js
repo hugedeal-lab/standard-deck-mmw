@@ -22,7 +22,7 @@ var FONT_FACES = { H: 'Mazda Type Bold', HR: 'Mazda Type', B: 'Arial' };
 var FONT = FONT_FACES.B;   // default for chrome: footers, tables, labels
 function fontFor(el) { return (el && FONT_FACES[el.font]) || FONT; }
 var _D = []; var _config = {}; var _currentSlide = 0; var _totalSlides = 0;
-var _customLogo = null; var _noLogo = false; var _imageMode = false;
+var _imageMode = false;
 var _imageCache = {};
 // Natural pixel dims per resolved image src, filled by prefetchImage()'s onload.
 // Used only for fit:'cover' center-crop math in exportImage().
@@ -223,26 +223,9 @@ var css = [
   '#sd-viewport { position:relative; width:1920px; height:1200px; transform-origin:top center; margin:20px auto 0; }',
   '.slide { position:absolute; top:0; left:0; width:1920px; height:1200px; overflow:hidden; opacity:0; transition:opacity 0.3s ease; pointer-events:none; }',
   '.slide.active { opacity:1; pointer-events:auto; }',
-  '.sd-color-picker { display:none; flex-direction:column; gap:10px; position:absolute; top:100%; right:0; margin-top:8px; padding:14px; background:#191919; border:1px solid #363732; border-radius:6px; z-index:1100; min-width:240px; }',
-  '.sd-picker-label { font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:#8B8C81; margin-bottom:4px; }',
-  '.sd-swatch-row { display:flex; flex-wrap:wrap; gap:6px; }',
-  '.sd-swatch { width:30px; height:30px; border-radius:6px; cursor:pointer; border:3px solid transparent; transition:border-color 0.2s, transform 0.15s; }',
-  '.sd-swatch:hover { transform:scale(1.1); }',
-  '.sd-swatch.active { border-color:#FFFFFF; }',
-  '.sd-picker-divider { height:1px; background:#363732; }',
-  '.sd-hex-row { display:flex; align-items:center; gap:6px; }',
-  '.sd-hex-row input { background:#2a2a2a; border:1px solid #444; color:#eee; padding:6px 8px; border-radius:4px; font-size:12px; width:90px; }',
-  '.sd-hex-row button { background:#363732; color:#ccc; border:none; padding:6px 10px; border-radius:4px; cursor:pointer; font-size:11px; }',
   '.sd-notes-panel { position:fixed; right:0; top:44px; width:320px; max-height:calc(100vh - 44px); background:#191919; border-left:1px solid #363732; overflow-y:auto; z-index:900; }',
   '.sd-notes-header { display:flex; justify-content:space-between; align-items:center; padding:12px 16px; border-bottom:1px solid #363732; color:#F5F5F5; font-weight:600; font-size:13px; }',
   '.sd-notes-content { padding:16px; color:#C2C4B8; font-size:13px; line-height:1.6; }',
-  '.sd-logo-panel { position:fixed; bottom:0; left:50%; transform:translateX(-50%); width:100%; max-width:600px; background:#191919; border:1px solid #363732; border-bottom:none; border-radius:8px 8px 0 0; padding:20px 24px; z-index:950; }',
-  '.sd-logo-preview { width:120px; height:80px; background:#2a2a2a; border-radius:6px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; overflow:hidden; }',
-  '.sd-logo-preview img { max-width:100%; max-height:100%; }',
-  '.sd-logo-controls { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin-top:12px; }',
-  '.sd-logo-controls label { color:#aaa; font-size:13px; }',
-  '.sd-logo-controls input[type=range] { width:150px; }',
-  '.sd-logo-controls select { background:#2a2a2a; color:#ddd; border:1px solid #444; padding:6px; border-radius:4px; }',
   '.sd-toast { position:fixed; bottom:20px; left:50%; transform:translateX(-50%); padding:10px 20px; border-radius:6px; font-size:13px; font-family:DM Sans,sans-serif; z-index:2000; transition:opacity 0.3s; }',
   '.sd-toast-ok { background:#28A745; color:#FFF; }',
   '.sd-toast-warn { background:#E67E00; color:#FFF; }',
@@ -303,9 +286,7 @@ function buildToolbar(container) {
     '  <button class="sd-btn sd-next" title="Next slide">\u25B6</button>',
     '</div>',
     '<div class="sd-toolbar-right">',
-    '  <button class="sd-btn sd-color-btn" title="Color">\uD83C\uDFA8 Color</button>',
     '  <button class="sd-btn sd-notes-btn" title="Notes">\uD83D\uDCDD Notes</button>',
-    '  <button class="sd-btn sd-logo-btn" title="Logo">\uD83D\uDDBC Logo</button>',
     '  <button class="sd-btn sd-btn-download sd-download-btn" title="Download">\u2B07 Download</button>',
     '</div>'
   ].join('');
@@ -314,44 +295,6 @@ function buildToolbar(container) {
   toolbar.querySelector('.sd-prev').addEventListener('click', function () { showSlide(_currentSlide - 1); });
   toolbar.querySelector('.sd-next').addEventListener('click', function () { showSlide(_currentSlide + 1); });
   return toolbar;
-}
-
-// ============================================================
-// COLOR PICKER
-// ============================================================
-
-function buildColorPicker(toolbarRight) {
-  var picker = document.createElement('div'); picker.className = 'sd-color-picker';
-  var al = document.createElement('div'); al.className = 'sd-picker-label'; al.textContent = 'Accent Color'; picker.appendChild(al);
-  var ar = document.createElement('div'); ar.className = 'sd-swatch-row';
-  var families = SD.ACCENT_FAMILIES; var ca = SD.getAccent().mid;
-  Object.keys(families).forEach(function (name) {
-    var fam = families[name]; var sw = document.createElement('button');
-    sw.className = 'sd-swatch' + (fam.mid === ca ? ' active' : '');
-    sw.style.background = fam.mid; sw.title = name; sw.setAttribute('data-family', name);
-    sw.addEventListener('click', function () { SD.setAccent(name); rerenderAll(); updateSwatchStates(); picker.style.display = 'none'; });
-    ar.appendChild(sw);
-  }); picker.appendChild(ar);
-  picker.appendChild(Object.assign(document.createElement('div'), { className: 'sd-picker-divider' }));
-  var hr = document.createElement('div'); hr.className = 'sd-hex-row';
-  hr.innerHTML = '<span style="color:#8B8C81;font-size:10px;margin-right:4px;">Custom:</span><input type="text" class="sd-hex-input" placeholder="#8D7057" maxlength="7"><button class="sd-hex-apply">Apply</button><button class="sd-hex-reset">Reset</button>';
-  picker.appendChild(hr);
-  toolbarRight.style.position = 'relative'; toolbarRight.appendChild(picker);
-  hr.querySelector('.sd-hex-apply').addEventListener('click', function () {
-    var hex = hr.querySelector('.sd-hex-input').value.trim();
-    if (/^#[0-9A-Fa-f]{6}$/.test(hex)) { SD.setAccent(hex); rerenderAll(); updateSwatchStates(); picker.style.display = 'none'; }
-  });
-  hr.querySelector('.sd-hex-reset').addEventListener('click', function () {
-    SD.setAccent('bronze'); rerenderAll(); updateSwatchStates();
-    hr.querySelector('.sd-hex-input').value = ''; picker.style.display = 'none';
-  });
-  return picker;
-}
-
-function updateSwatchStates() {
-  var cur = SD.getAccent().name;
-  document.querySelectorAll('.sd-swatch').forEach(function (s) { s.classList.toggle('active', s.getAttribute('data-family') === cur); });
-  var tb = document.querySelector('.sd-toolbar'); if (tb) tb.style.borderBottomColor = SD.getAccent().mid;
 }
 
 // ============================================================
@@ -377,77 +320,6 @@ function updateNotes() {
 function toggleNotesPanel() { var p = document.querySelector('.sd-notes-panel'); if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none'; }
 
 // ============================================================
-// LOGO MANAGER
-// ============================================================
-
-function buildLogoPanel(container) {
-  var existing = document.querySelector('.sd-logo-panel'); if (existing) existing.remove();
-  var panel = document.createElement('div'); panel.className = 'sd-logo-panel'; panel.style.display = 'none';
-  panel.innerHTML = [
-    '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">',
-    '<span style="color:#F5F5F5;font-weight:600;font-size:13px;">Logo Manager</span>',
-    '<button class="sd-btn sd-logo-close">\u2715</button></div>',
-    '<div class="sd-logo-preview"><span style="color:#666;font-size:13px;">No logo uploaded</span></div>',
-    '<button class="sd-btn sd-logo-upload" style="margin-bottom:12px;">\uD83D\uDCC1 Upload Logo</button>',
-    '<input type="file" class="sd-logo-file" accept=".png,.jpg,.jpeg,.svg" style="display:none;">',
-    '<div class="sd-logo-controls" style="display:none;">',
-    '<label>Size:</label><input type="range" class="sd-logo-size" min="40" max="200" value="80">',
-    '<span class="sd-logo-size-lbl">80px</span><label>Position:</label>',
-    '<select class="sd-logo-pos"><option value="bottom-right" selected>Bottom Right</option><option value="top-right">Top Right</option><option value="top-left">Top Left</option><option value="bottom-left">Bottom Left</option></select>',
-    '<button class="sd-btn sd-logo-apply">Apply to All</button>',
-    '<button class="sd-btn sd-logo-remove">Remove</button></div>'
-  ].join('');
-  (container || document.body).appendChild(panel);
-  panel.querySelector('.sd-logo-close').addEventListener('click', function () { panel.style.display = 'none'; });
-  panel.querySelector('.sd-logo-upload').addEventListener('click', function () { panel.querySelector('.sd-logo-file').click(); });
-  panel.querySelector('.sd-logo-file').addEventListener('change', function (e) {
-    var file = e.target.files[0]; if (!file) return;
-    if (file.size > 2 * 1024 * 1024) { showToast('Logo must be under 2MB.', 'warn'); return; }
-    var reader = new FileReader();
-    reader.onload = function (ev) {
-      var dataUri = ev.target.result; var tempImg = new Image();
-      tempImg.onload = function () {
-        var ar = tempImg.naturalHeight / tempImg.naturalWidth;
-        var ic = document.createElement('canvas'); ic.width = tempImg.naturalWidth; ic.height = tempImg.naturalHeight;
-        var ictx = ic.getContext('2d'); ictx.drawImage(tempImg, 0, 0);
-        var id = ictx.getImageData(0, 0, ic.width, ic.height); var px = id.data;
-        for (var p = 0; p < px.length; p += 4) { px[p] = 255 - px[p]; px[p+1] = 255 - px[p+1]; px[p+2] = 255 - px[p+2]; }
-        ictx.putImageData(id, 0, 0);
-        panel.querySelector('.sd-logo-preview').innerHTML = '<img src="' + dataUri + '">';
-        panel.querySelector('.sd-logo-controls').style.display = 'flex';
-        _customLogo = { src: dataUri, srcInverted: ic.toDataURL('image/png'), width: 80, aspectRatio: ar, position: 'bottom-right' };
-      }; tempImg.src = dataUri;
-    }; reader.readAsDataURL(file);
-  });
-  panel.querySelector('.sd-logo-size').addEventListener('input', function (e) { var v = e.target.value; panel.querySelector('.sd-logo-size-lbl').textContent = v + 'px'; if (_customLogo) _customLogo.width = parseInt(v); });
-  panel.querySelector('.sd-logo-pos').addEventListener('change', function (e) { if (_customLogo) _customLogo.position = e.target.value; });
-  panel.querySelector('.sd-logo-apply').addEventListener('click', function () { if (_customLogo) applyLogoToSlides(); });
-  panel.querySelector('.sd-logo-remove').addEventListener('click', function () {
-    _customLogo = null; removeLogoFromSlides();
-    panel.querySelector('.sd-logo-preview').innerHTML = '<span style="color:#666;font-size:13px;">No logo uploaded</span>';
-    panel.querySelector('.sd-logo-controls').style.display = 'none';
-  });
-  return panel;
-}
-
-function applyLogoToSlides() {
-  removeLogoFromSlides();
-  document.querySelectorAll('#sd-viewport .slide, #sw .sf').forEach(function (slide, i) {
-    var isDark = _D[i] && _D[i].dark;
-    var img = document.createElement('img'); img.src = isDark ? _customLogo.src : _customLogo.srcInverted; img.className = 'logo-custom';
-    var pos = _customLogo.position || 'bottom-right';
-    if (pos === 'bottom-right') { var slot = slide.querySelector('.logo-footer-slot'); if (slot) { img.style.width = _customLogo.width + 'px'; img.style.height = 'auto'; slot.appendChild(img); return; } }
-    img.style.position = 'absolute'; img.style.width = _customLogo.width + 'px'; img.style.height = 'auto';
-    if (pos.indexOf('top') > -1) img.style.top = '30px'; if (pos.indexOf('bottom') > -1) img.style.bottom = '30px';
-    if (pos.indexOf('right') > -1) img.style.right = '100px'; if (pos.indexOf('left') > -1) img.style.left = '50px';
-    slide.appendChild(img);
-  });
-}
-
-function removeLogoFromSlides() { document.querySelectorAll('.logo-custom').forEach(function (el) { el.remove(); }); }
-function toggleLogoPanel() { var p = document.querySelector('.sd-logo-panel'); if (p) p.style.display = p.style.display === 'none' ? 'block' : 'none'; }
-
-// ============================================================
 // TOAST / KEYBOARD / RERENDER
 // ============================================================
 
@@ -470,7 +342,7 @@ function setupKeyboard() {
 }
 
 function closeAllPanels() {
-  ['sd-notes-panel', 'sd-color-picker', 'sd-logo-panel'].forEach(function (cls) {
+  ['sd-notes-panel'].forEach(function (cls) {
     var el = document.querySelector('.' + cls); if (el) el.style.display = 'none';
   });
 }
@@ -478,7 +350,6 @@ function closeAllPanels() {
 function rerenderAll() {
   var vp = document.getElementById('sd-viewport'); if (!vp || _imageMode) return;
   SD.renderAll(_D, vp); _totalSlides = _D.length; showSlide(_currentSlide);
-  if (_customLogo) applyLogoToSlides();
 }
 
 // ============================================================
@@ -514,25 +385,12 @@ try {
   var pptx = new PptxGenJS();
   pptx.defineLayout({ name: 'SD_LAYOUT', width: 13.33, height: 7.5 }); pptx.layout = 'SD_LAYOUT';
   pptx.author = 'Standard Presentation Builder'; pptx.subject = _config.title || 'Presentation';
-  var accent = SD.getAccent(); var footerText = SD.getFooterText();
+  var accent = SD.getAccent();
   var darkBgColor = '040B13';
   var lightBgColor = 'FFFFFF';
-  var contentFooterText = SD.getContentFooter();
-
-  pptx.defineSlideMaster({ title: 'SD_DARK', background: { color: darkBgColor },
-    objects: [{ text: { text: footerText, options: { x: 0.3, y: 7.05, w: 4, h: 0.3, fontSize: 7, fontFace: FONT, color: '999999', bold: false, letterSpacing: 1.5 } } }] });
-  pptx.defineSlideMaster({ title: 'SD_LIGHT', background: { color: lightBgColor },
-    objects: [{ text: { text: footerText, options: { x: 0.3, y: 7.05, w: 4, h: 0.3, fontSize: 7, fontFace: FONT, color: '999999', bold: false, letterSpacing: 1.5 } } }] });
-
+  // Plain masters: no footer text (see standard-deck.js renderSlide).
   pptx.defineSlideMaster({ title: 'SD_DARK_NOFOOTER', background: { color: darkBgColor } });
   pptx.defineSlideMaster({ title: 'SD_LIGHT_NOFOOTER', background: { color: lightBgColor } });
-
-  if (contentFooterText) {
-    pptx.defineSlideMaster({ title: 'SD_DARK_CONTENT', background: { color: darkBgColor },
-      objects: [{ text: { text: contentFooterText, options: { x: 0.3, y: 7.05, w: 4, h: 0.3, fontSize: 7, fontFace: FONT, color: '767676', bold: false, letterSpacing: 1.5 } } }] });
-    pptx.defineSlideMaster({ title: 'SD_LIGHT_CONTENT', background: { color: lightBgColor },
-      objects: [{ text: { text: contentFooterText, options: { x: 0.3, y: 7.05, w: 4, h: 0.3, fontSize: 7, fontFace: FONT, color: '767676', bold: false, letterSpacing: 1.5 } } }] });
-  }
 
   _D.forEach(function (slideData, index) {
     var isDark = !!slideData.dark;
@@ -548,18 +406,8 @@ try {
 
     isDark = !!slideData.dark;
 
-    // STEP 2: Master selection (after dispatch)
-    var master;
-    if (slideData.customFooter ||
-        (SD.suppressesFooter && SD.suppressesFooter(slideData.layout))) {
-      master = isDark ? 'SD_DARK_NOFOOTER' : 'SD_LIGHT_NOFOOTER';
-    } else if (SD.isStructuralSlide(slideData.layout)) {
-      master = isDark ? 'SD_DARK' : 'SD_LIGHT';
-    } else if (contentFooterText) {
-      master = isDark ? 'SD_DARK_CONTENT' : 'SD_LIGHT_CONTENT';
-    } else {
-      master = isDark ? 'SD_DARK_NOFOOTER' : 'SD_LIGHT_NOFOOTER';
-    }
+    // STEP 2: Master
+    var master = isDark ? 'SD_DARK_NOFOOTER' : 'SD_LIGHT_NOFOOTER';
 
     var slide = pptx.addSlide({ masterName: master });
 
@@ -581,38 +429,9 @@ try {
       exportElement(slide, el, isDark, accent, pptx);
     });
 
-    // STEP 5: Page number (3-way)
-    if (slideData.num && !slideData.customFooter) {
-      if (!SD.isStructuralSlide(slideData.layout)) {
-        slide.addText(slideData.num, {
-          x: 12.30, y: 7.05, w: 0.80, h: 0.30,
-          fontSize: 7, fontFace: FONT, bold: false, color: '767676',
-          align: 'right', margin: [0, 0, 0, 0]
-        });
-      } else {
-        slide.addShape(pptx.shapes.RECTANGLE, { x: 12.15, y: 7.05, w: 0.01, h: 0.25, fill: { color: '999999' } });
-        slide.addText(slideData.num, {
-          x: 12.30, y: 7.05, w: 0.80, h: 0.30,
-          fontSize: 10, fontFace: FONT, bold: true, color: '999999',
-          align: 'left', margin: [0, 0, 0, 0]
-        });
-      }
-    }
-
-    // STEP 6: Notes + Logo
+    // STEP 6: Notes
     if (slideData.notes) slide.addNotes(slideData.notes);
 
-    if (_customLogo && !_noLogo) {
-      var logoSrc = isDark ? _customLogo.src : _customLogo.srcInverted;
-      var lw = _customLogo.width / 144; var lh = lw * (_customLogo.aspectRatio || 0.5);
-      var pos = _customLogo.position || 'bottom-right';
-      var lx, ly;
-      if (pos === 'bottom-right') { lx = 12.15 - lw - 0.15; ly = 7.05 + (0.25 - lh) / 2; }
-      else if (pos === 'top-right') { lx = 13.33 - lw - 0.3; ly = 0.15; }
-      else if (pos === 'top-left') { lx = 0.3; ly = 0.15; }
-      else { lx = 0.3; ly = 7.05; }
-      slide.addImage({ data: logoSrc, x: lx, y: ly, w: lw, h: lh });
-    }
   });
 
   var title = (_config.title || 'Presentation').replace(/[^a-zA-Z0-9\s_-]/g, '').replace(/\s+/g, '_').substring(0, 40);
@@ -1167,7 +986,7 @@ function exportImage(slide, el) {
 
 function deckInit(config) {
 config = config || {}; _config = config; _D = window.D || [];
-_totalSlides = _D.length; _noLogo = !!config.noLogo; _imageMode = !!config.imageMode;
+_totalSlides = _D.length; _imageMode = !!config.imageMode;
 
 // Resolve bare bgImage filenames ('pattern_dark.png') against the asset base.
 // slideData.bgImage is consumed verbatim -- by the preview (standard-deck.js's
@@ -1192,10 +1011,8 @@ injectStyles();
 if (config.accent) SD.setAccent(config.accent);
 else if (window.AH) SD.setAccent(window.AH, window.AL, window.AD);
 
-if (config.footer) SD.setFooter(config.footer);
-
-if (config.contentFooter === false || config.contentFooter === 'none') SD.setContentFooter(null);
-else if (config.contentFooter) SD.setContentFooter(config.contentFooter);
+// config.footer / config.contentFooter / config.noLogo are accepted and
+// ignored: the engine draws no footer and has no custom-logo tool (2026-10).
 
 window._deckTitle = config.title || 'Presentation';
 
@@ -1291,15 +1108,8 @@ if (window.DeckIcons) {
 var container = _imageMode ? (document.getElementById('sw') || document.body) : document.body;
 var toolbar = buildToolbar(container);
 var toolbarRight = toolbar.querySelector('.sd-toolbar-right');
-var colorPicker = buildColorPicker(toolbarRight);
-
-toolbarRight.querySelector('.sd-color-btn').addEventListener('click', function () {
-  closeAllPanels(); colorPicker.style.display = colorPicker.style.display === 'none' ? 'flex' : 'none';
-});
 buildNotesPanel();
 toolbarRight.querySelector('.sd-notes-btn').addEventListener('click', function () { closeAllPanels(); toggleNotesPanel(); });
-buildLogoPanel();
-toolbarRight.querySelector('.sd-logo-btn').addEventListener('click', function () { closeAllPanels(); toggleLogoPanel(); });
 toolbarRight.querySelector('.sd-download-btn').addEventListener('click', exportPPTX);
 
 setupKeyboard();
@@ -1319,7 +1129,7 @@ window.StandardShell = {
   init: deckInit, showSlide: showSlide, exportPPTX: exportPPTX, rerenderAll: rerenderAll,
   showToast: showToast, closeAllPanels: closeAllPanels,
   getConfig: function () { return _config; },
-  getState: function () { return { currentSlide:_currentSlide, totalSlides:_totalSlides, customLogo:_customLogo, noLogo:_noLogo, imageMode:_imageMode }; }
+  getState: function () { return { currentSlide:_currentSlide, totalSlides:_totalSlides, imageMode:_imageMode }; }
 };
 window.deckInit = deckInit;
 

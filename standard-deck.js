@@ -1047,45 +1047,10 @@ function renderSlide(slideData, index) {
     slide.appendChild(renderElement(el, isDark));
   });
 
-  // FOOTER: 3-way logic
-  if (slideData.customFooter) {
-    // Layout handles its own footer
-  } else if (isStructuralSlide(slideData.layout)) {
-    var mutedColor = resolveColor('muted', isDark);
-    var dateDiv = document.createElement('div');
-    dateDiv.style.cssText = 'position:absolute;bottom:24px;left:40px;'
-      + 'font-size:' + ptToPx(7) + 'px;'
-      + 'font-weight:400;'
-      + 'letter-spacing:0.15em;'
-      + 'text-transform:uppercase;'
-      + 'color:' + mutedColor + ';'
-      + 'font-family:Mazda Type,Arial,sans-serif;';
-    dateDiv.textContent = _footerText || getFooterDate();
-    slide.appendChild(dateDiv);
-  } else if (_contentFooter) {
-    var cfColor = '#767676';
-    var cfDiv = document.createElement('div');
-    cfDiv.style.cssText = 'position:absolute;bottom:24px;left:40px;'
-      + 'font-size:' + ptToPx(7) + 'px;'
-      + 'font-weight:400;'
-      + 'letter-spacing:0.15em;'
-      + 'text-transform:uppercase;'
-      + 'color:' + cfColor + ';'
-      + 'font-family:Mazda Type,Arial,sans-serif;';
-    cfDiv.textContent = _contentFooter;
-    slide.appendChild(cfDiv);
-
-    if (slideData.num) {
-      var numDiv = document.createElement('div');
-      numDiv.style.cssText = 'position:absolute;bottom:24px;right:40px;'
-        + 'font-size:' + ptToPx(7) + 'px;'
-        + 'font-weight:400;'
-        + 'color:' + cfColor + ';'
-        + 'font-family:Mazda Type,Arial,sans-serif;';
-      numDiv.textContent = slideData.num;
-      slide.appendChild(numDiv);
-    }
-  }
+  // No engine footer. MMW layouts draw their own furniture (logo, lockup,
+  // draft date) from the template; the old generic footer ("Company
+  // Confidential" / a date line / page numbers) collided with it and was
+  // removed 2026-10.
 
   return slide;
 }
@@ -1125,24 +1090,12 @@ function adjustBrightness(hex, amount) {
 // FOOTER CONFIGURATION
 // ============================================================
 
-var _footerText = null;
-var _contentFooter = 'Company Confidential';
-
-function setFooter(text) {
-  if (text === 'confidential') _footerText = 'S T R I C T L Y   C O N F I D E N T I A L';
-  else if (text === 'date' || text === null) _footerText = null;
-  else _footerText = text;
-}
-
-function getFooterText() { return _footerText || getFooterDate(); }
-
-function setContentFooter(text) {
-  if (text === false || text === 'none' || text === null) _contentFooter = null;
-  else if (text === 'strict') _contentFooter = 'Strictly Confidential';
-  else if (typeof text === 'string') _contentFooter = text;
-}
-
-function getContentFooter() { return _contentFooter; }
+// Footer API kept as no-ops so older artifacts that call them (or pass
+// deckInit footer / contentFooter) keep working; nothing is drawn.
+function setFooter() {}
+function getFooterText() { return ''; }
+function setContentFooter() {}
+function getContentFooter() { return null; }
 
 // ============================================================
 // PPTX SAFE AREA

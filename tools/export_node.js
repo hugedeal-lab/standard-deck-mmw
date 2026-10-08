@@ -185,7 +185,7 @@ const D = JSON.parse('[' + harness.split('var D=[')[1].split('\n];')[0] + ']');
 sandbox.D = D;
 
 console.error('[5] deckInit...');
-sandbox.deckInit({ title: 'MMW Layout Reference', contentFooter: 'Internal \u2014 Layout QA' });
+sandbox.deckInit({ title: 'MMW Layout Reference' });
 Object.assign(sandbox.StandardShell._imageCache, imageCache);
 
 console.log(`loaded deck-layouts ${sandbox.DeckLayouts.VERSION}, ${D.length} slides`);

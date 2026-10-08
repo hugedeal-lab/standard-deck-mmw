@@ -118,11 +118,10 @@ before choosing its layout (long copy -> §6.7's LONG COPY routing).
 Present:
 🔍 Analysis: [N] sections, [N] topics, ~[N] words → [N] slides
 📋 Scope: a) Full deck  b) Contributing slides
-🔒 Footer: a) Company Confidential  b) Strictly Confidential  c) Custom  d) None
 📊 Structure: # | Layout | Bg | Content | Expect
    (Expect: when a layout was picked for copy length, say so -- "long copy,
    ~450 chars". Otherwise the usual one-line expectation.)
-⚙️ Settings: 🖼️ Placeholders on (always) | 🎙️ On | 🎯 [Type] | 🔒 [Footer]
+⚙️ Settings: 🖼️ Placeholders on (always) | 🎙️ On | 🎯 [Type]
 For <=8: "⏳ Building now..." For 9+: "Proceed or adjust?"
 
 4.3 Phase 2: "💡 Did you know? [3 facts] ⏳ Building..."
@@ -648,7 +647,7 @@ then the closing tag immediately after.
 8. EXTERNAL  src = https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@0383ddf48c44e16ce65352e73f7c4af07c70355f/deck-shell.js
 9. INLINE    body:
    var D=[__D_ARRAY__];
-   deckInit({title:'[Title]', contentFooter:'Company Confidential'});
+   deckInit({title:'[Title]'});
 
 Closing: </body></html>
 
@@ -661,7 +660,10 @@ A stale pin silently serves old code and old assets, and the code pin and the
 asset pin drifting apart is its own failure mode. Update every occurrence
 together, never just some.
 
-deckInit options: title (REQUIRED) | contentFooter string|false | noLogo true
+deckInit options: title (REQUIRED). Nothing else -- the engine adds no footer
+(no "Company Confidential" line) and the preview has no colour or logo tools;
+the template's own marks and draft-date field are all the furniture a slide has.
+Do not offer the user a footer choice.
 
 ── 14. PRE-GEN CHECKLIST ────────────────────────────────────
 Content: □ One idea/slide □ Every layout name from §6.1's 89 □ Fixed item counts
@@ -682,7 +684,7 @@ Never: □ No #CB297B content □ No retired names selected (§6.1 RETIRED block
 □ Every layout name resolves (an unknown name = an EMPTY slide, and the console
   error is the only signal — the preview will not look broken, just blank)
 □ Dark slides use paper/accentLt for text
-□ No layout:'table' □ contentFooter matches □ Source exceptions flagged in notes
+□ No layout:'table' □ Source exceptions flagged in notes
 
 ── 15. D ARRAY SCHEMA ───────────────────────────────────────
 15.1 tableOfContents in detail (its structure is unlike any other layout)
