@@ -284,7 +284,7 @@ reportGrayChart	Content Gray	#EEEEEE	Chart in a fixed well. cfg.chart = {type, d
 reportDarkChart	Content Dark	#262626	Same as reportGrayChart, dark.
 reportGrayTable	Content Gray	#EEEEEE	Simple 2-column table: one heading + optional bullets per side. cfg.headers[2], cfg.rows (≤4, each {left:{heading,bullets}, right:{heading,bullets}}).
 reportDarkTable	Content Dark	#262626	Same as reportGrayTable, dark.
-reportGrayTimeline	Content Gray	#EEEEEE	Campaign-progress flow art (template slide 72 specifically — do not use for a generic timeline). cfg.milestones (≤8 strings) · cfg.hereLabel (false to hide the marker).
+reportGrayTimeline	Content Gray	#EEEEEE	WHERE WE ARE: project or campaign progress at a glance -- 3-8 short milestone labels along the template's flowing line art with a "we are here" marker. The default for a simple timeline or schedule (put dates in the labels). cfg.milestones (≤8 strings) · cfg.hereLabel (false to hide the marker).
 
 REPORTING — STRUCTURED COMPOSITIONS (17)
 These manage their own internal positioning — supply the structured fields
@@ -295,21 +295,21 @@ list here before writing content, and if a field name doesn't ring a bell,
 open the code comment rather than guessing from another layout's pattern.
 
 Name	Template layout	Background	Use + key fields
-reportSplitPanels	Report Split Panels (slide 73)	#FFFFFF	4 decreasing pill bars + up to 4 milestone callouts. cfg.stages (≤4), cfg.milestones (≤4, {header,copy}), cfg.hereLabel.
-reportStatRow	(slide 74)	#262626	5-col stat grid, 3 bands. cfg.title, cfg.columns (≤5), cfg.sections (≤3, {label,cells}).
+reportSplitPanels	Report Split Panels (slide 73)	#FFFFFF	ROADMAP: up to 4 phases (years, quarters, eras) as segments of one pill bar, up to 4 callouts above/below, "we are here" marker. Multi-year roadmaps and brand eras. cfg.stages (≤4), cfg.milestones (≤4, {header,copy}), cfg.hereLabel.
+reportStatRow	(slide 74)	#262626	5-column x 3-row matrix: strategic needs/priorities by market or audience (template: "Media realities"), a KPI scorecard (metrics x this period / last period / target), or status by workstream. cfg.title, cfg.columns (≤5), cfg.sections (≤3, {label,cells}).
 reportStatRowLight	(slide 75)	#EEEEEE	Same as reportStatRow, light.
 reportSpendBarsLight	(slide 86)	#EEEEEE	Up to 6 horizontal pill bars sized by pct. cfg.bars (≤6, {label, pct, value?, points?, color?}). value is a short string shown INSIDE the disc at the bar tip (e.g. "32%" or "$4.2M"); points is ≤2 sub-bullets set inside the bar; color overrides that bar's fill. Leave color unset to get the template ramp.
 reportSpendBarsDark	(slide 87)	#262626	Same as reportSpendBarsLight, dark.
-reportModelCompare	Report Model Compare (slide 89)	#262626	A 5-column x 4-row spanning grid that is meant to be FILLED edge to edge, not sparsely dotted. cfg.stages (≤4, {label, code}) -- label is the tan row caption, code is the short tag on the gray chip (e.g. "BDD"). cfg.entries: each {col, row, colSpan?, rowSpan?, label, copy}; col 0-4, row 0-3, spans default 1. Use spans heavily so entries tile the whole canvas -- the source has one entry spanning col 0 x all 4 rows, one spanning row 0 x cols 1-4, and 2-3 entries spanning 2-3 rows each. A grid left mostly single-cell reads as broken. Long copy belongs in a row-spanning entry; a 1-cell entry auto-shrinks its text to fit.
-reportBrandPillars	Report Brand Pillars (slide 90)	#262626	2 intro sections + 3 pillar boxes + 3-col stat block with optional pivot row. cfg.sections (≤2), cfg.pillars (≤3, {header,copy}), cfg.rowLabels (≤4), cfg.channels (≤3 -- ONE short word each, like "Paid"/"Owned"/"Earned"; these are compact top-right badges, not phrases), cfg.targets/cfg.outcomes (≤3 each), cfg.pivot ({label,copy}).
-reportPlatformMatrix	Report Platform Matrix (slide 91)	#EFF0F3	Hub disc + up to 8 spokes in a ring + up to 6 category chips down the left. cfg.hub ({label, name -- name is 1 short word/acronym, it sits big in a 1.4in disc}). cfg.spokes (≤8, {label, copy}): label is the SHORT text inside the spoke circle (≤2 words); copy is ONE short sentence for the dotted card beside it -- the card is only 2.2x1.0in, longer copy auto-shrinks toward 4.5pt. cfg.categories (≤6, {code, text}): code is a 3-letter tag in the chip, text is a short phrase beside it.
-reportEcosystemTree	Report Ecosystem Tree (slide 92)	#EFF0F3	Root node + dotted fact panel + up to 8 branch cards. cfg.title, cfg.root ({facts≤6, {key,value}}), cfg.branches (≤8), cfg.cornerLeft/cornerRight (optional, {icon,label,text}).
-reportMetricTable	(slide 95)	#262626	Funnel matrix, 7 fixed columns. cfg.columns, each {header, tone, stroke, noStroke, groups}. groups is the 3 funnel bands, each {label?, items:[cell,...]} where a cell is a string or {text,tone}. Band heights auto-split evenly when unset.
-reportQuotePanel	Report Quote Panel (slide 96)	#EFF0F3	4 quote cards, 2x2. FRAGILE flat-slot mapping — card1 eyebrow/headline are cfg.tag/cfg.subhead, everything else is cfg.items[0..9] in a fixed order. Check the code comment before writing content; getting the order wrong silently misplaces it.
+reportModelCompare	Report Model Compare (slide 89)	#262626	PORTFOLIO ROLES: what each model/nameplate (or product, audience) does at each funnel stage. A 5-column x 4-row spanning grid that is meant to be FILLED edge to edge, not sparsely dotted. cfg.stages (≤4, {label, code}) -- label is the tan row caption, code is the short tag on the gray chip (e.g. "BDD"). cfg.entries: each {col, row, colSpan?, rowSpan?, label, copy}; col 0-4, row 0-3, spans default 1. Use spans heavily so entries tile the whole canvas -- the source has one entry spanning col 0 x all 4 rows, one spanning row 0 x cols 1-4, and 2-3 entries spanning 2-3 rows each. A grid left mostly single-cell reads as broken. Long copy belongs in a row-spanning entry; a 1-cell entry auto-shrinks its text to fit.
+reportBrandPillars	Report Brand Pillars (slide 90)	#262626	MEDIA/BRAND STRATEGY ON A PAGE (template: media jobs-to-be-done -> objectives -> targets -> pivot -> outcomes; no statistics needed). 2 intro sections + 3 pillar boxes + 3-col block with optional pivot row. cfg.sections (≤2), cfg.pillars (≤3, {header,copy}), cfg.rowLabels (≤4), cfg.channels (≤3 -- ONE short word each, like "Paid"/"Owned"/"Earned"; these are compact top-right badges, not phrases), cfg.targets/cfg.outcomes (≤3 each), cfg.pivot ({label,copy}).
+reportPlatformMatrix	Report Platform Matrix (slide 91)	#EFF0F3	CAMPAIGN ARCHITECTURE: a platform or big idea at the hub with up to 8 campaigns/workstreams around it. Hub disc + up to 8 spokes in a ring + up to 6 category chips down the left. cfg.hub ({label, name -- name is 1 short word/acronym, it sits big in a 1.4in disc}). cfg.spokes (≤8, {label, copy}): label is the SHORT text inside the spoke circle (≤2 words); copy is ONE short sentence for the dotted card beside it -- the card is only 2.2x1.0in, longer copy auto-shrinks toward 4.5pt. cfg.categories (≤6, {code, text}): code is a 3-letter tag in the chip, text is a short phrase beside it.
+reportEcosystemTree	Report Ecosystem Tree (slide 92)	#EFF0F3	CAMPAIGN/CHANNEL PLAN: one campaign (root + key facts: models, budget, launch) branching to up to 8 channels, each with its tactics. Not an org chart. Root node + dotted fact panel + up to 8 branch cards. cfg.title, cfg.root ({facts≤6, {key,value}}), cfg.branches (≤8), cfg.cornerLeft/cornerRight (optional, {icon,label,text}).
+reportMetricTable	(slide 95)	#262626	MEASUREMENT FRAMEWORK / KPI PLAN: journey stage -> outcome KPI -> channels -> weekly KPIs and data sources -> monthly KPIs and data sources. 7 fixed columns. cfg.columns, each {header, tone, stroke, noStroke, groups}. groups is the 3 funnel bands, each {label?, items:[cell,...]} where a cell is a string or {text,tone}. Band heights auto-split evenly when unset.
+reportQuotePanel	Report Quote Panel (slide 96)	#EFF0F3	KEY INSIGHTS or findings (template cards read "INSIGHT · #1-4"), or 4 quotes: 4 cards, 2x2. FRAGILE flat-slot mapping — card1 eyebrow/headline are cfg.tag/cfg.subhead, everything else is cfg.items[0..9] in a fixed order. Check the code comment before writing content; getting the order wrong silently misplaces it.
 reportChapterOpener	(slide 97)	#EEEEEE	Before/after or old/new framing pair. cfg.text2/text3 (eyebrows), cfg.text4/cfg.subhead (headline pair — NOT cfg.title, that's the fixed decorative arrow), cfg.text5/text6 (body), cfg.items[1]/items[2] (STATUS / WHAT THIS UNLOCKS).
 reportStrategyStack	(slide 98)	#EEEEEE	Strategy with proof points and next steps. cfg.badges[2] ({sub,body}), cfg.pointOne/pointTwo/pointBody, cfg.insightHead/insightBody, cfg.panels[3] ({next,subhead,sections|bullets}), cfg.activationLabel/activationBody, cfg.footers[3] ({head,body}).
-reportJourneyMap	(slide 99)	#F2F2F2	4-column journey/timeline with a "we are here" marker. cfg.hereLabel, cfg.panels[4] ({tone:'dark'|'tan', icon, header, date, sections[3]}), each section {label, items} where an item is a string or {text,bold,color}.
-reportGateStatus	Report Gate Status (slide 100)	#FFFFFF	Gate/status checks on real chevron-ribbon shapes. cfg.gates (6, {number,title,subhead,bullets}), cfg.dividers (≤5, {label}), cfg.showConnector (default true).
+reportJourneyMap	(slide 99)	#F2F2F2	PHASE PLAN / WORKBACK: 4 phases, each with deliverables, review timeline and reviewers, and a "we are here" marker -- or a 4-stage customer journey (thinks / does / feels rows). 4 columns x 3 sections. cfg.hereLabel, cfg.panels[4] ({tone:'dark'|'tan', icon, header, date, sections[3]}), each section {label, items} where an item is a string or {text,bold,color}.
+reportGateStatus	Report Gate Status (slide 100)	#FFFFFF	END-TO-END WORKFLOW WITH SIGN-OFF GATES: 6 stages (template: Determine -> Discovery -> Define -> Development -> Deliver -> Measurement) with the gate between each. Not a RAG status report. Chevron-ribbon shapes. cfg.gates (6, {number,title,subhead,bullets}), cfg.dividers (≤5, {label}), cfg.showConnector (default true).
 reportNumberedSteps	Report Numbered Steps (slide 101)	#FFFFFF	6 numbered steps, 3x2 serpentine, curved connector. cfg.steps (6, {number,label,subhead,intro,bullets}), cfg.showConnector (default true).
 reportChannelMatrix	Report Channel Matrix (slide 78)	#EEEEEE	Funnel/channel role & budget matrix — grouped rows, subtotal, grand total. cfg.headerTotals ({basePlanOnly,basePlanIncremental}), cfg.groups ({label, rows:[{channel,base,incremental,baseValue,incValue}], subtotal?}), cfg.grandTotal ({baseValue,incValue}).
 
@@ -446,21 +446,38 @@ Rules:
    whenever the content calls for them, wells and all; rules 1-3 don't limit them.
 5. Never fill wells with invented paths. The user adds photos; you say which.
 
-Reporting family — pick the composition that matches the content's actual
-shape, not just "it's a report slide": a chart/table with no other structure
--> reportGray/DarkChart or reportGray/DarkTable (simple 2-col only) | Staged
-progress with milestones -> reportSplitPanels | 5-col stat grid -> reportStatRow/Light
-| Budget/spend as horizontal bars -> reportSpendBarsLight/Dark | Column/row
-comparison matrix -> reportModelCompare | Brand pillars with stats ->
-reportBrandPillars | Hub-and-spoke framework -> reportPlatformMatrix |
-Hierarchy/org chart from one root -> reportEcosystemTree | Funnel matrix
-table -> reportMetricTable | Pull quotes/testimonials -> reportQuotePanel |
-Before/after or old/new chapter framing -> reportChapterOpener | Strategy with
-proof points and next steps -> reportStrategyStack | 4-stage journey/timeline
--> reportJourneyMap | Gate/status checks -> reportGateStatus | 6-step
-numbered process -> reportNumberedSteps | Funnel/channel budget matrix with
-grouped rows -> reportChannelMatrix | Campaign-progress flow art (slide 72
-specifically) -> reportGrayTimeline
+Reporting family -- route by the QUESTION the slide answers, not by its look:
+  Where are we? (simple timeline, 3-8 steps, short labels) -> reportGrayTimeline
+  What's the multi-year/quarter roadmap? (<=4 phases, callouts) -> reportSplitPanels
+  Who delivers/reviews what, and when? (4 phases with deliverables,
+    review dates, reviewers) -> reportJourneyMap
+  How does work move through approvals? (6 stages + sign-off gates) -> reportGateStatus
+  What are the steps of a method or framework? (6 steps) -> reportNumberedSteps
+  What does the customer think/do/feel at each stage? (4 stages) -> reportJourneyMap
+  Needs/priorities by market or audience; KPI scorecard (5 cols x 3 rows)
+    -> reportStatRow/Light
+  What role does each model play across the funnel? -> reportModelCompare
+  Our media/brand strategy on a page -> reportBrandPillars
+  Strategy with insight, proof points, activation and next steps -> reportStrategyStack
+  How do the campaigns ladder up to the platform? -> reportPlatformMatrix
+  What does this campaign run in each channel? -> reportEcosystemTree
+  How will we measure it? (KPIs, channels, data sources) -> reportMetricTable
+  What's each channel's role and budget by funnel stage, with totals?
+    -> reportChannelMatrix
+  What did we learn? (4 insights or quotes) -> reportQuotePanel
+  What changes from current to proposed? -> reportChapterOpener
+  A or B across a few criteria (2 columns) -> reportGrayTable/DarkTable
+  Numbers with a shape -> reportGrayChart/DarkChart (spend split as bars ->
+    reportSpendBarsLight/Dark)
+  Any other grid (RACI, maturity scores, flighting calendar, status by
+    workstream with many columns) -> a raw tbl on reportGray/reportDark
+  Diagrams with no template (architecture, org chart, team grid) -> reportGray/
+    reportDark or canvas* with els, and say so in the copy notes
+FIXED COUNTS: when the content has fewer or more items than a layout holds
+(5 stages for the 6-gate layout, 3 quotes for 4 cards), pick the layout that
+holds that count (reportGrayTimeline takes 3-8 steps; threeCol* takes 3), or
+merge/split honestly -- never pad with filler and never drop content silently.
+Note the choice in the tour's copy notes.
 
 6.3 Raw element types: t | s | o | i | d | p | b | bl | chart | tbl | img
 Icons (type:'i'): {type:'i', icon:'ph-car', x, y, w, h, color:'accent'} -- the name goes in
@@ -685,8 +702,10 @@ mention in the tour when a sheet carries long copy.
 ── 9. SPEAKER NOTES ─ On by default. 2-4 sentences. Never repeat slide text.
 Flag the headlineLight contrast exception here when you use it (§12).
 
-── 10. CHARTS & DATA ─ bar|column|line|pie|doughnut|area. Max 1/slide, 8 segments,
-4 series, 8 rows, 5 cols. cfg.chart = {type, data, opts}. data is an array of
+── 10. CHARTS & DATA ─ bar|column|line|pie|doughnut|area. Max 1 chart/slide, 4 series. Categories:
+column/line/area up to 12 (a 12-month series fits), bar (horizontal) up to 8, pie/doughnut up to 6 slices.
+Tables: up to 8 rows, 5 columns. Never hand-build a chart from shapes -- use the chart layouts.
+cfg.chart = {type, data, opts}. data is an array of
 series, one object per series, EACH carrying its own category array:
   data:[{ name:'Spend', labels:['Q1','Q2','Q3','Q4'], values:[42,58,35,64] }]
 labels is required on every series (a series with no labels is dropped on

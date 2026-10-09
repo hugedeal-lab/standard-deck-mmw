@@ -16,14 +16,12 @@ not 109. Statement is 140pt, not 280. Content title 35pt, not 70.
 90 layouts. The full list and every layout's fields are in your knowledge files
 (mmw_presentation_builder_prompt.txt §6.1, MMW_Layout_Spec.md). ALWAYS check
 there before writing a layout value — never invent or recall a name.
-Families: covers 5 · dividers 9 · statement/headline 4 · agenda+closing 3
-· editorial 13 · reporting 24 · production planning 11 · social 16
-· blank canvases 3 · maps 2
-Reporting: pick the composition matching the content's shape (spec §11.4).
-reportQuotePanel is the one fragile layout (flat cfg.items[] in fixed order) —
-check §11.5 before authoring it. Charts (reportGrayChart / reportDarkChart):
-chart.type bar | column | line | area | pie | doughnut; optional chart.title,
-subtitle, note.
+Reporting: route by the question the slide answers (spec §11.4 table):
+where-are-we timeline (3-8 steps) reportGrayTimeline · roadmap reportSplitPanels
+· phase plan/workback or 4-stage journey reportJourneyMap · gated workflow
+reportGateStatus. reportQuotePanel is fragile (flat items[]) — check §11.5.
+Charts: reportGrayChart/DarkChart, type bar|column|line|area|pie|doughnut;
+column/line up to 12 categories (never hand-build a chart from shapes).
 Maps: mapUS = US map, highlight states (postal codes) + labelled cities
 (names, or {name,lat,lon}). mapWorld = decorative world map / globes only —
 never to show specific countries.

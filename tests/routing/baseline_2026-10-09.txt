@@ -1,0 +1,78 @@
+R01 | coverLight | Brand-pattern review cover with title and October 2026 date.
+R02 | coverPhoto | Full-bleed vehicle hero with a short campaign title.
+R03 | dividerPhoto | Driver-focused section break benefits from people or lifestyle photography.
+R04 | dividerTides | Blue section divider suits measurement, data, and reporting.
+R05 | headlineDark | Oversized standalone statement with no supporting content.
+R06 | statementSubhead | Core idea headline with one supporting line underneath.
+R07 | tableOfContents | Six agenda entries fit the numbered contents layout.
+R08 | thankYouLight | NO-FIT Closing fits; team contact needs separate text placement.
+R09 | content05 | Single hero photo beside a concept paragraph.
+R10 | content07 | Two side-by-side photos with a headline across the top.
+R11 | content03 | Wide key visual with four supporting crops below.
+R12 | content02 | Wide key visual with four supporting crops above.
+R13 | content06 | Two stacked photos with design rationale in the left column.
+R14 | content08 | Four mixed-ratio images with the tall well in the middle.
+R15 | content01 | Two large diagonally offset photos with title and supporting copy.
+R16 | threeColLight | Three parallel principles, each with its own heading and paragraph.
+R17 | twoRowsLight | Two labeled rows explain awareness building and conversion.
+R18 | reportGray | Open report canvas accommodates the full rationale with custom text placement.
+R19 | reportGrayTimeline | Campaign-progress flow with six milestones and a current-position marker.
+R20 | reportJourneyMap | Four annual phases with activities and a current-position marker.
+R21 | reportJourneyMap | Four stages organize deliverables, review dates, reviewers, and current status.
+R22 | reportGateStatus | Stage ribbons foreground sign-off gates throughout the delivery process.
+R23 | reportGateStatus | Six gates accommodate exit criteria and approval responsibilities.
+R24 | reportNumberedSteps | Six numbered steps present the dealer onboarding framework.
+R25 | reportNumberedSteps | Six sequential steps match the configurator release process.
+R26 | reportGray | NO-FIT Five dated stages require a custom timeline on the report canvas.
+R27 | reportJourneyMap | Four chronological eras pair period labels with short explanatory paragraphs.
+R28 | reportJourneyMap | Four journey columns organize what customers think, do, and feel.
+R29 | reportJourneyMap | Four production phases with a marker on the shoot phase.
+R30 | reportStatRowLight | Five columns across strategic need, priority, and implication bands.
+R31 | reportModelCompare | Five nameplate columns with spanning Build Demand and Capture Demand rows.
+R32 | reportBrandPillars | Intro sections, three objectives, targets, pivots, and expected outcomes.
+R33 | reportPlatformMatrix | Central MABM hub with eight campaign spokes.
+R34 | reportEcosystemTree | Campaign root with eight channel branches containing their tactics.
+R35 | reportMetricTable | Funnel matrix organizes stage outcomes, channels, KPIs, and data sources.
+R36 | reportChannelMatrix | Grouped funnel rows compare budgets with subtotals and grand totals.
+R37 | reportQuotePanel | Four research cards pair insight headlines with short supporting sentences.
+R38 | threeColLight | Three parallel columns give each interview quote equal prominence.
+R39 | reportChapterOpener | Before-and-after framing with an explicit explanation of what changes unlock.
+R40 | reportStrategyStack | Strategy, insight, two proof points, three activation pillars, and next steps.
+R41 | reportGrayTable | Two option columns compare four criteria with supporting bullets.
+R42 | reportGray | Six workstream rows and four responsibility columns fit a custom table.
+R43 | reportGray | Six capability rows and four maturity columns fit a custom table.
+R44 | reportGray | NO-FIT Weekly flighting requires a custom calendar beyond standard table capacity.
+R45 | reportGray | NO-FIT Twelve monthly categories exceed chart capacity; use a custom plot.
+R46 | reportGrayChart | Doughnut chart shows four channels' shares of total spend.
+R47 | reportSpendBarsLight | Six horizontal spend bars with dollar amounts at their tips.
+R48 | reportGray | NO-FIT Twelve months exceed chart capacity; use a custom two-series plot.
+R49 | reportStatRowLight | Five KPI columns with current-quarter and prior-quarter comparison bands.
+R50 | reportGray | NO-FIT Connected pipeline stages require a custom architecture diagram.
+R51 | canvasLight | NO-FIT Eight named team members require a custom team grid.
+R52 | reportGray | NO-FIT Specific international offices need location cards, not the decorative world map.
+R53 | storyboardGrid | Six numbered shot panels with captions.
+R54 | storyboardVO | VO script alongside three stacked key frames.
+R55 | scriptsCompare | Two VO script columns support side-by-side comparison.
+R56 | castingGrid | Four uniform talent-option panels with names.
+R57 | castingTalent | Two talent pairs, each with headshot, full-body image, and height.
+R58 | locationOverview | Five location options in a horizontal scout strip.
+R59 | locationDetail | Three location photos with a sun diagram and supporting details.
+R60 | moodboardProps | Ten prop wells with matching captions.
+R61 | moodboardWardrobe | Four outfit wells plus accessory spaces.
+R62 | moodboardToneManner | Eight-image mosaic establishes the intended mood and visual tone.
+R63 | videoReference | Four-panel reference collage for ads, films, and edit inspiration.
+R64 | metaCarousel4x5 | Meta carousel spec sheet with 4:5 creative frames.
+R65 | metaCarousel1x1 | Meta square carousel spec sheet.
+R66 | metaVideoStatic | Meta 9:16 video and static spec with two phone previews.
+R67 | tiktokVideoStatic | TikTok 9:16 in-feed video and static spec sheet.
+R68 | redditVideoStatic1x1 | Reddit square image and video spec sheet.
+R69 | pinterest2x3 | Pinterest standard 2:3 pin spec sheet.
+R70 | youtubeVideoAd | YouTube 16:9 video ad spec sheet.
+R71 | tiktokDivider | Built-in TikTok platform divider introduces the section.
+R72 | mapUS | Highlight three states and mark Los Angeles, Dallas, and Miami.
+R73 | mapWorld | Decorative world map communicates worldwide reach without specifying countries.
+R74 | threeColLight | Three sprint columns organize goals, scope, and owners.
+R75 | reportGray | NO-FIT Interconnected martech components require a custom connection diagram.
+R76 | reportStatRowLight | Five workstream columns with status and explanatory note bands.
+R77 | reportChapterOpener | Current-versus-future framing explains the operating model transformation.
+R78 | threeColLight | Three recommendation columns pair rationale with expected impact.

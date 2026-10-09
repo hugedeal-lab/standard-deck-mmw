@@ -1163,23 +1163,26 @@ elsewhere in the deck (16 of these 17 take structured objects instead;
 
 | If the slide needs to... | Use | Content shape |
 |---|---|---|
-| Show progress along a timeline/roadmap, "we are here" marker | `reportJourneyMap` (4-column) or `reportSplitPanels` (staged bars) | structured |
-| Compare exactly two things side by side | `reportChapterOpener` (headline pair) or `reportModelCompare` (stat grid) | structured |
-| Lay out 3+ competing options around a hub | `reportPlatformMatrix` | structured |
-| Show a hierarchy / org chart / breakdown from one root | `reportEcosystemTree` | structured |
-| State a strategy with supporting proof points and next steps | `reportStrategyStack` | structured |
-| Introduce a new chapter/section with a clear before/after or old/new framing | `reportChapterOpener` | structured |
-| Show a funnel or matrix table with uneven row/column density | `reportMetricTable` | structured |
-| Show 2-4 pull quotes or testimonials | `reportQuotePanel` | flat items -- fragile, see 11.5.11 |
-| Show a numbered sequence of 6 steps in a 3x2 grid, with a curved connector | `reportNumberedSteps` | structured |
-| Show gate/status checks (pass/fail/at-risk style) with chevron ribbons | `reportGateStatus` | structured |
-| Show 3 brand pillars with supporting metrics/pivot | `reportBrandPillars` | structured |
+| Show where a project or campaign is: 3-8 short milestones, "we are here" | `reportGrayTimeline` | structured (milestones[]) |
+| Show a multi-year/quarter roadmap or brand eras: up to 4 phases with callouts | `reportSplitPanels` | structured |
+| Show a phase plan / workback: 4 phases with deliverables, review dates, reviewers | `reportJourneyMap` | structured |
+| Show a 4-stage customer journey (thinks / does / feels) | `reportJourneyMap` | structured |
+| Show the end-to-end workflow with sign-off gates between 6 stages (not a RAG status report) | `reportGateStatus` | structured |
+| Show the 6 steps of a method or framework | `reportNumberedSteps` | structured |
+| Show needs/priorities by market or audience, a KPI scorecard, or status by workstream (5 columns x 3 rows) | `reportStatRow` / `reportStatRowLight` | structured |
+| Show what role each model/nameplate plays across the funnel | `reportModelCompare` | structured |
+| Put the media or brand strategy on one page (JTBD, objectives, targets, pivot, outcomes) | `reportBrandPillars` | structured |
+| State a strategy with its insight, proof points, activation and next steps | `reportStrategyStack` | structured |
+| Show campaigns laddering up to a platform or big idea (hub and spokes) | `reportPlatformMatrix` | structured |
+| Show one campaign's channel plan: the campaign and up to 8 channels with tactics | `reportEcosystemTree` | structured |
+| Lay out the measurement framework: journey stage, KPIs, channels, data sources | `reportMetricTable` | structured |
+| Show each channel's role and budget by funnel stage, with subtotals and a grand total | `reportChannelMatrix` | structured |
+| Present 4 key insights/findings, or 4 quotes | `reportQuotePanel` | flat items -- fragile, see 11.5.11 |
+| Frame the shift from current to proposed (chapter 1 -> chapter 2) | `reportChapterOpener` | structured |
+| Compare two options across a few criteria (one heading + bullets per side) | `reportGrayTable` / `reportDarkTable` | structured |
 | Show spend or budget allocation as horizontal bars | `reportSpendBarsLight` / `reportSpendBarsDark` | structured |
-| Show a labelled stat row across 3-5 columns with 3 bands of detail | `reportStatRow` / `reportStatRowLight` | structured |
-| Show a simple 2-column table (one heading + bullets per side) | `reportGrayTable` / `reportDarkTable` | structured |
-| Show a funnel/channel matrix with grouped rows, a subtotal and a grand total | `reportChannelMatrix` | structured |
-| Drop in a native chart with no other custom composition | `reportGrayChart` / `reportDarkChart` | generic well |
-| Show the campaign-progress flow art from slide 72 specifically | `reportGrayTimeline` | generic well |
+| Drop in a native chart (column/line/area up to 12 categories, bar up to 8, pie/doughnut up to 6) | `reportGrayChart` / `reportDarkChart` | generic well |
+| Any other grid: RACI, maturity scores, flighting calendar | `reportGray` / `reportDark` with a raw `tbl` | raw els |
 
 If nothing above fits, use the bare `Content Gray` / `Content Dark` chassis
 (§11.1) and keep the composition to chassis + one clearly-labelled block --
@@ -1370,7 +1373,7 @@ a different table object entirely, confirmed against the source directly.)
     to `#5C5C5C` on the dark chassis, where `#262626` would vanish), no
     legend. LibreOffice ignores the hole size and renders a 50% hole; the
     .pptx itself is 75.
-- **`reportGrayTimeline`** (bg `#EEEEEE`, template slide 72 specifically):
+- **`reportGrayTimeline`** (bg `#EEEEEE`, template slide 72; the default for a simple "where are we" timeline of 3-8 milestones):
   `cfg.milestones` (array, ≤8, plain strings placed at fixed marks along the
   campaign-progress flow art) · `cfg.hereLabel` (`false` to hide the gray
   dot-with-white-outline marker).
