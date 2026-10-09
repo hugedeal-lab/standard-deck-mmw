@@ -1221,6 +1221,8 @@
     "threeColDark"
    ],
    "accept": [
+    "reportStatRow",
+    "reportStatRowLight",
     "reportJourneyMap"
    ],
    "reject": [

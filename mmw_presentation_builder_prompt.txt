@@ -252,8 +252,8 @@ statementSubhead	Statement + Subhead (slide 31)	#262626	74pt title + 17.5pt acce
 AGENDA & CLOSING (3)
 Name	Template layout	Background	Use
 tableOfContents	Table of contents	#FFFFFF	Agenda. subtitle(gray)+title(black) heading, numbered list w/ optional sub-bullets, lower-left copy block. See 15.1.
-thankYouLight	Thank You Light	#FFFFFF	Closing, light. title(opt), date(opt).
-thankYouDark	Thank You Dark	#262626	Closing, dark. Accent title #BFA588.
+thankYouLight	Thank You Light	#FFFFFF	Closing, light. title(opt), date(opt). The date line is the closing's text slot (~475 chars at design size): put team contacts, a sign-off or next steps there. Always close on thankYouLight/Dark -- never rebuild a closing on a canvas.
+thankYouDark	Thank You Dark	#262626	Closing, dark. Accent title #BFA588. Same fields as thankYouLight.
 
 EDITORIAL CONTENT (13)
 Name	Template layout	Background	Use
