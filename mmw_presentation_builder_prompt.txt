@@ -648,8 +648,10 @@ bodyGray #808080 | captionGray #5E5E5E | mutedGray #868686 | lt2 #D5D5D5 |
 dividerLight #F5F5F5 | nearBlack #1A1A1A | cardSand #EAE7E0 | ink #221F20 |
 dkGray #535B69 | mdGray #333333 | gray #999999 | ltGray #CCCCCC
 Status: ok #28A745 | warn #E67E00 | bad #C12638
-CAUTION: tokens 'white'/'black' resolve to PURE #FFFFFF/#000000. For MMW Paper
-and MMW Asphalt use 'paper' and 'asphalt'.
+CAUTION: on ELEMENTS, tokens 'white'/'black' resolve to PURE #FFFFFF/#000000. For
+MMW Paper and MMW Asphalt use 'paper' and 'asphalt'. As a slide bgColor, 'white'
+is template white #FFFFFF and 'black' is asphalt #262626 (the template has no
+pure-black slide); paper (#EEEEEE) is a different background -- name it 'paper'.
 
 7.2 Semantic tokens: title | body | sub | muted | accent | accentLt | accentDk |
 accentDim | cardBg | cardBorder | slideBg — plus every neutral above.

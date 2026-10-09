@@ -4953,6 +4953,12 @@ function _hex6(c) {
   // A named palette colour ('paper', 'asphalt', 'lt2'). Only real palette
   // names: resolveColor() answers unknown words with a text colour, which
   // would make a typo a dark background.
+  // 'white' / 'black' follow the template's own backgrounds: white is the
+  // #FFFFFF of 25 layouts (paper #EEEEEE is a different, named colour), and
+  // the template's only dark neutral is asphalt -- it has no #000000 slide.
+  // (PALETTE.white is #EEEEEE for legacy text colours; not used here.)
+  var BG_WORDS = { white:'#FFFFFF', black:'#262626' };
+  if (BG_WORDS[s.toLowerCase()]) return BG_WORDS[s.toLowerCase()];
   var SD = window.StandardDeck;
   if (SD && SD.PALETTE && SD.PALETTE[s] && SD.PALETTE[s] !== s) return _hex6(SD.PALETTE[s]);
   return null;

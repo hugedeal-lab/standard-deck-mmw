@@ -37,6 +37,11 @@ s = run({ layout: 'dividerDark2', title: 'y' });
 check(/backgrounds\/pattern_dark2\.png$/.test(s.bgImage) && s.dark === 1, 'dividerDark2 -> pattern_dark2.png, dark (QA deck used to give it thankyou_texture)');
 s = run({ layout: 'redditDivider' });
 check(/social\/divider_bg_light\.jpg$/.test(s.bgImage), 'redditDivider -> social/ asset path');
+global.window.StandardDeck.PALETTE.white = '#EEEEEE';   // the real engine's legacy value
+s = run({ layout: 'content01', bgColor: 'white' });
+check(s.bgColor === '#FFFFFF' && s.dark === 0, "bgColor 'white' -> template white #FFFFFF, not paper");
+s = run({ layout: 'content01', bgColor: 'Black' });
+check(s.bgColor === '#262626' && s.dark === 1, "bgColor 'black' -> asphalt #262626 (template has no pure-black slide)");
 s = run({ layout: 'twoRowsLight', bgColor: '#123456' });
 check(s.bgColor === '#123456' && s.dark === 1, 'a valid explicit bgColor is kept; dark follows its luminance');
 
