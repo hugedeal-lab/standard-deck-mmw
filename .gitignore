@@ -1,3 +1,8 @@
 __pycache__/
 *.pyc
 tools/build/
+
+# Design Pass pilot material: client decks, reports, designer comments.
+# This repo is PUBLIC (jsDelivr) -- never commit them.
+design-pass/pilot/
+*.pilot.pptx
