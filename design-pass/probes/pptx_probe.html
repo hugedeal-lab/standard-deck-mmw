@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Design Pass Probe</title>
+<style>
+:root{--bg:#EEEEEE;--ink:#262626;--muted:#808080;--accent:#BFA588;--ok:#2E7D32;--bad:#C12638;--card:#FFFFFF}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1C1C1C;--ink:#EEEEEE;--muted:#9A9A9A;--card:#262626}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Arial,Helvetica,sans-serif}
+main{max-width:860px;margin:0 auto;padding:24px 16px 48px}h1{font-size:22px;margin:0 0 4px}p.lead{color:var(--muted);margin:0 0 20px}
+#drop{border:2px dashed var(--accent);border-radius:10px;background:var(--card);padding:32px 16px;text-align:center;cursor:pointer}
+#drop.over{background:rgba(191,165,136,.15)}#drop strong{display:block;font-size:17px;margin-bottom:6px}
+button{font:inherit;background:var(--ink);color:var(--bg);border:0;border-radius:6px;padding:10px 16px;cursor:pointer;margin-top:16px}
+button:disabled{opacity:.4;cursor:default}
+ol#steps{padding-left:20px}ol#steps li{margin:4px 0}.ok{color:var(--ok)}.bad{color:var(--bad)}.pend{color:var(--muted)}
+table{border-collapse:collapse;width:100%;background:var(--card);margin:8px 0 16px}td,th{padding:6px 10px;border-bottom:1px solid rgba(128,128,128,.25);text-align:left;vertical-align:top}
+th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}code{font-size:13px}
+</style></head><body><main>
+<h1>Design Pass probe</h1>
+<p class="lead">Tests whether this page can take a .pptx in, read it, change it and hand a corrected copy back. Nothing leaves your browser.</p>
+<div id="drop" tabindex="0" role="button" aria-label="Choose or drop a PowerPoint file"><strong>Drop a .pptx here, or click to choose</strong><span class="pend">Use a non-confidential deck</span></div>
+<input id="file" type="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
+<h2 style="font-size:16px;margin:24px 0 6px">Checks</h2>
+<ol id="steps">
+<li id="s1" class="pend">1. File received by the page</li>
+<li id="s2" class="pend">2. File opened and read</li>
+<li id="s3" class="pend">3. Fix applied (Calibri / Helvetica → Arial)</li>
+<li id="s4" class="pend">4. Corrected copy downloaded</li>
+</ol>
+<div id="report"></div>
+<button id="fix" disabled>Apply test fix and download</button>
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script>
+var zip=null, fname='deck.pptx';
+function mark(id,ok,msg){var e=document.getElementById(id);e.className=ok?'ok':'bad';e.textContent=e.textContent.replace(/^(\d\.).*$/, '$1 ')+msg;}
+function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
+function top(m,n){return Object.keys(m).sort(function(a,b){return m[b]-m[a]}).slice(0,n).map(function(k){return esc(k)+' ('+m[k]+')'}).join(', ')||'none'}
+async function analyze(z){
+  var slides=Object.keys(z.files).filter(function(p){return /^ppt\/slides\/slide\d+\.xml$/.test(p)});
+  var fonts={},colors={},layouts={},lorem=0,annot=0,pics=0,charts=0;
+  for(var i=0;i<slides.length;i++){
+    var x=await z.file(slides[i]).async('string');
+    (x.match(/typeface="([^"]+)"/g)||[]).forEach(function(m){var f=m.slice(10,-1);if(f.charAt(0)!=='+')fonts[f]=(fonts[f]||0)+1});
+    (x.match(/srgbClr val="([0-9A-Fa-f]{6})"/g)||[]).forEach(function(m){var c='#'+m.slice(13,19).toUpperCase();colors[c]=(colors[c]||0)+1});
+    if(/lorem ipsum/i.test(x))lorem++; if(/CB297B/i.test(x))annot++;
+    pics+=(x.match(/<p:pic>/g)||[]).length; charts+=(x.match(/graphicData uri="[^"]*chart"/g)||[]).length;
+    var rp=slides[i].replace('slides/','slides/_rels/')+'.rels', r=z.file(rp)?await z.file(rp).async('string'):'';
+    var lm=r.match(/Target="\.\.\/slideLayouts\/(slideLayout\d+\.xml)"/);
+    if(lm&&z.file('ppt/slideLayouts/'+lm[1])){var lx=await z.file('ppt/slideLayouts/'+lm[1]).async('string');var nm=(lx.match(/<p:cSld name="([^"]*)"/)||[])[1]||'(unnamed)';layouts[nm]=(layouts[nm]||0)+1}
+  }
+  return {slides:slides,fonts:fonts,colors:colors,layouts:layouts,lorem:lorem,annot:annot,pics:pics,charts:charts};
+}
+async function load(f){
+  if(!f)return; fname=f.name||'deck.pptx'; mark('s1',true,'File received: '+fname+' ('+Math.round(f.size/1024)+' KB)');
+  try{zip=await JSZip.loadAsync(await f.arrayBuffer());var a=await analyze(zip);
+    mark('s2',true,'Opened: '+a.slides.length+' slides');
+    document.getElementById('report').innerHTML='<table><tr><th>What</th><th>Found</th></tr>'+
+      '<tr><td>Slide layouts used</td><td>'+top(a.layouts,12)+'</td></tr>'+
+      '<tr><td>Fonts</td><td>'+top(a.fonts,10)+'</td></tr>'+
+      '<tr><td>Colours (top 12)</td><td>'+top(a.colors,12)+'</td></tr>'+
+      '<tr><td>Pictures / native charts</td><td>'+a.pics+' / '+a.charts+'</td></tr>'+
+      '<tr><td>Slides with "Lorem ipsum"</td><td>'+a.lorem+'</td></tr>'+
+      '<tr><td>Slides with #CB297B template annotations</td><td>'+a.annot+'</td></tr></table>';
+    document.getElementById('fix').disabled=false;
+  }catch(e){mark('s2',false,'Could not open the file: '+e.message)}
+}
+document.getElementById('fix').onclick=async function(){
+  try{var n=0,paths=Object.keys(zip.files).filter(function(p){return /^ppt\/(slides|slideLayouts|slideMasters)\/[^/]+\.xml$/.test(p)});
+    for(var i=0;i<paths.length;i++){var x=await zip.file(paths[i]).async('string');var y=x.replace(/typeface="(Calibri|Calibri Light|Helvetica|Helvetica Neue)"/g,function(){n++;return 'typeface="Arial"'});if(y!==x)zip.file(paths[i],y)}
+    mark('s3',true,'Fix applied: '+n+' font reference'+(n===1?'':'s')+' changed to Arial');
+    var blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
+    var url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=fname.replace(/\.pptx$/i,'')+'_designpass_probe.pptx';
+    document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},3000);
+    mark('s4',true,'Download started: '+a.download+'. Open it in PowerPoint to confirm it opens cleanly.');
+  }catch(e){mark('s3',false,'Failed: '+e.message)}
+};
+var drop=document.getElementById('drop'),inp=document.getElementById('file');
+drop.onclick=function(){inp.click()};drop.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();inp.click()}};
+inp.onchange=function(){load(inp.files[0])};
+['dragenter','dragover'].forEach(function(t){drop.addEventListener(t,function(e){e.preventDefault();drop.classList.add('over')})});
+['dragleave','drop'].forEach(function(t){drop.addEventListener(t,function(e){e.preventDefault();drop.classList.remove('over')})});
+drop.addEventListener('drop',function(e){load(e.dataTransfer.files[0])});
+</script></body></html>
