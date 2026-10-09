@@ -1158,8 +1158,7 @@ below `y:1.80` is 17 distinct, purpose-built compositions plus 5 generic
 Picking by silhouette rather than by name avoids the two most common
 mistakes: reaching for a generic well when a named layout already fits, and
 guessing at a `report*` layout's fields from the flat `items[]` pattern used
-elsewhere in the deck (16 of these 17 take structured objects instead;
-`reportQuotePanel` is the one still flat).
+elsewhere in the deck (all 17 take structured objects).
 
 | If the slide needs to... | Use | Content shape |
 |---|---|---|
@@ -1177,7 +1176,7 @@ elsewhere in the deck (16 of these 17 take structured objects instead;
 | Show one campaign's channel plan: the campaign and up to 8 channels with tactics | `reportEcosystemTree` | structured |
 | Lay out the measurement framework: journey stage, KPIs, channels, data sources | `reportMetricTable` | structured |
 | Show each channel's role and budget by funnel stage, with subtotals and a grand total | `reportChannelMatrix` | structured |
-| Present 4 key insights/findings, or 4 quotes | `reportQuotePanel` | flat items -- fragile, see 11.5.11 |
+| Present up to 4 key insights/findings, or quotes | `reportQuotePanel` | structured (`insights[]`) |
 | Frame the shift from current to proposed (chapter 1 -> chapter 2) | `reportChapterOpener` | structured |
 | Compare two options across a few criteria (one heading + bullets per side) | `reportGrayTable` / `reportDarkTable` | structured |
 | Show spend or budget allocation as horizontal bars | `reportSpendBarsLight` / `reportSpendBarsDark` | structured |
@@ -1254,16 +1253,15 @@ comments on the function; this entry exists so the layout is at least
 indexed here.
 
 **11.5.11 `reportQuotePanel`** (slide 96, bg `#EFF0F3`, template `Report Quote Panel (slide 96)`)
-Four quote cards in a 2x2 grid, each with a tan eyebrow, a bold headline and
-grey body copy. **Fragile mapping, not yet restructured**: card 1's eyebrow
-is `cfg.tag` and headline is `cfg.subhead`/`cfg.subtitle` (the chassis
-fields, reused); every other field for all 4 cards is a flat `cfg.items[]`
-slot in this exact order -- `[0]` card2 eyebrow, `[1]` card2 headline, `[2]`
-card1 body, `[3]` card2 body, `[4]` card3 eyebrow, `[5]` card4 eyebrow, `[6]`
-card3 headline, `[7]` card4 headline, `[8]` card3 body, `[9]` card4 body.
-Get this order wrong and content silently lands on the wrong card. Treat as
-a candidate for the same structured-object treatment as the rest of this
-section.
+Up to four insight (or quote) cards in a 2x2 grid, each with a tan eyebrow, a
+bold headline and grey body copy. `cfg.title` is the large heading above.
+`cfg.insights`: up to 4 `{label, headline, body}`, left-to-right then
+top-to-bottom; `label` defaults to the template's `INSIGHT · #n`; a string is
+taken as the headline; cards with no content are omitted (3 insights leave no
+empty box). The old flat form still renders: card 1 = `tag` / `subhead` /
+`items[2]`; card 2 = `items[0]` / `items[1]` / `items[3]`; card 3 =
+`items[4]` / `items[6]` / `items[8]`; card 4 = `items[5]` / `items[7]` /
+`items[9]` (restructured 2026-10).
 
 **11.5.12 `reportChapterOpener`** (slide 97, bg `#EEEEEE`) -- see 11.5.10; the
 full field reference is `deck-layouts.js`'s code comments:

@@ -1630,29 +1630,41 @@ function layout_reportMetricTable(cfg) {
 // Source slide: 96   Background: solid #EFF0F3
 // Set slideData.bgColor = "#EFF0F3" (engine honours bgColor on export + preview).
 // ==========================================================
+// cfg.title: the large heading over the cards.
+// cfg.insights: up to 4 cards, 2x2, read left-to-right then top-to-bottom,
+//   each {label, headline, body}. label is the small tan eyebrow (defaults
+//   to the template's "INSIGHT \u00b7 #n"); headline the bold line; body one
+//   or two sentences. Strings are taken as the headline. Cards without
+//   content are left out, so 3 insights don't leave an empty box.
+// Old flat form (still accepted): card 1 = tag / subhead / items[2];
+//   card 2 = items[0] / items[1] / items[3]; card 3 = items[4] / items[6] /
+//   items[8]; card 4 = items[5] / items[7] / items[9].
 function layout_reportQuotePanel(cfg) {
   var els = [];
   els.push({ type:'t', text:cfg.title || "", x:0.78, y:2.45, w:10.61, h:1.14, font:'H', size:35, color:'bodyGray', valign:'bottom', caps:true, lineSpacing:0.8, charSpacing:-0.7, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  els.push({ type:'s', x:0.82, y:3.8, w:5.38, h:1.52, fill:'white' });
-  els.push({ type:'s', x:0.82, y:3.8, w:0.06, h:1.52, fill:'accentDim' });
-  els.push({ type:'s', x:6.41, y:3.8, w:5.38, h:1.52, fill:'white' });
-  els.push({ type:'s', x:6.41, y:3.8, w:0.06, h:1.52, fill:'accentDim' });
-  if (cfg.tag) els.push({ type:'t', text:cfg.tag || '', x:1, y:3.87, w:5.11, h:0.34, font:'B', size:8.5, color:'accentDim', bold:true, valign:'middle', caps:false, lineSpacing:1, charSpacing:1.41, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[0]) || "", x:6.6, y:3.87, w:5.11, h:0.34, font:'B', size:8.5, color:'accentDim', bold:true, valign:'middle', caps:false, lineSpacing:1, charSpacing:1.41, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  if ((cfg.subhead || cfg.subtitle)) els.push({ type:'t', text:cfg.subhead || cfg.subtitle || '', x:1, y:4.16, w:5.11, h:0.42, font:'B', size:13.5, color:'nearBlack', bold:true, valign:'middle', caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[1]) || "", x:6.6, y:4.16, w:5.11, h:0.42, font:'B', size:13.5, color:'nearBlack', bold:true, valign:'middle', caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[2]) || "", x:1, y:4.57, w:5.11, h:0.52, font:'B', size:10, color:'#4D4D4D', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[3]) || "", x:6.6, y:4.57, w:5.11, h:0.52, font:'B', size:10, color:'#4D4D4D', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'s', x:0.82, y:5.45, w:5.38, h:1.52, fill:'white' });
-  els.push({ type:'s', x:0.82, y:5.45, w:0.06, h:1.52, fill:'accentDim' });
-  els.push({ type:'s', x:6.41, y:5.45, w:5.38, h:1.52, fill:'white' });
-  els.push({ type:'s', x:6.41, y:5.45, w:0.06, h:1.52, fill:'accentDim' });
-  els.push({ type:'t', text:(cfg.items && cfg.items[4]) || "", x:1, y:5.51, w:5.11, h:0.34, font:'B', size:8.5, color:'accentDim', bold:true, valign:'middle', caps:false, lineSpacing:1, charSpacing:1.41, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[5]) || "", x:6.6, y:5.51, w:5.11, h:0.34, font:'B', size:8.5, color:'accentDim', bold:true, valign:'middle', caps:false, lineSpacing:1, charSpacing:1.41, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[6]) || "", x:1, y:5.81, w:5.11, h:0.42, font:'B', size:13.5, color:'nearBlack', bold:true, valign:'middle', caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[7]) || "", x:6.6, y:5.81, w:5.11, h:0.42, font:'B', size:13.5, color:'nearBlack', bold:true, valign:'middle', caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[8]) || "", x:1, y:6.21, w:5.11, h:0.52, font:'B', size:10, color:'#4D4D4D', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
-  els.push({ type:'t', text:(cfg.items && cfg.items[9]) || "", x:6.6, y:6.21, w:5.11, h:0.52, font:'B', size:10, color:'#4D4D4D', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.104,t:0.104,r:0.104,b:0.104} });
+  var cards, it = cfg.items || [], named = Array.isArray(cfg.insights);
+  if (named) {
+    cards = cfg.insights.slice(0, 4).map(function (c, n) {
+      if (typeof c === 'string') c = { headline:c };
+      c = c || {};
+      var h = c.headline || c.title || c.quote || '', b = c.body || c.text || c.copy || '';
+      return { label:(h || b) ? (c.label || c.eyebrow || 'INSIGHT \u00b7 #' + (n + 1)) : '', headline:h, body:b };
+    });
+  } else {
+    cards = [{ label:cfg.tag, headline:cfg.subhead || cfg.subtitle, body:it[2] }, { label:it[0], headline:it[1], body:it[3] },
+             { label:it[4], headline:it[6], body:it[8] }, { label:it[5], headline:it[7], body:it[9] }];
+  }
+  var BX = [0.82, 6.41], TX = [1, 6.6], BY = [3.8, 5.45], EY = [3.87, 5.51], HY = [4.16, 5.81], DY = [4.57, 6.21];
+  var IN = {l:0.104,t:0.104,r:0.104,b:0.104};
+  for (var n = 0; n < 4; n++) {
+    var c = cards[n] || {}, col = n % 2, row = n < 2 ? 0 : 1;
+    if (named && !(c.headline || c.body)) continue;
+    els.push({ type:'s', x:BX[col], y:BY[row], w:5.38, h:1.52, fill:'white' });
+    els.push({ type:'s', x:BX[col], y:BY[row], w:0.06, h:1.52, fill:'accentDim' });
+    els.push({ type:'t', text:c.label || '', x:TX[col], y:EY[row], w:5.11, h:0.34, font:'B', size:8.5, color:'accentDim', bold:true, valign:'middle', caps:false, lineSpacing:1, charSpacing:1.41, insets:IN });
+    els.push({ type:'t', text:c.headline || '', x:TX[col], y:HY[row], w:5.11, h:0.42, font:'B', size:13.5, color:'nearBlack', bold:true, valign:'middle', caps:false, lineSpacing:1, insets:IN });
+    els.push({ type:'t', text:c.body || '', x:TX[col], y:DY[row], w:5.11, h:0.52, font:'B', size:10, color:'#4D4D4D', valign:'middle', caps:false, lineSpacing:1, insets:IN });
+  }
   return els;
 }
 
@@ -4524,6 +4536,7 @@ var LAYOUT_KEYS = {
     "tag"
   ],
   "reportQuotePanel": [
+    "insights",
     "items",
     "subhead",
     "subtitle",

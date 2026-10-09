@@ -96,6 +96,11 @@ const SPEND_BARS_SAMPLE = {
 };
 
 const SAMPLE_OVERRIDE = {
+  reportQuotePanel: { title:'What we learned', items:undefined, tag:undefined, subhead:undefined, insights:[
+    { headline:'Safety leads consideration', body:'Shoppers rank IIHS ratings above price when building a shortlist.' },
+    { headline:'Dealers shape the last mile', body:'Most visits start online; most decisions finish on the lot.' },
+    { headline:'Hybrid curiosity is high', body:'Two in three CX-50 intenders ask about the hybrid first.' },
+    { headline:'Design is the tiebreaker', body:'When safety and price are equal, design decides.' }] },
   castingTalent: { items:[{ name:'Talent A', height:"5'8\"" }, { name:'Talent B' }] },
   reportStrategyStack: {
     tag:'STRATEGY', title:'Lead with craft', intro:'How the plan earns consideration this year.',

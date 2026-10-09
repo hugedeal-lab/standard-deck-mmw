@@ -126,10 +126,9 @@ it measures its own list (prompt section 15.1).
 | `reportChannelMatrix` | `groups[].subtotal.incValue` | 70 |
 | `reportChannelMatrix` | `grandTotal.baseValue` | 60 |
 | `reportChannelMatrix` | `grandTotal.incValue` | 70 |
-| `reportQuotePanel` | `items[]` | 55/85 |
-| `reportQuotePanel` | `subhead` | 55/160 |
-| `reportQuotePanel` | `tag` | 65/160 |
 | `reportQuotePanel` | `title` | 65/220 |
+| `reportQuotePanel` | `insights[].headline` | 55/160 |
+| `reportQuotePanel` | `insights[].body` | 230/425 |
 | `reportChapterOpener` | `items[]` | 300/600+ |
 | `reportChapterOpener` | `subhead` | 110/140 |
 | `reportChapterOpener` | `tag` | 95/280 |

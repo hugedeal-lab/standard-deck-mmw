@@ -288,11 +288,10 @@ reportGrayTimeline	Content Gray	#EEEEEE	WHERE WE ARE: project or campaign progre
 
 REPORTING — STRUCTURED COMPOSITIONS (17)
 These manage their own internal positioning — supply the structured fields
-below, not raw els. Full field reference for every one of these lives in
-deck-layouts.js as code comments; this table is the index,
-not the complete spec. When a slide needs one of these, check the field
-list here before writing content, and if a field name doesn't ring a bell,
-open the code comment rather than guessing from another layout's pattern.
+below, not raw els. This table is the COMPLETE field reference -- you cannot
+read the engine code, so use only the fields listed for that layout ("Same as
+X" rows take X's fields). Never borrow a field name from another layout; an
+unknown field is ignored with a console warning.
 
 Name	Template layout	Background	Use + key fields
 reportSplitPanels	Report Split Panels (slide 73)	#FFFFFF	ROADMAP: up to 4 phases (years, quarters, eras) as segments of one pill bar, up to 4 callouts above/below, "we are here" marker. Multi-year roadmaps and brand eras. cfg.stages (≤4), cfg.milestones (≤4, {header,copy}), cfg.hereLabel.
@@ -304,8 +303,8 @@ reportModelCompare	Report Model Compare (slide 89)	#262626	PORTFOLIO ROLES: what
 reportBrandPillars	Report Brand Pillars (slide 90)	#262626	MEDIA/BRAND STRATEGY ON A PAGE (template: media jobs-to-be-done -> objectives -> targets -> pivot -> outcomes; no statistics needed). 2 intro sections + 3 pillar boxes + 3-col block with optional pivot row. cfg.sections (≤2), cfg.pillars (≤3, {header,copy}), cfg.rowLabels (≤4), cfg.channels (≤3 -- ONE short word each, like "Paid"/"Owned"/"Earned"; these are compact top-right badges, not phrases), cfg.targets/cfg.outcomes (≤3 each), cfg.pivot ({label,copy}).
 reportPlatformMatrix	Report Platform Matrix (slide 91)	#EFF0F3	CAMPAIGN ARCHITECTURE: a platform or big idea at the hub with up to 8 campaigns/workstreams around it. Hub disc + up to 8 spokes in a ring + up to 6 category chips down the left. cfg.hub ({label, name -- name is 1 short word/acronym, it sits big in a 1.4in disc}). cfg.spokes (≤8, {label, copy}): label is the SHORT text inside the spoke circle (≤2 words); copy is ONE short sentence for the dotted card beside it -- the card is only 2.2x1.0in, longer copy auto-shrinks toward 4.5pt. cfg.categories (≤6, {code, text}): code is a 3-letter tag in the chip, text is a short phrase beside it.
 reportEcosystemTree	Report Ecosystem Tree (slide 92)	#EFF0F3	CAMPAIGN/CHANNEL PLAN: one campaign (root + key facts: models, budget, launch) branching to up to 8 channels, each with its tactics. Not an org chart. Root node + dotted fact panel + up to 8 branch cards. cfg.title, cfg.root ({facts≤6, {key,value}}), cfg.branches (≤8), cfg.cornerLeft/cornerRight (optional, {icon,label,text}).
-reportMetricTable	(slide 95)	#262626	MEASUREMENT FRAMEWORK / KPI PLAN: journey stage -> outcome KPI -> channels -> weekly KPIs and data sources -> monthly KPIs and data sources. 7 fixed columns. cfg.columns, each {header, tone, stroke, noStroke, groups}. groups is the 3 funnel bands, each {label?, items:[cell,...]} where a cell is a string or {text,tone}. Band heights auto-split evenly when unset.
-reportQuotePanel	Report Quote Panel (slide 96)	#EFF0F3	KEY INSIGHTS or findings (template cards read "INSIGHT · #1-4"), or 4 quotes: 4 cards, 2x2. FRAGILE flat-slot mapping — card1 eyebrow/headline are cfg.tag/cfg.subhead, everything else is cfg.items[0..9] in a fixed order. Check the code comment before writing content; getting the order wrong silently misplaces it.
+reportMetricTable	(slide 95)	#262626	MEASUREMENT FRAMEWORK / KPI PLAN: journey stage -> outcome KPI -> channels -> weekly KPIs and data sources -> monthly KPIs and data sources. 7 fixed columns. cfg.columns, each {header, tone, stroke, noStroke, groups}. groups is the 3 funnel bands, each {label?, items:[cell,...]} where a cell is a string or {text,tone}. Band heights auto-split evenly when unset. cfg.date (optional) is the small date line.
+reportQuotePanel	Report Quote Panel (slide 96)	#EFF0F3	KEY INSIGHTS or findings, or quotes: up to 4 cards, 2x2. cfg.title (large heading above), cfg.insights (<=4, read left-to-right then top-to-bottom, each {label?, headline, body}): label is the small tan eyebrow (default "INSIGHT · #n"; for quotes use the speaker, e.g. "DEALER · DALLAS"), headline the bold line, body one or two sentences. Fewer than 4 leaves the unused cards out.
 reportChapterOpener	(slide 97)	#EEEEEE	Before/after or old/new framing pair. cfg.text2/text3 (eyebrows), cfg.text4/cfg.subhead (headline pair — NOT cfg.title, that's the fixed decorative arrow), cfg.text5/text6 (body), cfg.items[1]/items[2] (STATUS / WHAT THIS UNLOCKS).
 reportStrategyStack	(slide 98)	#EEEEEE	Strategy with proof points and next steps. cfg.badges[2] ({sub,body}), cfg.pointOne/pointTwo/pointBody, cfg.insightHead/insightBody, cfg.panels[3] ({next,subhead,sections|bullets}), cfg.activationLabel/activationBody, cfg.footers[3] ({head,body}).
 reportJourneyMap	(slide 99)	#F2F2F2	PHASE PLAN / WORKBACK: 4 phases, each with deliverables, review timeline and reviewers, and a "we are here" marker -- or a 4-stage customer journey (thinks / does / feels rows). 4 columns x 3 sections. cfg.hereLabel, cfg.panels[4] ({tone:'dark'|'tan', icon, header, date, sections[3]}), each section {label, items} where an item is a string or {text,bold,color}.
@@ -398,8 +397,7 @@ Name	Template layout	Background	Use
 mapUS	(map slide)	#EEEEEE or #262626	US map with highlighted states and labelled locations. cfg.style 'solid' (filled states) | 'dots' (dot grid). cfg.highlight: states as postal codes or names (['CA','TX'] / ['California']) -> Spark tan. cfg.cities: ['Irvine', 'Dallas'] or {name, state?, note?, label?} -- ~770 US cities built in; for anywhere else pass {name, lat, lon}. cfg.legend: label for the tan highlight. cfg.marker 'pin'|'dot' (default: template pins, auto-switching to dots when cities crowd). Labels place themselves; list cities in priority order. Defaults to the light chassis; for dark pass dark:1, bgColor:'#262626'. Unknown states/cities log a warning and are skipped -- never invent coordinates.
 mapWorld	(map slide)	#262626 (default)	Decorative world map -- NO country boundaries, so never use it to show specific countries or markets. cfg.style 'solid' | 'dots' | 'globes' (cfg.globes: any of 'americas','atlantic','europe-africa','asia-pacific', default all four; cfg.captions labels them). For "global / worldwide / every market" framing only. dark:0 + light bgColor switches to the light variants.
 Names are case-sensitive. The exact template names ("Cover Dark", "Moodboard "
-with its trailing space, "Title & Bullets", "Meta_Video&Static") also resolve,
-so this prompt and MMW_Layout_Spec.md agree.
+with its trailing space, "Title & Bullets", "Meta_Video&Static") also resolve.
 
 6.2 Content -> Layout
 Brand pattern cover -> coverLight/coverDark | Photography cover -> coverPhoto |
@@ -531,7 +529,7 @@ reportSplitPanels 4 milestones max | reportStatRow/Light 5 columns x 3
 sections max | reportSpendBarsLight/Dark 6 bars max | reportBrandPillars 3
 pillars / 4 row labels / 3 channels / 3 targets+outcomes max | reportPlatformMatrix
 8 spokes / 6 categories max | reportEcosystemTree 8 branches max |
-reportMetricTable 7 columns (fixed) | reportQuotePanel 4 cards (fixed) |
+reportMetricTable 7 columns (fixed) | reportQuotePanel up to 4 cards |
 reportStrategyStack 2 badges / 3 panels / 3 footers (fixed) | reportJourneyMap
 4 panels x 3 sections (fixed) | reportGateStatus 6 gates / 5 dividers max |
 reportNumberedSteps 6 steps (fixed) | reportChannelMatrix group/row counts are
@@ -610,7 +608,7 @@ reportPlatformMatrix: title 90 | hub.label 90 | hub.name 600+ | spokes[].label 1
 reportEcosystemTree: title 90/130 | cornerLeft.label 16/34 | cornerLeft.text 400/500 | cornerRight.label 16/34 | cornerRight.text 400/500 | root.label 85/100 | root.facts[].key 90 | root.facts[].value 90 | branches[].label 32/55 | branches[].items[].text 475 | branches[].items[].subs[] 600+ | branches[].items[] 600+
 reportMetricTable: date 45/85 | tag 95/280
 reportChannelMatrix: tag 95/280 | title 45 | intro 375/600+ | headerTotals.basePlanOnly 60 | headerTotals.basePlanIncremental 70 | groups[].label 140 | groups[].rows[].channel 65 | groups[].rows[].base 250 | groups[].rows[].incremental 270 | groups[].rows[].baseValue 60 | groups[].rows[].incValue 70 | groups[].subtotal.baseValue 60 | groups[].subtotal.incValue 70 | grandTotal.baseValue 60 | grandTotal.incValue 70
-reportQuotePanel: items[] 55/85 | subhead 55/160 | tag 65/160 | title 65/220
+reportQuotePanel: title 65/220 | insights[].headline 55/160 | insights[].body 230/425
 reportChapterOpener: items[] 300/600+ | subhead 110/140 | tag 95/280 | text 45 | text2 150/230 | text3 200/230
 reportStrategyStack: title 45 | intro 230/550 | badges[].sub 20/55 | badges[].body 30/90 | pointOne 34/90 | pointTwo 32/85 | pointBody 170/350 | insightHead 75/220 | insightBody 210/375 | panels[].next 65/130 | panels[].subhead 60/120 | panels[].sections[].head 34/45 | panels[].sections[].body 160 | panels[].bullets[] 105 | activationLabel 90/230 | activationBody 140/375 | footers[].head 40/105 | footers[].body 170/325
 reportJourneyMap: tag 95/280 | title 45 | panels[].header 8 | panels[].date 8 | panels[].sections[].label 24/65 | panels[].sections[].items[] 70 | panels[].sections[].items[].text 130
