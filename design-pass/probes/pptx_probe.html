@@ -1,6 +1,6 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Design Pass Probe</title>
+<title>Design Pass Probe v2</title>
 <style>
 :root{--bg:#EEEEEE;--ink:#262626;--muted:#808080;--accent:#BFA588;--ok:#2E7D32;--bad:#C12638;--card:#FFFFFF}
 @media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1C1C1C;--ink:#EEEEEE;--muted:#9A9A9A;--card:#262626}}
@@ -10,13 +10,14 @@ main{max-width:860px;margin:0 auto;padding:24px 16px 48px}h1{font-size:22px;marg
 #drop.over{background:rgba(191,165,136,.15)}#drop strong{display:block;font-size:17px;margin-bottom:6px}
 button{font:inherit;background:var(--ink);color:var(--bg);border:0;border-radius:6px;padding:10px 16px;cursor:pointer;margin-top:16px}
 button:disabled{opacity:.4;cursor:default}
-ol#steps{padding-left:20px}ol#steps li{margin:4px 0}.ok{color:var(--ok)}.bad{color:var(--bad)}.pend{color:var(--muted)}
+ol#steps{padding-left:0;list-style:none}#log{font:12px/1.5 Menlo,Consolas,monospace;background:var(--card);padding:10px;white-space:pre-wrap;max-height:220px;overflow:auto}label.pick{display:inline-block;margin-top:14px}ol#steps li{margin:4px 0}.ok{color:var(--ok)}.bad{color:var(--bad)}.pend{color:var(--muted)}
 table{border-collapse:collapse;width:100%;background:var(--card);margin:8px 0 16px}td,th{padding:6px 10px;border-bottom:1px solid rgba(128,128,128,.25);text-align:left;vertical-align:top}
 th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}code{font-size:13px}
 </style></head><body><main>
-<h1>Design Pass probe</h1>
+<h1>Design Pass probe <span style="font-size:13px;color:var(--muted)">v2</span></h1>
 <p class="lead">Tests whether this page can take a .pptx in, read it, change it and hand a corrected copy back. Nothing leaves your browser.</p>
 <div id="drop" tabindex="0" role="button" aria-label="Choose or drop a PowerPoint file"><strong>Drop a .pptx here, or click to choose</strong><span class="pend">Use a non-confidential deck</span></div>
+<label class="pick">Or use the plain file picker: <input id="file2" type="file" accept=".pptx"></label>
 <input id="file" type="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
 <h2 style="font-size:16px;margin:24px 0 6px">Checks</h2>
 <ol id="steps">
@@ -27,10 +28,16 @@ th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--mute
 </ol>
 <div id="report"></div>
 <button id="fix" disabled>Apply test fix and download</button>
+<h2 style="font-size:16px;margin:24px 0 6px">Event log</h2>
+<div id="log">Waiting for events...</div>
+<p class="lead" style="margin-top:8px">If something fails, screenshot this log.</p>
 </main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
 <script>
-var zip=null, fname='deck.pptx';
+var zip=null, fname='deck.pptx', logN=0;
+function log(m){var e=document.getElementById('log');if(!logN)e.textContent='';logN++;e.textContent+=new Date().toISOString().slice(11,19)+'  '+m+'\n';e.scrollTop=e.scrollHeight;}
+log('Page loaded. In iframe: '+(window.self!==window.top)+'. JSZip loaded: '+(typeof JSZip!=='undefined'));
+window.addEventListener('error',function(e){log('Page error: '+e.message)});
 function mark(id,ok,msg){var e=document.getElementById(id);e.className=ok?'ok':'bad';e.textContent=e.textContent.replace(/^(\d\.).*$/, '$1 ')+msg;}
 function esc(s){return String(s).replace(/[&<>]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;'}[c]})}
 function top(m,n){return Object.keys(m).sort(function(a,b){return m[b]-m[a]}).slice(0,n).map(function(k){return esc(k)+' ('+m[k]+')'}).join(', ')||'none'}
@@ -50,7 +57,8 @@ async function analyze(z){
   return {slides:slides,fonts:fonts,colors:colors,layouts:layouts,lorem:lorem,annot:annot,pics:pics,charts:charts};
 }
 async function load(f){
-  if(!f)return; fname=f.name||'deck.pptx'; mark('s1',true,'File received: '+fname+' ('+Math.round(f.size/1024)+' KB)');
+  if(!f){log('No file in the event');return;}
+  log('Reading '+f.name+' ('+f.size+' bytes)'); fname=f.name||'deck.pptx'; mark('s1',true,'File received: '+fname+' ('+Math.round(f.size/1024)+' KB)');
   try{zip=await JSZip.loadAsync(await f.arrayBuffer());var a=await analyze(zip);
     mark('s2',true,'Opened: '+a.slides.length+' slides');
     document.getElementById('report').innerHTML='<table><tr><th>What</th><th>Found</th></tr>'+
@@ -61,7 +69,7 @@ async function load(f){
       '<tr><td>Slides with "Lorem ipsum"</td><td>'+a.lorem+'</td></tr>'+
       '<tr><td>Slides with #CB297B template annotations</td><td>'+a.annot+'</td></tr></table>';
     document.getElementById('fix').disabled=false;
-  }catch(e){mark('s2',false,'Could not open the file: '+e.message)}
+  }catch(e){mark('s2',false,'Could not open the file: '+e.message);log('Open failed: '+e.message)}
 }
 document.getElementById('fix').onclick=async function(){
   try{var n=0,paths=Object.keys(zip.files).filter(function(p){return /^ppt\/(slides|slideLayouts|slideMasters)\/[^/]+\.xml$/.test(p)});
@@ -70,13 +78,16 @@ document.getElementById('fix').onclick=async function(){
     var blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
     var url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=fname.replace(/\.pptx$/i,'')+'_designpass_probe.pptx';
     document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},3000);
-    mark('s4',true,'Download started: '+a.download+'. Open it in PowerPoint to confirm it opens cleanly.');
-  }catch(e){mark('s3',false,'Failed: '+e.message)}
+    log('Download triggered: '+a.download);mark('s4',true,'Download started: '+a.download+'. Open it in PowerPoint to confirm it opens cleanly.');
+  }catch(e){mark('s3',false,'Failed: '+e.message);log('Fix/download failed: '+e.message)}
 };
 var drop=document.getElementById('drop'),inp=document.getElementById('file');
-drop.onclick=function(){inp.click()};drop.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();inp.click()}};
-inp.onchange=function(){load(inp.files[0])};
-['dragenter','dragover'].forEach(function(t){drop.addEventListener(t,function(e){e.preventDefault();drop.classList.add('over')})});
+drop.onclick=function(){log('Drop box clicked: opening file picker');try{inp.click()}catch(e){log('File picker blocked: '+e.message)}};drop.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();inp.click()}};
+inp.onchange=function(){log('Hidden picker: '+inp.files.length+' file(s)');load(inp.files[0])};
+var inp2=document.getElementById('file2');inp2.onchange=function(){log('Plain picker: '+inp2.files.length+' file(s)');load(inp2.files[0])};
+var dragSeen={};
+['dragenter','dragover'].forEach(function(t){drop.addEventListener(t,function(e){e.preventDefault();drop.classList.add('over');if(!dragSeen[t]){dragSeen[t]=1;log(t+' reached the page (types: '+Array.prototype.join.call((e.dataTransfer&&e.dataTransfer.types)||[],', ')+')')}})});
+document.addEventListener('dragover',function(e){e.preventDefault()});document.addEventListener('drop',function(e){e.preventDefault();log('drop landed outside the box')});
 ['dragleave','drop'].forEach(function(t){drop.addEventListener(t,function(e){e.preventDefault();drop.classList.remove('over')})});
-drop.addEventListener('drop',function(e){load(e.dataTransfer.files[0])});
+drop.addEventListener('drop',function(e){var n=e.dataTransfer?e.dataTransfer.files.length:-1;log('drop reached the box: '+n+' file(s)');if(n>0)load(e.dataTransfer.files[0]);else log('The drop carried no file -- the host is likely stripping it.')});
 </script></body></html>
