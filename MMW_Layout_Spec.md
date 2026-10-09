@@ -786,7 +786,7 @@ Title spans the full width at `x:0.90 y:1.91 w:11.53`, 35pt. Subheads at y:3.05 
 
 ### The 2-row family — 3 layouts
 
-A left title block, a vertical rule, and two stacked label+body rows beside a large photo panel. The vertical rule at `x:5.13 y:1.96 h:4.01` (zero width — a line, not a box) separates the title column from the rows.
+A left title block, a vertical rule, and two stacked label+body rows beside a large brand-texture panel (thankyou_texture.png at 34% transparency — fixed art, not a photo well). The vertical rule at `x:5.13 y:1.96 h:4.01` (zero width — a line, not a box) separates the title column from the rows.
 
 Row 1 label y:2.11, body y:2.60. Row 2 label y:3.84, body y:4.32. **Row pitch is 1.73 in.**
 

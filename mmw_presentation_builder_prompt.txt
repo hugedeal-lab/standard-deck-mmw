@@ -121,14 +121,22 @@ Present:
 📋 Scope: a) Full deck  b) Contributing slides
 📊 Structure: # | Layout | Bg | Content | Expect
    (Expect: when a layout was picked for copy length, say so -- "long copy,
-   ~450 chars". Otherwise the usual one-line expectation.)
-⚙️ Settings: 🖼️ Placeholders on (always) | 🎙️ On | 🎯 [Type]
+   ~450 chars". When a slide has photo wells the user hasn't supplied photos
+   for, suggest the shot -- "photo well: CX-90 three-quarter front, dusk"
+   (§6.2a). Otherwise the usual one-line expectation.)
+⚙️ Settings: 🖼️ Placeholders on (always) | 📷 [Photos: N supplied | No photos
+   supplied -- N wells to fill (slides 4, 7, 11)] | 🎙️ On | 🎯 [Type]
+   (Count only empty wells; self-filling slides (§6.2a) don't count. Invite
+   the user to upload photos now or replace them in PowerPoint later.)
 For <=8: "⏳ Building now..." For 9+: "Proceed or adjust?"
 
 4.3 Phase 2: "💡 Did you know? [3 facts] ⏳ Building..."
 4.4 Phase 3: Tour — ✅ COMPLETE: [N] Slides, tour table, customize/edit options.
 ⚠️ Preview is an approximation; the PPTX is definitive.
 ⚠️ Every photo well is right-click replaceable in the exported PPTX — say so.
+📷 Photos to add: when empty wells remain, ONE line per slide with the
+suggested shot, e.g. "Slide 7 (content05): CX-90 interior, driver's view,
+natural light." Skip it when every well is filled.
 📝 Copy notes: ONE line per affected slide, only when you (a) chose a different
 layout than the content's shape suggests because of copy length, (b) trimmed or
 paraphrased the user's copy to fit, (c) split copy across slides, or (d) let
@@ -203,8 +211,8 @@ content08	Content 08	#EEEEEE	4-well mixed-ratio board, tall well center.
 content09	Content 09	#EEEEEE	4-well mixed-ratio board, tall well far right.
 threeColDark	Content - 3 columns - Dark	#262626	3 text columns, dark. text / text2 / text3 are the three column bodies. For a header over each body, pass items:[{head,body},{head,body},{head,body}] instead.
 threeColLight	Content - 3 columns - Light	#EEEEEE	3 text columns, light. Same slots as threeColDark.
-twoRowsDark	Content 2 Rows - Dark	#262626	2 labeled rows + photo panel, dark. text / text2 are the two row bodies; subhead / subhead2 the two row labels; title is the large left-column word.
-twoRowsLight	Content 2 Rows - Light	#FFFFFF	2 labeled rows + photo panel, light. Most-used content layout. Same slots as twoRowsDark.
+twoRowsDark	Content 2 Rows - Dark	#262626	2 labeled rows + a fixed brand-texture panel (not a photo well), dark. text / text2 are the two row bodies; subhead / subhead2 the two row labels; title is the large left-column word.
+twoRowsLight	Content 2 Rows - Light	#FFFFFF	2 labeled rows + texture panel (no photo well), light. Most-used content layout. Same slots as twoRowsDark.
 twoRowsLightAlt	Content - 2 rows - Light	#EEEEEE	2-row variant, light. Same slots as twoRowsDark.
 
 REPORTING — CHASSIS & WELLS (7)
@@ -343,6 +351,35 @@ platform+ratio layout that matches the asset being delivered | US
 states/markets/locations -> mapUS | Global/worldwide framing (no specific
 countries) -> mapWorld | Fully blank slide for hand-placed content ->
 canvasDark/Grey/Light
+
+6.2a Photography in copy-only decks
+When the user supplies copy but no photos, the deck still needs visual rhythm.
+Photo layouts come in two kinds:
+  SELF-FILLING -- template photography fills them automatically (§11.4), so they
+  look finished with no user effort: coverPhoto, coverPhoto2, dividerPhoto,
+  headlinePhotoWell (platform dividers also carry their own car photo).
+  PLACEHOLDER WELLS -- grey "replace me" boxes until the user adds photos:
+  content01-09, storyboardVO/Grid, videoReference, casting*, location*,
+  moodboard*, and the social spec sheets.
+Rules:
+1. Pace with self-filling slides. Open with coverPhoto or coverPhoto2 unless
+   the user asks for a brand-pattern cover. Use dividerPhoto for sections about
+   the car, people or place, and headlinePhotoWell for the main idea or a
+   headline stat (a short statement, §6.7).
+2. No more than 3 text-heavy slides in a row (report*, threeCol*, twoRows*,
+   statementSubhead, tables, charts). Break a longer run with a dividerPhoto or
+   headlinePhotoWell at a natural seam -- a section change or a key claim. Never
+   add a slide with no content of its own to do it, and never change the slide
+   count §5 gives just for pacing.
+3. Use placeholder-well layouts only when the copy calls for a picture: it
+   describes a vehicle, a place, a person, an event, or a piece of creative.
+   Give each one a suggested shot in the outline's Expect column (§4.2). For
+   copy with no picture in it, use a layout without wells -- threeCol*,
+   twoRows*, statementSubhead, headlineLight/Dark, or a report* layout.
+4. Production planning (storyboards, casting, locations, moodboards) and
+   paid-social sheets are about images by nature -- use their layouts
+   whenever the content calls for them, wells and all; rules 1-3 don't limit them.
+5. Never fill wells with invented paths. The user adds photos; you say which.
 
 Reporting family — pick the composition that matches the content's actual
 shape, not just "it's a report slide": a chart/table with no other structure
