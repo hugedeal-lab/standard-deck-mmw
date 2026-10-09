@@ -1,0 +1,1313 @@
+{
+ "version": 1,
+ "note": "MMW agent routing test. Expected = the layout the brief should land on; accept = defensible alternates; reject = a known wrong answer worth flagging.",
+ "briefs": [
+  {
+   "id": "R01",
+   "team": "Client Engagement",
+   "brief": "Cover for our Q3 business review with Mazda. Title 'Q3 Business Review', October 2026.",
+   "expect": [
+    "coverLight",
+    "coverDark"
+   ],
+   "accept": [
+    "coverLight2",
+    "coverPhoto",
+    "coverPhoto2"
+   ],
+   "reject": [],
+   "tags": [
+    "control",
+    "cover"
+   ]
+  },
+  {
+   "id": "R02",
+   "team": "Creative",
+   "brief": "Open the CX-50 Hybrid concepts deck with a big hero image of the car. Title: 'Go Further, Lighter'.",
+   "expect": [
+    "coverPhoto2",
+    "coverPhoto"
+   ],
+   "accept": [],
+   "reject": [
+    "coverLight",
+    "coverDark"
+   ],
+   "tags": [
+    "control",
+    "cover"
+   ]
+  },
+  {
+   "id": "R03",
+   "team": "Strategy",
+   "brief": "Section break before the audience section, which is all about the drivers we're targeting.",
+   "expect": [
+    "dividerPhoto"
+   ],
+   "accept": [
+    "dividerDark",
+    "dividerDark2",
+    "dividerLight",
+    "dividerLight2",
+    "dividerAsphalt",
+    "dividerCanopy",
+    "dividerAurora",
+    "dividerTides"
+   ],
+   "reject": [],
+   "tags": [
+    "control",
+    "divider"
+   ]
+  },
+  {
+   "id": "R04",
+   "team": "Media",
+   "brief": "Section divider before the measurement and reporting section.",
+   "expect": [
+    "dividerTides"
+   ],
+   "accept": [
+    "dividerDark",
+    "dividerDark2",
+    "dividerLight",
+    "dividerLight2",
+    "dividerAsphalt",
+    "dividerCanopy",
+    "dividerAurora",
+    "dividerTides",
+    "dividerPhoto"
+   ],
+   "reject": [],
+   "tags": [
+    "control",
+    "divider"
+   ]
+  },
+  {
+   "id": "R05",
+   "team": "Creative",
+   "brief": "One slide that just says 'Built for the long way home.' Big, nothing else.",
+   "expect": [
+    "headlineDark",
+    "headlineLight",
+    "headlinePhotoWell"
+   ],
+   "accept": [],
+   "reject": [
+    "statementSubhead"
+   ],
+   "tags": [
+    "control",
+    "statement"
+   ]
+  },
+  {
+   "id": "R06",
+   "team": "Strategy",
+   "brief": "Our core idea, 'Make choosing Mazda easier', with one supporting line underneath explaining it.",
+   "expect": [
+    "statementSubhead"
+   ],
+   "accept": [],
+   "reject": [
+    "headlineDark",
+    "headlineLight"
+   ],
+   "tags": [
+    "control",
+    "statement"
+   ]
+  },
+  {
+   "id": "R07",
+   "team": "Delivery",
+   "brief": "Agenda for the kickoff: intros, objectives, scope, timeline, team, next steps.",
+   "expect": [
+    "tableOfContents"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "control"
+   ]
+  },
+  {
+   "id": "R08",
+   "team": "Client Engagement",
+   "brief": "Closing slide. Thank you, with our team contact.",
+   "expect": [
+    "thankYouLight",
+    "thankYouDark"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "control"
+   ]
+  },
+  {
+   "id": "R09",
+   "team": "Creative",
+   "brief": "Concept 1: the idea in one paragraph next to a single strong hero shot of the CX-90.",
+   "expect": [
+    "content05"
+   ],
+   "accept": [
+    "content06"
+   ],
+   "reject": [
+    "content01",
+    "content02",
+    "content03"
+   ],
+   "tags": [
+    "editorial"
+   ]
+  },
+  {
+   "id": "R10",
+   "team": "Creative",
+   "brief": "Show the CX-90 exterior and interior side by side with a short headline across the top.",
+   "expect": [
+    "content07"
+   ],
+   "accept": [
+    "content01"
+   ],
+   "reject": [
+    "content05"
+   ],
+   "tags": [
+    "editorial"
+   ]
+  },
+  {
+   "id": "R11",
+   "team": "Creative",
+   "brief": "Key visual for the campaign plus four supporting detail crops underneath it.",
+   "expect": [
+    "content03"
+   ],
+   "accept": [
+    "content02"
+   ],
+   "reject": [
+    "content08",
+    "content09"
+   ],
+   "tags": [
+    "editorial"
+   ]
+  },
+  {
+   "id": "R12",
+   "team": "Creative",
+   "brief": "Key visual with a strip of four detail crops above it.",
+   "expect": [
+    "content02"
+   ],
+   "accept": [
+    "content03"
+   ],
+   "reject": [],
+   "tags": [
+    "editorial"
+   ]
+  },
+  {
+   "id": "R13",
+   "team": "Creative",
+   "brief": "Two images stacked, a wide exterior and a close-up detail, with the design rationale on the left.",
+   "expect": [
+    "content06"
+   ],
+   "accept": [],
+   "reject": [
+    "content07"
+   ],
+   "tags": [
+    "editorial"
+   ]
+  },
+  {
+   "id": "R14",
+   "team": "Creative",
+   "brief": "Look-and-feel board: four images of mixed sizes, one tall portrait in the middle.",
+   "expect": [
+    "content08"
+   ],
+   "accept": [
+    "content09",
+    "moodboardToneManner"
+   ],
+   "reject": [],
+   "tags": [
+    "editorial"
+   ]
+  },
+  {
+   "id": "R15",
+   "team": "Creative",
+   "brief": "Two big photos offset diagonally with a title and a short line of copy. Editorial feel.",
+   "expect": [
+    "content01"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "editorial"
+   ]
+  },
+  {
+   "id": "R16",
+   "team": "Strategy",
+   "brief": "Three brand principles: Crafted, Human, Joyful. A short paragraph on each.",
+   "expect": [
+    "threeColLight",
+    "threeColDark"
+   ],
+   "accept": [],
+   "reject": [
+    "reportStatRow",
+    "reportStatRowLight"
+   ],
+   "tags": [
+    "editorial",
+    "control"
+   ]
+  },
+  {
+   "id": "R17",
+   "team": "Strategy",
+   "brief": "Our approach in two steps: first build awareness with always-on video, then convert with retargeting and dealer offers.",
+   "expect": [
+    "twoRowsLight",
+    "twoRowsDark",
+    "twoRowsLightAlt"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "editorial",
+    "control"
+   ]
+  },
+  {
+   "id": "R18",
+   "team": "Consulting",
+   "brief": "A 420-word rationale for restructuring the agency operating model. Keep all the copy.",
+   "expect": [
+    "twoRowsLight",
+    "twoRowsDark",
+    "twoRowsLightAlt",
+    "reportGray",
+    "reportDark"
+   ],
+   "accept": [
+    "threeColLight",
+    "threeColDark"
+   ],
+   "reject": [
+    "headlineDark",
+    "statementSubhead",
+    "content05"
+   ],
+   "tags": [
+    "editorial",
+    "long-copy"
+   ]
+  },
+  {
+   "id": "R19",
+   "team": "Delivery",
+   "brief": "Where are we on the CX-5 campaign? Explore, share ideas, refine, exec plan, approval, production. We're at 'share ideas'.",
+   "expect": [
+    "reportGrayTimeline"
+   ],
+   "accept": [],
+   "reject": [
+    "reportNumberedSteps"
+   ],
+   "tags": [
+    "process",
+    "timeline-lookalike"
+   ]
+  },
+  {
+   "id": "R20",
+   "team": "Strategy",
+   "brief": "Our 2024 to 2027 roadmap in four phases, what happens in each year, and where we are now.",
+   "expect": [
+    "reportSplitPanels"
+   ],
+   "accept": [
+    "reportJourneyMap"
+   ],
+   "reject": [
+    "reportNumberedSteps"
+   ],
+   "tags": [
+    "process",
+    "timeline-lookalike"
+   ]
+  },
+  {
+   "id": "R21",
+   "team": "Delivery",
+   "brief": "Workback plan for the launch: Define, Develop, Deliver, Measure, each with deliverables, review dates and client reviewers. We're in Develop.",
+   "expect": [
+    "reportJourneyMap"
+   ],
+   "accept": [],
+   "reject": [
+    "reportNumberedSteps",
+    "reportSplitPanels"
+   ],
+   "tags": [
+    "process",
+    "timeline-lookalike"
+   ]
+  },
+  {
+   "id": "R22",
+   "team": "Delivery",
+   "brief": "Our end-to-end process from intake through measurement, with the sign-off gates between stages.",
+   "expect": [
+    "reportGateStatus"
+   ],
+   "accept": [],
+   "reject": [
+    "reportNumberedSteps"
+   ],
+   "tags": [
+    "process",
+    "timeline-lookalike"
+   ]
+  },
+  {
+   "id": "R23",
+   "team": "Development",
+   "brief": "Phase gates for the website rebuild: six stages, each with exit criteria and who approves.",
+   "expect": [
+    "reportGateStatus"
+   ],
+   "accept": [
+    "reportNumberedSteps"
+   ],
+   "reject": [],
+   "tags": [
+    "process",
+    "timeline-lookalike"
+   ]
+  },
+  {
+   "id": "R24",
+   "team": "Consulting",
+   "brief": "A six-step framework for how we onboard a new dealer group.",
+   "expect": [
+    "reportNumberedSteps"
+   ],
+   "accept": [
+    "reportGateStatus"
+   ],
+   "reject": [
+    "reportGrayTimeline"
+   ],
+   "tags": [
+    "process"
+   ]
+  },
+  {
+   "id": "R25",
+   "team": "Development",
+   "brief": "Release process for the configurator: plan, build, QA, UAT, launch, monitor.",
+   "expect": [
+    "reportNumberedSteps"
+   ],
+   "accept": [
+    "reportGateStatus"
+   ],
+   "reject": [],
+   "tags": [
+    "process"
+   ]
+  },
+  {
+   "id": "R26",
+   "team": "Delivery",
+   "brief": "Project timeline: five stages from kickoff to launch, with dates.",
+   "expect": [
+    "reportGrayTimeline"
+   ],
+   "accept": [
+    "reportSplitPanels",
+    "reportJourneyMap"
+   ],
+   "reject": [],
+   "tags": [
+    "process",
+    "count-mismatch"
+   ]
+  },
+  {
+   "id": "R27",
+   "team": "Strategy",
+   "brief": "Mazda's four brand eras, from Zoom-Zoom to today, one short paragraph each.",
+   "expect": [
+    "reportSplitPanels"
+   ],
+   "accept": [
+    "reportJourneyMap",
+    "threeColLight",
+    "threeColDark"
+   ],
+   "reject": [
+    "reportGateStatus"
+   ],
+   "tags": [
+    "process",
+    "timeline-lookalike"
+   ]
+  },
+  {
+   "id": "R28",
+   "team": "Strategy",
+   "brief": "Customer journey across awareness, consideration, shopping and purchase: what the customer thinks, does and feels at each stage.",
+   "expect": [
+    "reportJourneyMap"
+   ],
+   "accept": [
+    "reportStatRow",
+    "reportStatRowLight"
+   ],
+   "reject": [
+    "reportGrayTimeline"
+   ],
+   "tags": [
+    "process",
+    "journey"
+   ]
+  },
+  {
+   "id": "R29",
+   "team": "Delivery",
+   "brief": "Production schedule for the shoot: prep, shoot days, post, delivery, with a 'we are here' marker on shoot days.",
+   "expect": [
+    "reportGrayTimeline",
+    "reportJourneyMap"
+   ],
+   "accept": [
+    "reportSplitPanels"
+   ],
+   "reject": [],
+   "tags": [
+    "process",
+    "timeline-lookalike"
+   ]
+  },
+  {
+   "id": "R30",
+   "team": "Media",
+   "brief": "Media realities for the 161 region: five columns, each with the strategic need, the priority and the implication.",
+   "expect": [
+    "reportStatRow",
+    "reportStatRowLight"
+   ],
+   "accept": [],
+   "reject": [
+    "reportMetricTable"
+   ],
+   "tags": [
+    "framework"
+   ]
+  },
+  {
+   "id": "R31",
+   "team": "Strategy",
+   "brief": "Role of each nameplate (CX-5, CX-50, CX-90/CX-70, CX-30, MX-5) across Build Demand and Capture Demand.",
+   "expect": [
+    "reportModelCompare"
+   ],
+   "accept": [
+    "reportStatRow",
+    "reportStatRowLight"
+   ],
+   "reject": [],
+   "tags": [
+    "framework"
+   ]
+  },
+  {
+   "id": "R32",
+   "team": "Media",
+   "brief": "Our media strategy on a page: jobs to be done, objectives (salience, relevance, impact), targets, Q2 pivots and the outcomes we expect.",
+   "expect": [
+    "reportBrandPillars"
+   ],
+   "accept": [
+    "reportStrategyStack"
+   ],
+   "reject": [],
+   "tags": [
+    "framework"
+   ]
+  },
+  {
+   "id": "R33",
+   "team": "Strategy",
+   "brief": "Marketing ecosystem: the MABM platform at the centre with the eight campaigns that ladder up to it.",
+   "expect": [
+    "reportPlatformMatrix"
+   ],
+   "accept": [
+    "reportEcosystemTree"
+   ],
+   "reject": [],
+   "tags": [
+    "framework"
+   ]
+  },
+  {
+   "id": "R34",
+   "team": "Media",
+   "brief": "Campaign ecosystem for the CX-50 Hybrid launch: the campaign and its eight channels, with the tactics in each.",
+   "expect": [
+    "reportEcosystemTree"
+   ],
+   "accept": [
+    "reportPlatformMatrix"
+   ],
+   "reject": [],
+   "tags": [
+    "framework"
+   ]
+  },
+  {
+   "id": "R35",
+   "team": "Media",
+   "brief": "Measurement framework: journey stage, outcome KPI, channels, weekly KPIs and data sources, monthly KPIs.",
+   "expect": [
+    "reportMetricTable"
+   ],
+   "accept": [],
+   "reject": [
+    "reportGrayTable",
+    "reportDarkTable"
+   ],
+   "tags": [
+    "framework"
+   ]
+  },
+  {
+   "id": "R36",
+   "team": "Media",
+   "brief": "Channel plan: the role of each channel by funnel stage, base plan vs incremental budget, with subtotals and a grand total.",
+   "expect": [
+    "reportChannelMatrix"
+   ],
+   "accept": [
+    "reportMetricTable"
+   ],
+   "reject": [
+    "reportGrayTable"
+   ],
+   "tags": [
+    "framework"
+   ]
+  },
+  {
+   "id": "R37",
+   "team": "Strategy",
+   "brief": "Four key insights from the research, each with a short headline and one sentence.",
+   "expect": [
+    "reportQuotePanel"
+   ],
+   "accept": [
+    "threeColLight",
+    "threeColDark"
+   ],
+   "reject": [],
+   "tags": [
+    "framework",
+    "insights"
+   ]
+  },
+  {
+   "id": "R38",
+   "team": "Client Engagement",
+   "brief": "Three customer quotes from the dealer interviews.",
+   "expect": [
+    "reportQuotePanel",
+    "threeColLight",
+    "threeColDark"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "framework",
+    "insights",
+    "count-mismatch"
+   ]
+  },
+  {
+   "id": "R39",
+   "team": "Strategy",
+   "brief": "How our approach changes: last year's plan vs this year's, and what the new one unlocks.",
+   "expect": [
+    "reportChapterOpener"
+   ],
+   "accept": [
+    "reportGrayTable",
+    "reportDarkTable"
+   ],
+   "reject": [],
+   "tags": [
+    "framework"
+   ]
+  },
+  {
+   "id": "R40",
+   "team": "Strategy",
+   "brief": "Strategy slide: the core strategy, the insight behind it, two proof points (IIHS Top Safety Pick+, Consumer Reports), three activation pillars and next steps.",
+   "expect": [
+    "reportStrategyStack"
+   ],
+   "accept": [
+    "reportBrandPillars"
+   ],
+   "reject": [],
+   "tags": [
+    "framework"
+   ]
+  },
+  {
+   "id": "R41",
+   "team": "Client Engagement",
+   "brief": "Compare two agency options, A vs B, across four criteria with a few bullets each.",
+   "expect": [
+    "reportGrayTable",
+    "reportDarkTable"
+   ],
+   "accept": [
+    "reportChapterOpener"
+   ],
+   "reject": [],
+   "tags": [
+    "framework",
+    "table"
+   ]
+  },
+  {
+   "id": "R42",
+   "team": "Delivery",
+   "brief": "RACI for the project: six workstreams by agency lead, client lead, approver and informed.",
+   "expect": [
+    "reportGray",
+    "reportDark",
+    "canvasDark",
+    "canvasGrey",
+    "canvasLight"
+   ],
+   "accept": [],
+   "reject": [
+    "reportGrayTable",
+    "reportDarkTable"
+   ],
+   "tags": [
+    "table",
+    "no-fit"
+   ]
+  },
+  {
+   "id": "R43",
+   "team": "Consulting",
+   "brief": "Capability maturity: six capabilities scored across four maturity levels.",
+   "expect": [
+    "reportGray",
+    "reportDark",
+    "canvasDark",
+    "canvasGrey",
+    "canvasLight"
+   ],
+   "accept": [
+    "reportModelCompare"
+   ],
+   "reject": [
+    "reportGrayTable",
+    "reportDarkTable"
+   ],
+   "tags": [
+    "table",
+    "no-fit"
+   ]
+  },
+  {
+   "id": "R44",
+   "team": "Media",
+   "brief": "Flighting calendar: each channel's on/off weeks across Q1.",
+   "expect": [
+    "reportGray",
+    "reportDark",
+    "canvasDark",
+    "canvasGrey",
+    "canvasLight"
+   ],
+   "accept": [],
+   "reject": [
+    "reportGrayTimeline",
+    "reportSplitPanels"
+   ],
+   "tags": [
+    "table",
+    "no-fit"
+   ]
+  },
+  {
+   "id": "R45",
+   "team": "Media",
+   "brief": "Monthly reach by channel for Q1 to Q4 as a column chart.",
+   "expect": [
+    "reportGrayChart",
+    "reportDarkChart"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "chart",
+    "control"
+   ]
+  },
+  {
+   "id": "R46",
+   "team": "Media",
+   "brief": "Share of spend by channel: CTV 40%, Social 25%, Search 20%, Display 15%.",
+   "expect": [
+    "reportSpendBarsLight",
+    "reportSpendBarsDark",
+    "reportGrayChart",
+    "reportDarkChart"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "chart"
+   ]
+  },
+  {
+   "id": "R47",
+   "team": "Media",
+   "brief": "Q2 spend allocation as horizontal bars, six channels with dollar amounts.",
+   "expect": [
+    "reportSpendBarsLight",
+    "reportSpendBarsDark"
+   ],
+   "accept": [
+    "reportGrayChart",
+    "reportDarkChart"
+   ],
+   "reject": [],
+   "tags": [
+    "chart"
+   ]
+  },
+  {
+   "id": "R48",
+   "team": "Strategy",
+   "brief": "Brand consideration trend over 12 months, Mazda vs segment average.",
+   "expect": [
+    "reportGrayChart",
+    "reportDarkChart"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "chart"
+   ]
+  },
+  {
+   "id": "R49",
+   "team": "Media",
+   "brief": "KPI scorecard: five headline numbers (reach, CTR, VCR, leads, CPL) with this quarter vs last.",
+   "expect": [
+    "reportStatRow",
+    "reportStatRowLight"
+   ],
+   "accept": [
+    "reportGrayTable",
+    "reportDarkTable",
+    "reportGray",
+    "reportDark",
+    "canvasDark",
+    "canvasGrey",
+    "canvasLight"
+   ],
+   "reject": [],
+   "tags": [
+    "chart",
+    "framework"
+   ]
+  },
+  {
+   "id": "R50",
+   "team": "Development",
+   "brief": "Architecture diagram of the data pipeline: sources, CDP, activation channels.",
+   "expect": [
+    "reportGray",
+    "reportDark",
+    "canvasDark",
+    "canvasGrey",
+    "canvasLight"
+   ],
+   "accept": [
+    "reportEcosystemTree"
+   ],
+   "reject": [],
+   "tags": [
+    "no-fit"
+   ]
+  },
+  {
+   "id": "R51",
+   "team": "Client Engagement",
+   "brief": "Team slide: eight people with names and roles.",
+   "expect": [
+    "reportGray",
+    "reportDark",
+    "canvasDark",
+    "canvasGrey",
+    "canvasLight",
+    "threeColLight",
+    "threeColDark"
+   ],
+   "accept": [],
+   "reject": [
+    "castingGrid",
+    "castingTalent"
+   ],
+   "tags": [
+    "no-fit"
+   ]
+  },
+  {
+   "id": "R52",
+   "team": "Consulting",
+   "brief": "Show our offices in the UK, Germany and Japan.",
+   "expect": [
+    "threeColLight",
+    "threeColDark",
+    "reportGray",
+    "reportDark"
+   ],
+   "accept": [
+    "reportGray",
+    "reportDark",
+    "canvasDark",
+    "canvasGrey",
+    "canvasLight"
+   ],
+   "reject": [
+    "mapWorld"
+   ],
+   "tags": [
+    "no-fit",
+    "map-rule"
+   ]
+  },
+  {
+   "id": "R53",
+   "team": "Production",
+   "brief": "Shot list for the :30 spot, six shots with captions.",
+   "expect": [
+    "storyboardGrid"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "production",
+    "control"
+   ]
+  },
+  {
+   "id": "R54",
+   "team": "Production",
+   "brief": "VO script for the :30 with three key frames.",
+   "expect": [
+    "storyboardVO"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "production",
+    "control"
+   ]
+  },
+  {
+   "id": "R55",
+   "team": "Creative",
+   "brief": "Compare the two VO script options side by side.",
+   "expect": [
+    "scriptsCompare"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "production",
+    "control"
+   ]
+  },
+  {
+   "id": "R56",
+   "team": "Production",
+   "brief": "Casting picks: four talent options for the dad role.",
+   "expect": [
+    "castingGrid"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "production",
+    "control"
+   ]
+  },
+  {
+   "id": "R57",
+   "team": "Production",
+   "brief": "Final two talent, headshot and full-body for each, heights listed.",
+   "expect": [
+    "castingTalent"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "production",
+    "control"
+   ]
+  },
+  {
+   "id": "R58",
+   "team": "Production",
+   "brief": "Location scout: five options for the coastal drive.",
+   "expect": [
+    "locationOverview"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "production",
+    "control"
+   ]
+  },
+  {
+   "id": "R59",
+   "team": "Production",
+   "brief": "Deep dive on the Malibu location, with the sun path for the morning shoot.",
+   "expect": [
+    "locationDetail"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "production",
+    "control"
+   ]
+  },
+  {
+   "id": "R60",
+   "team": "Production",
+   "brief": "Props for the picnic scene, ten items.",
+   "expect": [
+    "moodboardProps"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "production",
+    "control"
+   ]
+  },
+  {
+   "id": "R61",
+   "team": "Production",
+   "brief": "Wardrobe for the lead: four outfits plus accessories.",
+   "expect": [
+    "moodboardWardrobe"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "production",
+    "control"
+   ]
+  },
+  {
+   "id": "R62",
+   "team": "Creative",
+   "brief": "Tone and manner board: the mood we're going for.",
+   "expect": [
+    "moodboardToneManner"
+   ],
+   "accept": [
+    "content08",
+    "content09"
+   ],
+   "reject": [],
+   "tags": [
+    "production"
+   ]
+  },
+  {
+   "id": "R63",
+   "team": "Creative",
+   "brief": "Reference ads and films we like for the edit style.",
+   "expect": [
+    "videoReference"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "production",
+    "control"
+   ]
+  },
+  {
+   "id": "R64",
+   "team": "Media",
+   "brief": "Spec sheet for a Meta 4:5 carousel, five cards.",
+   "expect": [
+    "metaCarousel4x5"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "social",
+    "control"
+   ]
+  },
+  {
+   "id": "R65",
+   "team": "Media",
+   "brief": "Facebook square carousel spec.",
+   "expect": [
+    "metaCarousel1x1"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "social",
+    "control"
+   ]
+  },
+  {
+   "id": "R66",
+   "team": "Media",
+   "brief": "Instagram Reels and Stories 9:16 static and video spec.",
+   "expect": [
+    "metaVideoStatic"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "social",
+    "control"
+   ]
+  },
+  {
+   "id": "R67",
+   "team": "Media",
+   "brief": "TikTok in-feed 9:16 video spec.",
+   "expect": [
+    "tiktokVideoStatic"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "social",
+    "control"
+   ]
+  },
+  {
+   "id": "R68",
+   "team": "Media",
+   "brief": "Reddit promoted post, 1:1 image and video spec.",
+   "expect": [
+    "redditVideoStatic1x1"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "social",
+    "control"
+   ]
+  },
+  {
+   "id": "R69",
+   "team": "Media",
+   "brief": "Pinterest standard 2:3 pin spec.",
+   "expect": [
+    "pinterest2x3"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "social",
+    "control"
+   ]
+  },
+  {
+   "id": "R70",
+   "team": "Media",
+   "brief": "YouTube 16:9 in-stream ad spec.",
+   "expect": [
+    "youtubeVideoAd"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "social",
+    "control"
+   ]
+  },
+  {
+   "id": "R71",
+   "team": "Media",
+   "brief": "Divider introducing the TikTok section of the paid social plan.",
+   "expect": [
+    "tiktokDivider"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "social",
+    "control"
+   ]
+  },
+  {
+   "id": "R72",
+   "team": "Media",
+   "brief": "Launch markets: highlight California, Texas and Florida and mark LA, Dallas and Miami.",
+   "expect": [
+    "mapUS"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "map",
+    "control"
+   ]
+  },
+  {
+   "id": "R73",
+   "team": "Client Engagement",
+   "brief": "We're a global network: show worldwide reach, no specific countries.",
+   "expect": [
+    "mapWorld"
+   ],
+   "accept": [],
+   "reject": [],
+   "tags": [
+    "map",
+    "control"
+   ]
+  },
+  {
+   "id": "R74",
+   "team": "Development",
+   "brief": "Sprint plan for the next three sprints: goal, scope and owner for each.",
+   "expect": [
+    "threeColLight",
+    "threeColDark"
+   ],
+   "accept": [
+    "reportJourneyMap"
+   ],
+   "reject": [
+    "reportNumberedSteps"
+   ],
+   "tags": [
+    "process",
+    "count-mismatch"
+   ]
+  },
+  {
+   "id": "R75",
+   "team": "Development",
+   "brief": "Our martech stack: CMS, CDP, analytics, ad server, and how they connect.",
+   "expect": [
+    "reportGray",
+    "reportDark",
+    "canvasDark",
+    "canvasGrey",
+    "canvasLight"
+   ],
+   "accept": [
+    "reportEcosystemTree",
+    "reportPlatformMatrix"
+   ],
+   "reject": [],
+   "tags": [
+    "no-fit"
+   ]
+  },
+  {
+   "id": "R76",
+   "team": "Development",
+   "brief": "Weekly status: on track, at risk or blocked for five workstreams, with a note on each.",
+   "expect": [
+    "reportGray",
+    "reportDark",
+    "canvasDark",
+    "canvasGrey",
+    "canvasLight"
+   ],
+   "accept": [
+    "reportStatRow",
+    "reportStatRowLight"
+   ],
+   "reject": [
+    "reportGateStatus"
+   ],
+   "tags": [
+    "table",
+    "no-fit",
+    "trap"
+   ]
+  },
+  {
+   "id": "R77",
+   "team": "Consulting",
+   "brief": "Current state vs future state of the marketing operating model.",
+   "expect": [
+    "reportChapterOpener"
+   ],
+   "accept": [
+    "reportGrayTable",
+    "reportDarkTable"
+   ],
+   "reject": [],
+   "tags": [
+    "framework"
+   ]
+  },
+  {
+   "id": "R78",
+   "team": "Consulting",
+   "brief": "Three recommendations, each with the rationale and the expected impact.",
+   "expect": [
+    "threeColLight",
+    "threeColDark"
+   ],
+   "accept": [
+    "reportStrategyStack"
+   ],
+   "reject": [
+    "reportQuotePanel"
+   ],
+   "tags": [
+    "framework"
+   ]
+  }
+ ]
+}
