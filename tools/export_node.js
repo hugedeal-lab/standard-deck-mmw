@@ -180,8 +180,10 @@ console.error('[4] engine loaded');
 
 // Slide data: reuse the harness's own 67-slide D array so this matches what the
 // browser renders, rather than inventing a second source of truth.
-const harness = fs.readFileSync(path.join(SRC, 'test-deck.html'), 'utf8');
-const D = JSON.parse('[' + harness.split('var D=[')[1].split('\n];')[0] + ']');
+// MMW_DECK=<file.json> exports that D array instead (used by tests).
+const harness = process.env.MMW_DECK ? null : fs.readFileSync(path.join(SRC, 'test-deck.html'), 'utf8');
+const D = process.env.MMW_DECK ? JSON.parse(fs.readFileSync(process.env.MMW_DECK, 'utf8'))
+  : JSON.parse('[' + harness.split('var D=[')[1].split('\n];')[0] + ']');
 sandbox.D = D;
 
 console.error('[5] deckInit...');

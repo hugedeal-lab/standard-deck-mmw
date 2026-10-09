@@ -881,6 +881,39 @@ function formatVal(v) {
 // TABLE RENDERER
 // ============================================================
 
+// Tables: one reader for both the preview and the export. The documented
+// shape is {type:'tbl', headers:['A','B'], rows:[['a1','b1'],['a2','b2']]},
+// but agents also write data/cells/body for the rows, columns for the
+// headers, rows as objects keyed by header, and cells as {text}. Read them
+// all rather than exporting an empty table -- PptxGenJS throws on that and
+// the whole download fails (2026-10).
+function _cellText(c) {
+  if (c === null || c === undefined) return '';
+  if (typeof c === 'object' && !Array.isArray(c)) {
+    var v = c.text !== undefined ? c.text : c.value !== undefined ? c.value : c.label;
+    return v === undefined ? '' : String(v);
+  }
+  return String(c);
+}
+function tableRows(el) {
+  var hdr = el.headers || el.header || el.columns || el.cols || [];
+  if (!Array.isArray(hdr)) hdr = [];
+  hdr = hdr.map(function (h) { return h && typeof h === 'object' ? _cellText(h.label !== undefined ? h.label : h) : _cellText(h); });
+  var src = [el.rows, el.data, el.cells, el.body].filter(Array.isArray)[0] || [];
+  var keys = (el.headers || el.columns || []).map(function (h) { return h && typeof h === 'object' ? (h.key || h.label || h.text) : h; });
+  var rows = src.map(function (r) {
+    if (Array.isArray(r)) return r.map(_cellText);
+    if (r && typeof r === 'object') {
+      var c = r.cells || r.values || r.cols;
+      if (Array.isArray(c)) return c.map(_cellText);
+      if (keys.length && keys.some(function (k) { return k in r; })) return keys.map(function (k) { return _cellText(r[k]); });
+      return Object.keys(r).map(function (k) { return _cellText(r[k]); });
+    }
+    return [_cellText(r)];
+  }).filter(function (r) { return r.length; });
+  return { headers: hdr, rows: rows };
+}
+
 function renderTable(el, isDark) {
   var container = document.createElement('div');
   container.style.cssText = 'position:absolute;overflow:hidden;';
@@ -888,7 +921,7 @@ function renderTable(el, isDark) {
   container.style.width = toX(el.w) + 'px'; container.style.height = toY(el.h) + 'px';
   var table = document.createElement('table');
   table.style.cssText = 'width:100%;border-collapse:collapse;font-family:Mazda Type,Arial,sans-serif;font-size:' + ptToPx(10) + 'px;';
-  var headers = el.headers || []; var rows = el.rows || []; var colW = el.colW;
+  var _t = tableRows(el); var headers = _t.headers; var rows = _t.rows; var colW = el.colW;
   if (headers.length) {
     var thead = document.createElement('thead'); var tr = document.createElement('tr');
     headers.forEach(function (h, i) {
@@ -904,7 +937,7 @@ function renderTable(el, isDark) {
     var tr = document.createElement('tr');
     tr.style.background = ri % 2 === 0 ? 'transparent' : resolveColor(isDark ? 'dkGray' : 'ltGray', isDark) + '33';
     (Array.isArray(row) ? row : [row]).forEach(function (cell) {
-      var td = document.createElement('td'); td.textContent = cell;
+      var td = document.createElement('td'); td.textContent = _cellText(cell);
       td.style.cssText = 'padding:10px 16px;border-bottom:1px solid ' + resolveColor('ltGray', isDark) + '44;color:' + resolveColor('body', isDark) + ';';
       tr.appendChild(td);
     });
@@ -1124,7 +1157,7 @@ var pptxSafeArea = {
 
 window.StandardDeck = {
   renderAll: renderAll, renderSlide: renderSlide, renderElement: renderElement,
-  resolveColor: resolveColor, colorForPptx: colorForPptx,
+  resolveColor: resolveColor, colorForPptx: colorForPptx, tableRows: tableRows,
   setAccent: setAccent, setBgMode: setBgMode, getBgMode: getBgMode, detectBgMode: detectBgMode,
   setFooter: setFooter, getFooterText: getFooterText,
   setContentFooter: setContentFooter, getContentFooter: getContentFooter,

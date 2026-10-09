@@ -29,6 +29,7 @@ var _imageCache = {};
 var _imageDims = {};
 // Images an export had to leave out (see exportImage); reported in its toast.
 var _exportMissing = {};
+var _exportSkipped = [], _exportSlideNo = 0;
 function _linkImages() { return typeof location !== 'undefined' && location.protocol === 'file:'; }
 // Set by deckInit()'s prefetchDeckAssets(); exportPPTX() awaits it before
 // export. Declared here (module scope), not with `var` inside deckInit, so
@@ -377,7 +378,7 @@ await _prefetchPromise;
 // Mask tags are per-export: exportPPTX can run more than once in a session and
 // stale entries would renumber against the wrong pictures.
 _maskJobs = {}; _maskSeq = 0;
-_exportMissing = {};
+_exportMissing = {}; _exportSkipped = []; _exportSlideNo = 0;
 _gradJobs = {}; _gradSeq = 0;
 if (downloadBtn) { downloadBtn.textContent = '\u23F3 Exporting...'; }
 
@@ -394,6 +395,7 @@ try {
 
   _D.forEach(function (slideData, index) {
     var isDark = !!slideData.dark;
+    _exportSlideNo = index + 1;
 
     // STEP 1: Dispatch (mutates slideData)
     var els;
@@ -450,7 +452,12 @@ try {
   var finish = function (msg) {
     if (downloadBtn) { downloadBtn.disabled = false; downloadBtn.textContent = '\u2B07 Download'; }
     var missing = Object.keys(_exportMissing);
-    if (missing.length) {
+    if (_exportSkipped.length) {
+      showToast('PPTX downloaded, but ' + _exportSkipped.join(', ') + ' could not be exported and ' +
+        (_exportSkipped.length > 1 ? 'were' : 'was') + ' left out. Ask the builder to fix ' +
+        (_exportSkipped.length > 1 ? 'them' : 'it') + ', then download again.' +
+        (missing.length ? ' ' + missing.length + ' image(s) also failed to load.' : ''), 'bad');
+    } else if (missing.length) {
       var names = missing.map(function (u) { return u.split('/').pop(); }).join(', ');
       showToast('PPTX downloaded, but ' + missing.length + ' image' + (missing.length > 1 ? 's' : '') +
         ' could not be loaded and ' + (missing.length > 1 ? 'were' : 'was') + ' left out (' + names +
@@ -515,7 +522,14 @@ try {
 
 function exportElement(slide, el, isDark, accent, pptx) {
   var m = { t: exportText, s: exportShape, o: exportOval, d: exportDivider, p: exportPill, b: exportBar, ln: exportLine, path: exportPath, chart: exportChart, tbl: exportTable, i: exportIcon, img: exportImage };
-  var fn = m[el.type]; if (fn) fn(slide, el, isDark, accent, pptx);
+  var fn = m[el.type]; if (!fn) return;
+  // One malformed element must not sink the whole download: skip it, keep
+  // going, and name it in the closing toast.
+  try { fn(slide, el, isDark, accent, pptx); }
+  catch (err) {
+    console.warn('[SD] Skipped a ' + el.type + ' element on export:', err);
+    _exportSkipped.push('a ' + ({tbl:'table',chart:'chart',img:'image',i:'icon',t:'text box'}[el.type] || el.type + ' element') + ' on slide ' + (_exportSlideNo || '?'));
+  }
 }
 
 // PptxGenJS margin is in POINTS, ordered [top, right, bottom, left].
@@ -909,11 +923,15 @@ function exportChart(slide, el, isDark, accent, pptx) {
 }
 
 function exportTable(slide, el, isDark) {
-  var headers=el.headers||[]; var rows=el.rows||[]; var tr=[];
+  var t=SD.tableRows(el); var headers=t.headers; var rows=t.rows; var tr=[];
   if (headers.length) { tr.push(headers.map(function(h){return{text:h,options:{bold:true,fill:{color:SD.colorForPptx('accent',isDark)},color:'FFFFFF',fontSize:11,fontFace:FONT}};})); }
   rows.forEach(function(row,ri) {
     tr.push((Array.isArray(row)?row:[row]).map(function(cell){return{text:String(cell),options:{fontSize:10,fontFace:FONT,color:SD.colorForPptx('body',isDark),fill:ri%2===0?{color:isDark?'535B69':'F5F5F5'}:{color:isDark?'2A2A2A':'FFFFFF'}}};}));
   });
+  if (!tr.length) { console.warn('[SD] Table with no headers or rows skipped -- use {type:\'tbl\', headers:[...], rows:[[...]]}.'); _exportSkipped.push('an empty table on slide ' + (_exportSlideNo || '?')); return; }
+  // PptxGenJS wants every row the same width; pad short rows.
+  var nc = tr.reduce(function (m, r) { return Math.max(m, r.length); }, 0);
+  tr.forEach(function (r) { var o = r.length ? r[r.length - 1].options : { fontSize:10, fontFace:FONT }; while (r.length < nc) r.push({ text:'', options:o }); });
   slide.addTable(tr, { x:el.x, y:el.y, w:el.w, fontSize:10, fontFace:FONT, border:{type:'solid',color:'CCCCCC',pt:0.5}, colW:el.colW||undefined });
 }
 

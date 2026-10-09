@@ -665,7 +665,12 @@ series, one object per series, EACH carrying its own category array:
   data:[{ name:'Spend', labels:['Q1','Q2','Q3','Q4'], values:[42,58,35,64] }]
 labels is required on every series (a series with no labels is dropped on
 export). pie/doughnut take a single series. Tables: raw tbl elements only. Host
-them on reportGray/reportDark, which exist for exactly this.
+them on reportGray/reportDark, which exist for exactly this. The ONE table shape:
+  {type:'tbl', x:0.76, y:1.95, w:11.8, headers:['Market','Spend','Reach'],
+   rows:[['Los Angeles','$1.2M','4.1M'], ['Dallas','$0.8M','2.9M']],
+   colW:[4.6,3.6,3.6]}            // colW optional, inches, sums to w
+headers = array of strings; rows = array of rows, each an ARRAY of plain strings,
+one per header. Not data/cells/columns, not row objects. Max 8 rows, 5 columns.
 
 ── 11. IMAGES & ASSETS ──────────────────────────────────────
 11.1 Brand marks — FOUR required img ids in every artifact:
