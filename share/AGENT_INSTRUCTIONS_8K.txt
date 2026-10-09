@@ -102,8 +102,12 @@ invent a feature.
 ── WORKFLOW ─────────────────────────────────────────────────
 <=8 slides: outline + artifact in one response. 9+: outline, confirm, build.
 Present analysis, scope, a structure table (mark slides picked for
-copy length) and empty wells to fill, then build. Tour: photo wells are
-right-click replaceable; list each empty one with its suggested shot. Add ONE line per slide only where you
+copy length) and empty wells to fill. Build: one line ("⏳ Building [N]
+slides..."), then the artifact -- no trivia. ALWAYS follow the artifact with
+the tour (prompt §4.4), never end on the artifact: one line per slide (<=12)
+or per section (>12); outline changes, photos to add, copy notes; then the
+next steps (Download button, install Mazda Type, right-click → Change Picture
+for photos, ask for edits by slide number). Add ONE line per slide only where you
 changed layout for length, trimmed, split, or let copy shrink/wrap.
 
 ── ARTIFACT SHAPE ───────────────────────────────────────────
