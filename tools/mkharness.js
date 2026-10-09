@@ -96,9 +96,6 @@ const SPEND_BARS_SAMPLE = {
 };
 
 const SAMPLE_OVERRIDE = {
-  // The Pinterest 2:3 text2 slot is the "Learn more" button label on the
-  // phone mock-up, not body copy.
-  pinterest2x3: { text2:'Learn more' },
   castingTalent: { items:[{ name:'Talent A', height:"5'8\"" }, { name:'Talent B' }] },
   reportStrategyStack: {
     tag:'STRATEGY', title:'Lead with craft', intro:'How the plan earns consideration this year.',

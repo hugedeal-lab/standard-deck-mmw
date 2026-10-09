@@ -335,6 +335,31 @@ function deviceMock(els, cfg, o) {
     (1 - s[0] - s[2]) * o.w, (1 - s[1] - s[3]) * o.h, o.slot);
 }
 
+// ---------- Social device stack (7.30 template, slides 56-70) ----------
+// The template builds every phone in two layers: the layout's phone PNG --
+// white body, soft drop shadow baked into its alpha -- and, on top, the
+// platform screen the slide drops into the screen placeholder (status bar,
+// buttons and a checkerboard "your creative here" area). The engine used to
+// draw the screen alone, so phones lost their body and shadow (2026-10).
+function phoneBody(els, cfg, name, x, y, w, h) {
+  els.push({ type:'img', src:(cfg.assets && cfg.assets[name]) || A + 'social/' + name, x:x, y:y, w:w, h:h, fit:'fill' });
+}
+// A screen picture at the template's placeholder geometry. images[slot]
+// lands in the screen's creative area (o.hole = l,t,r,b fractions), keeping
+// the platform UI around it; without one the template's sample screen stays
+// -- a picture, so Change Picture replaces it in PowerPoint as on the source.
+function socialScreen(els, cfg, o) {
+  var e = { type:'img', src:(cfg.assets && cfg.assets[o.name]) || A + 'social/' + o.name, x:o.x, y:o.y, w:o.w, h:o.h, fit:'fill' };
+  if (o.crop) e.crop = o.crop;
+  els.push(e);
+  var sup = cfg.images && cfg.images[o.slot];
+  if (sup) {
+    var hl = o.hole || [0, 0, 0, 0];
+    els.push({ type:'img', src:sup, x:o.x + hl[0] * o.w, y:o.y + hl[1] * o.h,
+      w:o.w * (1 - hl[0] - hl[2]), h:o.h * (1 - hl[1] - hl[3]), fit:'cover' });
+  }
+}
+
 function ph(els, cfg, x, y, w, h, slot, mask) {
   var supplied = cfg.images && (Array.isArray(cfg.images) ? cfg.images[slot] : cfg.images[slot]);
   if (supplied) {
@@ -2944,14 +2969,14 @@ function layout_metaCarousel1x1(cfg) {
   // footer all baked in), positioned by matching its transparent
   // content-hole fraction against the source's own placeholder geometry --
   // not the old bezel-only overlay.
-  deviceMock(els, cfg, { name:'meta_carousel_frame.png', x:0.68, y:2.64, w:2.142, h:3.259, screen:[0,0.275,0,0.067], slot:0 });
+  phoneBody(els, cfg, 'phone_mockup_meta.png', 0, 2.015, 3.493, 5.633);
+  socialScreen(els, cfg, { name:'meta_carousel_frame.png', x:0.682, y:3.147, w:2.139, h:3.275, hole:[0,0.275,0,0.067], slot:0 });
   els.push({ type:'t', text:_socialCopy(cfg, 'headline', 3), x:4.74, y:2.18, w:2.67, h:0.5, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text2 || '', x:0.77, y:3.5, w:1.97, h:0.51, font:'B', size:6.5, color:'black', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"1:1 Carousel", x:10.68, y:3.64, w:1.23, h:0.23, font:'B', size:11, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  ph(els, cfg, 2.97, 4.04, 2.14, 2.13, 1);
-  ph(els, cfg, 5.21, 4.04, 2.14, 2.13, 2);
-  ph(els, cfg, 7.44, 4.04, 2.14, 2.13, 3);
-  ph(els, cfg, 9.68, 4.04, 2.14, 2.13, 4);
+  [2.969, 5.206, 7.443, 9.68].forEach(function (cx, i) {
+    socialScreen(els, cfg, { name:'meta_carousel_card.png', x:cx, y:4.043, w:2.139, h:2.132, crop:{ l:0.1, t:0.2025, r:0.1 }, slot:i + 1 });
+  });
   return els;
 }
 
@@ -2979,16 +3004,19 @@ function layout_metaCarousel4x5(cfg) {
   // Fixed device chrome: same real Meta Carousel MockUp asset as the 1x1
   // variant, repositioned for this format's own "main" content-well
   // geometry (index5 below, not the filmstrip cards).
-  deviceMock(els, cfg, { name:'meta_carousel_frame.png', x:0.71, y:3.061, w:2.042, h:3.106, screen:[0,0.275,0,0.067], slot:5 });
+  // Source slide 58: the phone carries the feed UI; the Meta carousel
+  // screenshot is split into its header (top 9.7%) and footer (bottom 6.9%)
+  // slices around a 4:5 card -- slot 5, kept from the old numbering.
+  phoneBody(els, cfg, 'phone_mockup_meta.png', -0.016, 2.015, 3.493, 5.633);
+  els.push({ type:'img', src:A + 'social/meta_carousel_frame.png', x:0.682, y:2.99, w:2.139, h:0.319, fit:'fill', crop:{ b:0.90271 } });
+  els.push({ type:'img', src:A + 'social/meta_carousel_frame.png', x:0.682, y:6.374, w:2.097, h:0.199, fit:'fill', crop:{ t:0.93146 } });
+  socialScreen(els, cfg, { name:'meta_carousel_card.png', x:0.712, y:3.737, w:2.037, h:2.546, crop:{ l:0.1, r:0.1 }, slot:5 });
   els.push({ type:'t', text:_socialCopy(cfg, 'headline', 3), x:4.74, y:2.18, w:2.67, h:0.5, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 0.68, 2.99, 2.14, 0.32, 0);
   els.push({ type:'t', text:"4:5 Carousel", x:10.78, y:3.21, w:1.23, h:0.23, font:'B', size:11, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:cfg.text2 || '', x:0.77, y:3.34, w:1.97, h:0.51, font:'B', size:6.5, color:'black', caps:false, lineSpacing:1.1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  ph(els, cfg, 2.97, 3.6, 2.14, 2.67, 1);
-  ph(els, cfg, 5.24, 3.6, 2.14, 2.67, 2);
-  ph(els, cfg, 7.5, 3.6, 2.14, 2.67, 3);
-  ph(els, cfg, 9.77, 3.6, 2.14, 2.67, 4);
-  ph(els, cfg, 0.68, 6.37, 2.1, 0.2, 6);
+  [2.969, 5.236, 7.503, 9.77].forEach(function (cx, i) {
+    socialScreen(els, cfg, { name:'meta_carousel_card.png', x:cx, y:3.603, w:2.139, h:2.673, crop:{ l:0.1, r:0.1 }, slot:i + 1 });
+  });
   return els;
 }
 
@@ -3007,8 +3035,10 @@ function layout_metaVideoStatic(cfg) {
   // in), positioned by matching its transparent content-hole fraction
   // against the source's own placeholder geometry -- not the generic
   // bezel-only overlay used before.
-  deviceMock(els, cfg, { name:'meta_reel_frame.png', x:5.13, y:1.667, w:2.465, h:5.254, screen:[0,0.05,0,0.085], slot:0 });
-  deviceMock(els, cfg, { name:'meta_reel_frame.png', x:8.73, y:1.667, w:2.465, h:5.254, screen:[0,0.05,0,0.085], slot:1 });
+  phoneBody(els, cfg, 'phone_mockup.png', 4.342, 0.875, 3.971, 6.403);
+  phoneBody(els, cfg, 'phone_mockup.png', 7.943, 0.875, 3.971, 6.403);
+  socialScreen(els, cfg, { name:'meta_reel_frame.png', x:5.128, y:1.476, w:2.455, h:5.234, hole:[0,0.05,0,0.085], slot:0 });
+  socialScreen(els, cfg, { name:'meta_reel_frame.png', x:8.729, y:1.476, w:2.455, h:5.234, hole:[0,0.05,0,0.085], slot:1 });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:"9:16 STATIC REEL", x:5.63, y:1.02, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"9:16 STORY", x:9.44, y:1.02, w:0.97, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
@@ -3069,13 +3099,16 @@ function layout_redditCarousel(cfg) {
   // context, the rest are plain swipeable thumbnails). Repositioned to the
   // real Reddit UI mockup's content-hole fraction; the previous overlay
   // pair didn't match this card's actual bounds.
-  deviceMock(els, cfg, { name:'reddit_video_frame.png', x:1.321, y:3.304, w:1.962, h:3.164, screen:[0.205,0.185,0.21,0.17], slot:2 });
+  // Source slide 68: Reddit phone + post card behind the first card. Cards
+  // are slots 0-4 left to right.
+  phoneBody(els, cfg, 'phone_mockup_reddit.png', 0.553, 2.049, 3.482, 5.615);
+  phoneBody(els, cfg, 'reddit_post_card.png', 1.253, 3.261, 2.084, 3.191);
+  socialScreen(els, cfg, { name:'reddit_carousel_card.png', x:1.259, y:3.572, w:2.084, h:2.605, slot:0 });
   els.push({ type:'t', text:_socialCopy(cfg, 'headline', 3), x:4.74, y:2.18, w:2.67, h:0.5, minSize:8, font:'B', size:11.5, color:'mutedGray', bold:true, caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:"4:5 Carousel", x:11.45, y:3.3, w:0.83, h:0.16, font:'B', size:7, color:'captionGray', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
-  ph(els, cfg, 3.53, 3.56, 2.1, 2.62, 1);
-  ph(els, cfg, 5.72, 3.57, 2.1, 2.62, 3);
-  ph(els, cfg, 7.9, 3.57, 2.1, 2.62, 4);
-  ph(els, cfg, 10.08, 3.57, 2.1, 2.62, 5);
+  [[3.535, 3.565], [5.715, 3.572], [7.896, 3.572], [10.084, 3.572]].forEach(function (c, i) {
+    socialScreen(els, cfg, { name:'reddit_carousel_card.png', x:c[0], y:c[1], w:2.096, h:2.62, slot:i + 1 });
+  });
   return els;
 }
 
@@ -3093,8 +3126,16 @@ function layout_redditVideoStatic1x1(cfg) {
   // comment/share/award row, u/username caption, Home/Inbox/You nav all
   // baked in), positioned by matching its checkerboard content-hole
   // fraction against the source's own placeholder geometry.
-  deviceMock(els, cfg, { name:'reddit_video_frame.png', x:4.889, y:2.32, w:3.178, h:5.124, screen:[0.205,0.185,0.21,0.17], slot:1 });
-  deviceMock(els, cfg, { name:'reddit_video_frame.png', x:8.289, y:2.32, w:3.178, h:5.124, screen:[0.205,0.185,0.21,0.17], slot:2 });
+  // Source slide 67: text-post Reddit phones; static post left (slot 1),
+  // a 1:1 video over the right-hand post (slot 2).
+  phoneBody(els, cfg, 'phone_mockup_reddit_post.png', 4.163, 0.256, 4.65, 7.498);
+  phoneBody(els, cfg, 'phone_mockup_reddit_post.png', 7.569, 0.256, 4.65, 7.498);
+  socialScreen(els, cfg, { name:'reddit_post_4x5.png', x:5.096, y:2.751, w:2.75, h:4.212, hole:[0,0.097,0,0.087], slot:1 });
+  socialScreen(els, cfg, { name:'reddit_post_4x5.png', x:8.502, y:2.751, w:2.75, h:4.212, slot:-1 });
+  socialScreen(els, cfg, { name:'reddit_video_1x1.png', x:8.502, y:3.159, w:2.751, h:2.751, slot:2 });
+  // With a real video still in place, the post's sample checkerboard below
+  // the square would show through; the post body there is plain white.
+  if (cfg.images && cfg.images[2]) els.push({ type:'s', x:8.502, y:5.91, w:2.75, h:0.687, fill:'#FFFFFF' });
   els.push({ type:'t', text:"1:1 STATIC", x:5.75, y:0.51, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"1:1 VIDEO", x:9.37, y:0.56, w:0.63, h:0.17, font:'B', size:7.5, color:'captionGray', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -3132,8 +3173,14 @@ function layout_redditVideoStatic4x5(cfg) {
   // Fixed device chrome: the real Reddit UI mockup, positioned per column by
   // matching its checkerboard content-hole fraction against each column's
   // own placeholder geometry (the two columns aren't the same height).
-  deviceMock(els, cfg, { name:'reddit_video_frame.png', x:4.885, y:1.475, w:3.215, h:5.184, screen:[0.205,0.185,0.21,0.17], slot:1 });
-  deviceMock(els, cfg, { name:'reddit_video_frame.png', x:8.748, y:1.981, w:2.649, h:4.272, screen:[0.205,0.185,0.21,0.17], slot:2 });
+  // Source slide 66: Reddit phones with the post card; static post left
+  // (slot 1), 4:5 video right (slot 2).
+  phoneBody(els, cfg, 'phone_mockup_reddit.png', 7.712, 0.256, 4.65, 7.498);
+  phoneBody(els, cfg, 'phone_mockup_reddit.png', 4.163, 0.256, 4.65, 7.498);
+  phoneBody(els, cfg, 'reddit_post_card.png', 8.673, 1.898, 2.798, 4.285);
+  phoneBody(els, cfg, 'reddit_post_card.png', 5.088, 1.898, 2.798, 4.285);
+  socialScreen(els, cfg, { name:'reddit_post_4x5.png', x:5.096, y:1.909, w:2.784, h:4.263, hole:[0,0.097,0,0.087], slot:1 });
+  socialScreen(els, cfg, { name:'reddit_video_4x5.png', x:8.67, y:2.342, w:2.805, h:3.506, slot:2 });
   els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:"Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 0), x:0.47, y:2.71, w:2.65, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -3182,15 +3229,15 @@ function layout_tiktokCarousel(cfg) {
   els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:8.9, y:1.96, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.58, y:2.01, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:_socialCopy(cfg, 'headline', 3), x:4.74, y:2.18, w:2.67, h:0.5, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  // The 5 filmstrip cards are plain, unframed image wells in the source --
-  // confirmed directly, no device chrome around any of them (matching the
-  // same pattern Meta's carousel filmstrip uses). Removed 5 oversized
-  // generic device_frame_9x16.png overlays that didn't match the source.
-  ph(els, cfg, 6.87, 3.35, 1.75, 3.73, 0);
-  ph(els, cfg, 8.97, 3.35, 1.75, 3.73, 1);
-  ph(els, cfg, 0.54, 3.36, 1.75, 3.73, 2);
-  ph(els, cfg, 2.65, 3.36, 1.75, 3.73, 3);
-  ph(els, cfg, 4.71, 3.36, 1.75, 3.73, 4);
+  // Source slide 64: five phones, each with the TikTok screen; slots 0-4
+  // left to right.
+  [[-0.03, 2.907, 0.538, 3.36], [2.085, 2.907, 2.653, 3.36], [4.145, 2.907, 4.713, 3.36],
+   [6.298, 2.902, 6.865, 3.355], [8.404, 2.902, 8.971, 3.355]].forEach(function (c) {
+    phoneBody(els, cfg, 'phone_mockup.png', c[0], c[1], 2.88, 4.645);
+  });
+  [[0.538, 3.36], [2.653, 3.36], [4.713, 3.36], [6.865, 3.355], [8.971, 3.355]].forEach(function (c, i) {
+    socialScreen(els, cfg, { name:'tiktok_video_frame.png', x:c[0], y:c[1], w:1.751, h:3.729, hole:[0,0.06,0,0.075], slot:i });
+  });
   els.push({ type:'t', text:"9:16 Carousel", x:10.99, y:3.55, w:0.94, h:0.17, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:true, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   return els;
 }
@@ -3210,8 +3257,10 @@ function layout_tiktokVideoStatic(cfg) {
   // "Learn more" CTA, bottom nav all baked in), positioned by matching its
   // checkerboard content-hole fraction against the source's own placeholder
   // geometry -- not the generic bezel-only overlay used before.
-  deviceMock(els, cfg, { name:'tiktok_video_frame.png', x:4.92, y:1.519, w:2.432, h:5.135, screen:[0,0.06,0,0.075], slot:0 });
-  deviceMock(els, cfg, { name:'tiktok_video_frame.png', x:8.83, y:1.519, w:2.432, h:5.135, screen:[0,0.06,0,0.075], slot:1 });
+  phoneBody(els, cfg, 'phone_mockup.png', 4.147, 0.787, 3.971, 6.403);
+  phoneBody(els, cfg, 'phone_mockup.png', 8.054, 0.787, 3.971, 6.403);
+  socialScreen(els, cfg, { name:'tiktok_video_frame.png', x:4.921, y:1.418, w:2.429, h:5.128, hole:[0,0.06,0,0.075], slot:0 });
+  socialScreen(els, cfg, { name:'tiktok_video_frame.png', x:8.828, y:1.418, w:2.429, h:5.128, hole:[0,0.06,0,0.075], slot:1 });
   els.push({ type:'t', text:"9:16 STATIC", x:5.44, y:0.86, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:"9:16 VIDEO", x:9.35, y:0.86, w:1.38, h:0.26, font:'B', size:7.5, color:'captionGray', align:'center', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -3261,10 +3310,14 @@ function layout_pinterest2x3(cfg) {
   // places directly at that placeholder's bounds -- no hole-fraction scaling
   // needed. That also confirms index2 (the actual swappable ad card, 5.92,
   // 2.97, 1.17, 2.00) already lines up with the mockup's real content hole.
-  deviceMock(els, cfg, { name:'pinterest_2x3_frame.jpg', x:4.71, y:1.36, w:2.4, h:5.2, screen:[0.52,0.31,0.02,0.36], slot:2 });
+  // Source slide 60: phone, then the Pinterest feed screen, then our pin
+  // (slot 2) at its own placeholder in the feed's right column.
+  phoneBody(els, cfg, 'phone_mockup.png', 3.916, 0.767, 3.971, 6.403);
+  socialScreen(els, cfg, { name:'pinterest_2x3_frame.jpg', x:4.705, y:1.364, w:2.397, h:5.196, slot:-1 });
+  socialScreen(els, cfg, { name:'pinterest_pin.png', x:5.917, y:2.973, w:1.169, h:1.999, hole:[0,0,0,0.11], slot:2 });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  ph(els, cfg, 8.76, 1.88, 2.44, 4.18, 1);
+  socialScreen(els, cfg, { name:'pinterest_pin.png', x:8.757, y:1.877, w:2.443, h:4.178, hole:[0,0,0,0.11], slot:1 });
   els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:"Post copy (500 ch):", x:0.47, y:2.27, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:_socialCopy(cfg, 'postCopy', 0), x:0.47, y:2.71, w:2.65, h:1.17, minSize:6.5, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -3272,11 +3325,8 @@ function layout_pinterest2x3(cfg) {
   els.push({ type:'t', text:_socialCopy(cfg, 'headline', 1), x:0.47, y:4.34, w:2.65, h:0.62, minSize:8, font:'B', size:11.5, color:'mutedGray', caps:false, lineSpacing:0.9, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:"Alts:", x:0.47, y:5.01, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:_socialCopy(cfg, 'alts', 2), x:0.47, y:5.42, w:2.65, h:0.58, minSize:7, font:'B', size:10, color:'mutedGray', caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
-  els.push({ type:'img', src:(cfg.assets && cfg.assets['pinterest_wordmark.png']) || A+'social/pinterest_wordmark.png', x:8.77, y:5.54, w:2.42, h:0.51 });
-  // Button background drawn BEFORE its label -- was pushed after, so the
-  // black button covered the white "Follow"-style text completely.
-  els.push({ type:'s', x:8.77, y:5.69, w:1.37, h:0.31, fill:'black' });
-  els.push({ type:'t', text:cfg.text2 || '', x:8.89, y:5.68, w:0.91, h:0.23, font:'B', size:11, color:'white', valign:'middle', caps:false, lineSpacing:1, insets:{l:0.028,t:0.028,r:0.028,b:0.028} });
+  // (The template's CTA01 strip sits under the pin's own "Learn more" bar,
+  // which is baked into the pin screen -- nothing separate to draw.)
   els.push({ type:'t', text:_socialLine(cfg, 'super_', 'Super:', 'Super:'), x:0.47, y:6.03, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:_socialLine(cfg, 'cta', 'CTA:', 'CTA: Learn More'), x:0.47, y:6.44, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:_socialLine(cfg, 'destination', 'Destination:', 'Destination: VLP'), x:0.47, y:6.85, w:2.65, h:0.39, font:'B', size:10, color:'mutedGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -3298,7 +3348,11 @@ function layout_pinterest1x1(cfg) {
   // checkerboard content-hole fraction against the source's own placeholder.
   // Replaces two overlapping overlays (a generic bezel + a partial Pinterest
   // asset) with one correctly-positioned frame.
-  deviceMock(els, cfg, { name:'pinterest_1x1_frame.png', x:6.566, y:0.826, w:2.902, h:6.051, screen:[0.04,0.32,0.04,0.24], slot:0 });
+  // Source slide 61: large phone, the Pinterest video-pin screen, then the
+  // square creative (slot 0) cropped from the template's sample pin.
+  phoneBody(els, cfg, 'phone_mockup.png', 5.667, 0.142, 4.723, 7.617);
+  socialScreen(els, cfg, { name:'pinterest_1x1_frame.png', x:6.601, y:0.888, w:2.855, h:6.079, slot:-1 });
+  socialScreen(els, cfg, { name:'pinterest_pin.png', x:6.647, y:2.796, w:2.735, h:2.771, crop:{ l:0.012, t:0.0116, r:0.0002, b:0.403 }, slot:0 });
   els.push({ type:'t', text:(cfg.copy && cfg.copy.format) || cfg.title || "", x:0.47, y:0.98, w:2.65, h:0.41, font:'B', size:11.5, color:'captionGray', bold:true, caps:false, lineSpacing:1.15, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:cfg.text || '', x:0.47, y:1.47, w:2.65, h:0.42, font:'B', size:11, color:'titleGray', bold:true, caps:true, lineSpacing:0.9, charSpacing:-0.44, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
   els.push({ type:'t', text:_socialLine(cfg, 'size', 'Size:', 'Size: 4:5'), x:0.47, y:1.92, w:2.65, h:0.33, font:'B', size:7, color:'captionGray', caps:true, lineSpacing:1, charSpacing:-0.5, insets:{l:0.079,t:0.104,r:0.079,b:0.104} });
@@ -4752,7 +4806,6 @@ var LAYOUT_KEYS = {
     "copy",
     "items",
     "text",
-    "text2",
     "title"
   ],
   "pinterest1x1": [

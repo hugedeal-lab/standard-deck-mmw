@@ -20,9 +20,19 @@
  "tiktok_video_frame.png": "assets/social/tiktok_video_frame.png",
  "meta_reel_frame.png": "assets/social/meta_reel_frame.png",
  "meta_carousel_frame.png": "assets/social/meta_carousel_frame.png",
- "reddit_video_frame.png": "assets/social/reddit_video_frame.png",
  "pinterest_2x3_frame.jpg": "assets/social/pinterest_2x3_frame.jpg",
  "pinterest_1x1_frame.png": "assets/social/pinterest_1x1_frame.png",
  "reddit_brand_photo.png": "assets/social/reddit_brand_photo.png",
- "tiktok_chrome.png": "assets/social/tiktok_chrome.png"
+ "tiktok_chrome.png": "assets/social/tiktok_chrome.png",
+ "phone_mockup.png": "assets/social/phone_mockup.png",
+ "phone_mockup_meta.png": "assets/social/phone_mockup_meta.png",
+ "phone_mockup_reddit.png": "assets/social/phone_mockup_reddit.png",
+ "phone_mockup_reddit_post.png": "assets/social/phone_mockup_reddit_post.png",
+ "reddit_post_card.png": "assets/social/reddit_post_card.png",
+ "reddit_post_4x5.png": "assets/social/reddit_post_4x5.png",
+ "reddit_video_4x5.png": "assets/social/reddit_video_4x5.png",
+ "reddit_video_1x1.png": "assets/social/reddit_video_1x1.png",
+ "reddit_carousel_card.png": "assets/social/reddit_carousel_card.png",
+ "meta_carousel_card.png": "assets/social/meta_carousel_card.png",
+ "pinterest_pin.png": "assets/social/pinterest_pin.png"
 }

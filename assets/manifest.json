@@ -149,10 +149,6 @@
   "note": "Real Meta carousel chrome (mazdausa header, dots, footer CTA), replaces device_frame_meta_carousel.png."
  },
  {
-  "file": "social/reddit_video_frame.png",
-  "note": "Real Reddit UI chrome (upvote/comment/share row, username, nav), replaces device_frame_reddit.png / device_frame_reddit_1x1.png / reddit_ui_chrome.png."
- },
- {
   "file": "social/pinterest_2x3_frame.jpg",
   "note": "Real Pinterest in-feed mockup with surrounding pins for context, replaces device_frame_9x16.png. JPEG (photo content), not PNG."
  },
@@ -279,5 +275,82 @@
   "bytes": 69051,
   "md5": "1b586162ed50",
   "note": "YouTube logo sprite for youtubeDivider (template image109; layout crops to the white top logo, b 71.6%)."
+ },
+ {
+  "file": "social/phone_mockup.png",
+  "source": "image20.png (7.30.26 template, resized)",
+  "bytes": 57930,
+  "md5": "b23173c6df46",
+  "note": "Plain phone mockup: white body, soft drop shadow in alpha (Phone_mockup.png). Behind Meta reel, TikTok and Pinterest screens."
+ },
+ {
+  "file": "social/phone_mockup_meta.png",
+  "source": "image18.png (7.30.26 template, resized)",
+  "bytes": 528825,
+  "md5": "c139eab8bcf1",
+  "note": "Phone mockup with Meta feed UI (Phone_mockup2.png). Behind Meta carousels."
+ },
+ {
+  "file": "social/phone_mockup_reddit.png",
+  "source": "image22.png (7.30.26 template, resized)",
+  "bytes": 222737,
+  "md5": "0e44547c4a66",
+  "note": "Phone mockup with Reddit feed UI (Phone_mockup4.png). Reddit 4:5 and carousel."
+ },
+ {
+  "file": "social/phone_mockup_reddit_post.png",
+  "source": "image24.png (7.30.26 template, resized)",
+  "bytes": 234391,
+  "md5": "e9d5bf2e5f7e",
+  "note": "Phone mockup with a Reddit text post (Phone_mockup5.png). Reddit 1:1."
+ },
+ {
+  "file": "social/reddit_post_card.png",
+  "source": "image23.png (7.30.26 template, resized)",
+  "bytes": 18286,
+  "md5": "caf67def5b29",
+  "note": "Reddit promoted-post card overlay (4x5 Reddit_placeholder2.png), transparent."
+ },
+ {
+  "file": "social/reddit_post_4x5.png",
+  "source": "image106.png (7.30.26 template, resized)",
+  "bytes": 49813,
+  "md5": "57e9692caca1",
+  "note": "Reddit 4:5 static post screen (sample creative)."
+ },
+ {
+  "file": "social/reddit_video_4x5.png",
+  "source": "image105.png (7.30.26 template, resized)",
+  "bytes": 37500,
+  "md5": "a2623bfa8ea7",
+  "note": "Reddit 4:5 video screen with play button."
+ },
+ {
+  "file": "social/reddit_video_1x1.png",
+  "source": "image107.png (7.30.26 template, resized)",
+  "bytes": 33357,
+  "md5": "f485d7e08ce0",
+  "note": "Reddit 1:1 video screen with play button."
+ },
+ {
+  "file": "social/reddit_carousel_card.png",
+  "source": "image108.png (7.30.26 template, resized)",
+  "bytes": 15858,
+  "md5": "9b540bbf10c4",
+  "note": "Reddit carousel card (sample creative)."
+ },
+ {
+  "file": "social/meta_carousel_card.png",
+  "source": "image100.png (7.30.26 template, resized)",
+  "bytes": 3573,
+  "md5": "734f2ab81635",
+  "note": "Meta carousel card (sample creative), cropped per format in the layouts."
+ },
+ {
+  "file": "social/pinterest_pin.png",
+  "source": "image101.png (7.30.26 template, resized)",
+  "bytes": 33431,
+  "md5": "e8795ab45e53",
+  "note": "Pinterest pin with \"Learn more\" bar (sample creative)."
  }
 ]

@@ -366,6 +366,15 @@ The grey labels "Post copy (500 ch):", "Headline (100 ch):", "Alts:" are fixed
 template text -- never pass them. Full 500-character post copy and 100-character
 headlines fit (the type shrinks); see §6.7 for where it stays at design size.
 (cfg.items[n] is the old positional API -- still accepted, never use it.)
+Phones and platform screens are built in (the template's phone mockups, with
+sample screens). images:[...] puts the user's creative INSIDE each screen,
+keeping the platform UI around it; without images the template's sample
+screens stay (replaceable in PowerPoint). Slots: carousels -- cards left to
+right from 0 (metaCarousel1x1: 0 = the in-phone card; metaCarousel4x5: 5 =
+in-phone card, 1-4 the strip; redditCarousel/tiktokCarousel: 0-4); two-phone
+sheets -- metaVideoStatic/tiktokVideoStatic 0 left, 1 right; reddit sheets 1
+left, 2 right; pinterest2x3 2 = in-feed pin, 1 = standalone pin; pinterest1x1 0.
+Pass only images the user supplied.
 Name	Template layout	Background	Use
 metaDivider	Meta_Divider	car photo (auto)	Meta platform divider. Complete on its own: template car photo, line pattern and the Meta logo are built in -- pass no content. images:['...'] only for an optional co-brand mark in the bottom-right corner.
 metaCarousel1x1	Meta_Carousel 1x1	#FFFFFF	Meta 1:1 carousel spec sheet.
@@ -614,13 +623,12 @@ locationDetail: subhead 24/70 | tag 55/150 | text 600+ | title 24/60
 moodboardProps: captions[] 105 | tag 55/150 | title 26/60
 moodboardWardrobe: accessoryCaption 200/375 | subtitle 75/200 | tag 95/280 | text 600+ | title 10
 moodboardToneManner: tag 45/90 | title 18/34
-metaCarousel1x1: copy.postCopy 190/600+ | copy.headline 65/140 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 90/190 | text 40/45 | text2 350
-metaCarousel4x5: copy.postCopy 190/600+ | copy.headline 65/140 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 90/190 | text 40/45 | text2 180
-metaVideoStatic, redditVideoStatic4x5, tiktokVideoStatic, pinterest1x1, youtubeVideoAd: copy.postCopy 180/600+ | copy.headline 95/240 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 55/140 | text 40/45
+metaCarousel1x1: copy.postCopy 190/600+ | copy.headline 65/140 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 90/190 | text 26/28 | text2 600+
+metaCarousel4x5: copy.postCopy 190/600+ | copy.headline 65/140 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 90/190 | text 26/28 | text2 180
+metaVideoStatic, redditVideoStatic4x5, tiktokVideoStatic, pinterest2x3, pinterest1x1, youtubeVideoAd: copy.postCopy 180/600+ | copy.headline 95/240 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 55/140 | text 40/45
 redditCarousel: copy.postCopy 180/600+ | copy.headline 60/130 | copy.alts 75/210 | copy.format 26/65 | copy.cta 30/100 | copy.destination 90/190 | text 40/45
 redditVideoStatic1x1: copy.postCopy 180/600+ | copy.headline 90/230 | copy.alts 75/210 | copy.format 30/80 | copy.cta 30/100 | copy.destination 55/140 | text 40/45
 tiktokCarousel: copy.postCopy 190/600+ | copy.headline 65/140 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 90/190 | text 40/45
-pinterest2x3: copy.postCopy 180/600+ | copy.headline 95/240 | copy.alts 75/220 | copy.format 30/80 | copy.cta 30/100 | copy.destination 55/140 | text 40/45 | text2 10/16
 reportGrayChart, reportDarkChart: tag 95/280 | title 45 | intro 600+
 reportGrayTable, reportDarkTable: tag 95/280 | title 45 | intro 575/600+ | headers[] 50
 reportGrayTimeline: tag 95/280 | title 45 | intro 600+ | milestones[] 40/95

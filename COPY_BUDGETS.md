@@ -266,15 +266,15 @@ it measures its own list (prompt section 15.1).
 | `metaCarousel1x1` | `copy.format` | 30/80 |
 | `metaCarousel1x1` | `copy.cta` | 30/100 |
 | `metaCarousel1x1` | `copy.destination` | 90/190 |
-| `metaCarousel1x1` | `text` | 40/45 |
-| `metaCarousel1x1` | `text2` | 350 |
+| `metaCarousel1x1` | `text` | 26/28 |
+| `metaCarousel1x1` | `text2` | 600+ |
 | `metaCarousel4x5` | `copy.postCopy` | 190/600+ |
 | `metaCarousel4x5` | `copy.headline` | 65/140 |
 | `metaCarousel4x5` | `copy.alts` | 75/220 |
 | `metaCarousel4x5` | `copy.format` | 30/80 |
 | `metaCarousel4x5` | `copy.cta` | 30/100 |
 | `metaCarousel4x5` | `copy.destination` | 90/190 |
-| `metaCarousel4x5` | `text` | 40/45 |
+| `metaCarousel4x5` | `text` | 26/28 |
 | `metaCarousel4x5` | `text2` | 180 |
 | `metaVideoStatic` | `copy.postCopy` | 180/600+ |
 | `metaVideoStatic` | `copy.headline` | 95/240 |
@@ -325,7 +325,6 @@ it measures its own list (prompt section 15.1).
 | `pinterest2x3` | `copy.cta` | 30/100 |
 | `pinterest2x3` | `copy.destination` | 55/140 |
 | `pinterest2x3` | `text` | 40/45 |
-| `pinterest2x3` | `text2` | 10/16 |
 | `pinterest1x1` | `copy.postCopy` | 180/600+ |
 | `pinterest1x1` | `copy.headline` | 95/240 |
 | `pinterest1x1` | `copy.alts` | 75/220 |
