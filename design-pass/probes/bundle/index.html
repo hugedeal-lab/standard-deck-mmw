@@ -1,8 +1,8 @@
 <!doctype html>
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Design Pass Probe v3</title>
+<title>Design Pass Probe v4</title>
 <link rel="stylesheet" href="probe.css"></head><body><main>
-<h1>Design Pass probe <span style="font-size:13px;color:var(--muted)">v3 (bundle)</span></h1>
+<h1>Design Pass probe <span style="font-size:13px;color:var(--muted)">v4 (bundle)</span></h1>
 <p class="lead">Tests whether this page can take a .pptx in, read it, change it and hand a corrected copy back. Nothing leaves your browser.</p>
 <div id="drop" tabindex="0" role="button" aria-label="Choose or drop a PowerPoint file"><strong>Drop a .pptx here, or click to choose</strong><span class="pend">Use a non-confidential deck</span></div>
 <label class="pick">Or use the plain file picker: <input id="file2" type="file" accept=".pptx"></label>
@@ -11,7 +11,7 @@
 <ol id="steps">
 <li id="s1" class="pend">1. File received by the page</li>
 <li id="s2" class="pend">2. File opened and read</li>
-<li id="s3" class="pend">3. Fix applied (Calibri / Helvetica → Arial)</li>
+<li id="s3" class="pend">3. Fix applied (non-MMW fonts → Arial)</li>
 <li id="s4" class="pend">4. Corrected copy downloaded</li>
 </ol>
 <div id="report"></div>

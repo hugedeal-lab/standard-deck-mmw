@@ -21,8 +21,11 @@ async function analyze(z){
   }
   return {slides:slides,fonts:fonts,colors:colors,layouts:layouts,lorem:lorem,annot:annot,pics:pics,charts:charts};
 }
+var STEP0={s1:'1. File received by the page',s2:'2. File opened and read',s3:'3. Fix applied (non-MMW fonts → Arial)',s4:'4. Corrected copy downloaded'};
+function resetSteps(){for(var k in STEP0){var e=document.getElementById(k);e.className='pend';e.textContent=STEP0[k]}document.getElementById('report').innerHTML='';document.getElementById('fix').disabled=true;}
 async function load(f){
   if(!f){log('No file in the event');return;}
+  resetSteps();
   log('Reading '+f.name+' ('+f.size+' bytes)'); fname=f.name||'deck.pptx'; mark('s1',true,'File received: '+fname+' ('+Math.round(f.size/1024)+' KB)');
   try{zip=await JSZip.loadAsync(await f.arrayBuffer());var a=await analyze(zip);
     mark('s2',true,'Opened: '+a.slides.length+' slides');
@@ -36,15 +39,22 @@ async function load(f){
     document.getElementById('fix').disabled=false;
   }catch(e){mark('s2',false,'Could not open the file: '+e.message);log('Open failed: '+e.message)}
 }
+var KEEP={'Mazda Type Bold':1,'Mazda Type':1,'Arial':1,'Symbol':1,'Wingdings':1,'Wingdings 2':1,'Wingdings 3':1,'Webdings':1,'Courier New':1};
 document.getElementById('fix').onclick=async function(){
-  try{var n=0,paths=Object.keys(zip.files).filter(function(p){return /^ppt\/(slides|slideLayouts|slideMasters)\/[^/]+\.xml$/.test(p)});
-    for(var i=0;i<paths.length;i++){var x=await zip.file(paths[i]).async('string');var y=x.replace(/typeface="(Calibri|Calibri Light|Helvetica|Helvetica Neue)"/g,function(){n++;return 'typeface="Arial"'});if(y!==x)zip.file(paths[i],y)}
+  var btn=document.getElementById('fix');btn.disabled=true;
+  try{log('Applying fix to '+fname+'...');var changed={},n=0;
+    var paths=Object.keys(zip.files).filter(function(p){return /^ppt\/(slides|slideLayouts|slideMasters|theme|notesSlides|notesMasters)\/[^/]+\.xml$/.test(p)});
+    for(var i=0;i<paths.length;i++){var x=await zip.file(paths[i]).async('string');
+      var y=x.replace(/<a:(latin|ea|cs) typeface="([^"]*)"/g,function(m,tag,f){if(!f||f.charAt(0)==='+'||KEEP[f]||tag!=='latin')return m;changed[f]=(changed[f]||0)+1;n++;return '<a:latin typeface="Arial"'});
+      if(y!==x)zip.file(paths[i],y)}
     mark('s3',true,'Fix applied: '+n+' font reference'+(n===1?'':'s')+' changed to Arial');
-    var blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.presentationml.presentation'});
+    log('Changed: '+(Object.keys(changed).map(function(k){return k+' ×'+changed[k]}).join(', ')||'nothing -- no non-MMW fonts found'));
+    var last=-1;var blob=await zip.generateAsync({type:'blob',mimeType:'application/vnd.openxmlformats-officedocument.presentationml.presentation'},function(md){var p=Math.floor(md.percent/10)*10;if(p!==last){last=p;document.getElementById('s4').textContent='4. Packing corrected copy: '+p+'%'}});
     var url=URL.createObjectURL(blob),a=document.createElement('a');a.href=url;a.download=fname.replace(/\.pptx$/i,'')+'_designpass_probe.pptx';
     document.body.appendChild(a);a.click();a.remove();setTimeout(function(){URL.revokeObjectURL(url)},3000);
-    log('Download triggered: '+a.download);mark('s4',true,'Download started: '+a.download+'. Open it in PowerPoint to confirm it opens cleanly.');
+    log('Download triggered: '+a.download+' ('+Math.round(blob.size/1024)+' KB)');mark('s4',true,'Download started: '+a.download+'. Open it in PowerPoint to confirm it opens cleanly.');
   }catch(e){mark('s3',false,'Failed: '+e.message);log('Fix/download failed: '+e.message)}
+  btn.disabled=false;
 };
 var drop=document.getElementById('drop'),inp=document.getElementById('file');
 drop.onclick=function(){log('Drop box clicked: opening file picker');try{inp.click()}catch(e){log('File picker blocked: '+e.message)}};drop.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();inp.click()}};
@@ -54,4 +64,4 @@ var dragSeen={};
 ['dragenter','dragover'].forEach(function(t){drop.addEventListener(t,function(e){e.preventDefault();drop.classList.add('over');if(!dragSeen[t]){dragSeen[t]=1;log(t+' reached the page (types: '+Array.prototype.join.call((e.dataTransfer&&e.dataTransfer.types)||[],', ')+')')}})});
 document.addEventListener('dragover',function(e){e.preventDefault()});document.addEventListener('drop',function(e){e.preventDefault();log('drop landed outside the box')});
 ['dragleave','drop'].forEach(function(t){drop.addEventListener(t,function(e){e.preventDefault();drop.classList.remove('over')})});
-drop.addEventListener('drop',function(e){var n=e.dataTransfer?e.dataTransfer.files.length:-1;log('drop reached the box: '+n+' file(s)');if(n>0)load(e.dataTransfer.files[0]);else log('The drop carried no file -- the host is likely stripping it.')});
+drop.addEventListener('drop',function(e){e.stopPropagation();var n=e.dataTransfer?e.dataTransfer.files.length:-1;log('drop reached the box: '+n+' file(s)');if(n>0)load(e.dataTransfer.files[0]);else log('The drop carried no file -- the host is likely stripping it.')});
