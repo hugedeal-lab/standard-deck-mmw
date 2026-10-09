@@ -893,6 +893,10 @@ function exportChart(slide, el, isDark, accent, pptx) {
     co.barGrouping=opts.barGrouping||'clustered'; co.barDir=opts.barDir||'bar'; co.valAxisHidden=opts.valAxisHidden||false;
     co.catAxisLabelColor=SD.colorForPptx('body',isDark); co.valAxisLabelColor=SD.colorForPptx('body',isDark);
     if (el.chartType==='bar') co.dataLabelPosition=opts.dataLabelPosition||'outEnd';
+    // Value labels default to black -- invisible on the asphalt chassis -- and
+    // sit on the line's own markers. Body colour, above the point.
+    co.dataLabelColor=opts.dataLabelColor||SD.colorForPptx('body',isDark); co.dataLabelFontSize=opts.dataLabelFontSize||9;
+    if (el.chartType==='line') co.dataLabelPosition=opts.dataLabelPosition||'t';
     // Area fill defaults to opaque, which reads as a solid wedge and swamps the
     // trend line. The preview draws it at 15% -- match that here.
     if (el.chartType==='area') co.chartColorsOpacity = opts.chartColorsOpacity != null ? opts.chartColorsOpacity : 18;

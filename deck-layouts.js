@@ -3384,6 +3384,90 @@ function _niceMax(v) {
   return Math.ceil(v / mag) * mag;
 }
 
+// ---------- Chart colours: cfg.chart.opts.colors / opts.highlight ----------
+// Default: each chart type keeps the template's own palette. Two opt-ins:
+//   colors:    ['canopy', 'tide-light', '#4A634D', ...] -- brand names (below),
+//              hex, or palette tokens. Multi-series: one per series. One series:
+//              one colour for every bar, or several to cycle per category.
+//              Pie/doughnut: per slice.
+//   highlight: a category label or 0-based index (or an array of them), or a
+//              series name -- that one draws in Spark (or colors[0]) and the
+//              rest go grey. The usual "make our number stand out" chart.
+// Unknown names warn and fall back to the template palette.
+// Mid tones are the template charts' own values (slides 80-94), not the
+// accent families' -- e.g. canopy #4A634D, not #43644B.
+var CHART_NAMED = {
+  'spark':  '#BFA588', 'spark-light':  '#FFE0C0', 'spark-dark':  '#9C7C5C',
+  'canopy': '#4A634D', 'canopy-light': '#B3BDB6', 'canopy-dark': '#203822',
+  'tide':   '#416986', 'tide-light':   '#7CA8C1', 'tide-dark':   '#0B2A47',
+  'aurora': '#6D649F', 'aurora-light': '#AFAFC1', 'aurora-dark': '#2D273D',
+  'asphalt':'#262626', 'paper':'#EEEEEE', 'gray':'#808080', 'grey':'#808080',
+  'gray-light':'#C8C8C8', 'gray-dark':'#5C5C5C', 'white':'#FFFFFF', 'accent':'#BFA588'
+};
+var CHART_HL = '#BFA588';
+var _chartWarned = {};
+function _chartColor(c, dark) {
+  if (c == null || c === '') return null;
+  var k = String(c).trim().toLowerCase().replace(/\s+|_/g, '-').replace(/^(tides|green|blue|purple|tan)(-|$)/, function (m, f, d) {
+    return ({ tides:'tide', green:'canopy', blue:'tide', purple:'aurora', tan:'spark' })[f] + d; });
+  if (k === 'ink') return dark ? '#EEEEEE' : '#262626';
+  var h = CHART_NAMED[k] || _hex6(c);
+  if (!h && !_chartWarned[k]) {
+    _chartWarned[k] = 1;
+    console.warn('[DeckLayouts] chart colour "' + c + '" is not a brand colour -- using the template palette. ' +
+      'Use spark, canopy, tide, aurora (each with -light / -dark), asphalt, paper, gray, ink, or hex.');
+  }
+  if (h && dark && !_chartWarned['dk' + h] && (function (x) {
+      var r = parseInt(x.substr(1, 2), 16), g = parseInt(x.substr(3, 2), 16), b = parseInt(x.substr(5, 2), 16);
+      return (0.2126 * r + 0.7152 * g + 0.0722 * b) / 255 < 0.16; })(h)) {
+    _chartWarned['dk' + h] = 1;
+    console.warn('[DeckLayouts] chart colour "' + c + '" (' + h + ') nearly disappears on a dark slide -- use a mid or -light shade.');
+  }
+  return h;
+}
+// fill(si, gi) for series si in category gi; legend(si) for the legend swatch.
+// def(si, gi) is the chart type's own default. Returns null when neither
+// option is set, so callers keep their template palette untouched.
+function _chartFills(ch, dark, labels, data, def) {
+  var o = ch.opts || {};
+  var raw = o.colors != null ? o.colors : o.chartColors;
+  if (raw != null && !Array.isArray(raw)) raw = [raw];
+  var cols = (raw || []).map(function (c) { return _chartColor(c, dark); }).filter(Boolean);
+  var hl = o.highlight;
+  if (!cols.length && (hl == null || hl === '')) return null;
+  var grey = dark ? '#5C5C5C' : '#C8C8C8';
+  var nS = data.length, hlSeries = {}, hlCat = {}, any = false;
+  (Array.isArray(hl) ? hl : (hl == null || hl === '' ? [] : [hl])).forEach(function (h) {
+    var hs = String(h).toLowerCase(), hit = false;
+    if (nS > 1) data.forEach(function (sr, si) { if (String(sr.name || '').toLowerCase() === hs) { hlSeries[si] = 1; hit = true; } });
+    if (!hit) labels.forEach(function (l, gi) { if (String(l).toLowerCase() === hs) { hlCat[gi] = 1; hit = true; } });
+    if (!hit && typeof h === 'number' && h >= 0 && h < labels.length) { hlCat[h] = 1; hit = true; }
+    if (hit) any = true;
+    else if (!_chartWarned['hl' + hs]) { _chartWarned['hl' + hs] = 1;
+      console.warn('[DeckLayouts] chart highlight "' + h + '" matches no category or series -- ignored.'); }
+  });
+  var serMode = Object.keys(hlSeries).length > 0;
+  var HL = cols[0] || CHART_HL;
+  function base(si, gi) {
+    if (!cols.length) return def(si, gi);
+    if (nS === 1) return cols.length === 1 ? cols[0] : cols[(gi < 0 ? 0 : gi) % cols.length];
+    return cols[si % cols.length];
+  }
+  if (!any && !cols.length) return null;
+  return {
+    fill: function (si, gi) {
+      if (!any) return base(si, gi);
+      if (serMode) return hlSeries[si] ? HL : grey;
+      if (!hlCat[gi]) return grey;
+      return nS === 1 ? HL : base(si, gi);
+    },
+    legend: function (si) {
+      if (any && serMode) return hlSeries[si] ? HL : grey;
+      return base(si, -1);
+    }
+  };
+}
+
 // Horizontal grouped bar chart built from primitives so the pill ends survive
 // export -- PowerPoint's chart renderer ignores series geometry, so a native
 // <c:barChart> can only ever draw flat bars. Axis line, 5 gridlines, category
@@ -3397,6 +3481,7 @@ function chartBarEls(els, cfg, X, Y, W, H, dark) {
   var labels = data[0].labels || data[0].values.map(function (_, i) { return String(i + 1); });
   var nG = labels.length, nS = data.length;
   var PAL = dark ? CHART_BARS_DARK : CHART_BARS_LIGHT;
+  var cf = _chartFills(ch, dark, labels, data, function (si, gi) { return nS === 1 ? PAL[(gi < 0 ? 0 : gi) % PAL.length] : PAL[si % PAL.length]; });
   var axisCol = dark ? 'mutedGray' : 'bodyGray';
   var gridCol = dark ? '#3C3C3C' : '#D8D8D8';
 
@@ -3433,7 +3518,7 @@ function chartBarEls(els, cfg, X, Y, W, H, dark) {
       var v = +s.values[gi] || 0;
       var bw = Math.max((v / axisMax) * pw, barH);
       var by = py + gi * groupH + pad + si * barH;
-      var fill = (nS === 1) ? PAL[gi % PAL.length] : PAL[si % PAL.length];
+      var fill = cf ? cf.fill(si, gi) : (nS === 1) ? PAL[gi % PAL.length] : PAL[si % PAL.length];
       els.push({ type:'s', x:px, y:by, w:bw, h:barH - 0.03, fill:fill, radius:'pill' });
       if (opts.showValue !== false) {
         els.push({ type:'t', text:String(v), x:px + bw + 0.09, y:by - 0.02, w:0.9, h:barH,
@@ -3447,7 +3532,7 @@ function chartBarEls(els, cfg, X, Y, W, H, dark) {
   if (showLeg) {
     var lx = px;
     data.forEach(function (s, si) {
-      els.push({ type:'s', x:lx, y:Y + 0.06, w:0.16, h:0.16, fill:PAL[si % PAL.length], radius:0.03 });
+      els.push({ type:'s', x:lx, y:Y + 0.06, w:0.16, h:0.16, fill:cf ? cf.legend(si) : PAL[si % PAL.length], radius:0.03 });
       var name = String(s.name || ('Series ' + (si + 1)));
       els.push({ type:'t', text:name, x:lx + 0.22, y:Y - 0.02, w:2.4, h:0.32, font:'B', size:8.5,
         color:axisCol, align:'left', valign:'middle', caps:false, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
@@ -3475,6 +3560,7 @@ function chartColEls(els, cfg, X, Y, W, H, dark) {
   var labels = data[0].labels || data[0].values.map(function (_, i) { return String(i + 1); });
   var nG = labels.length, nS = data.length;
   var PAL = dark ? CHART_COLS_DARK : CHART_COLS_LIGHT;
+  var cf = _chartFills(ch, dark, labels, data, function (si) { return nS === 1 ? PAL[0] : PAL[si % PAL.length]; });
   var ink = dark ? '#EEEEEE' : '#262626', axisCol = dark ? 'mutedGray' : 'bodyGray';
   var gridCol = dark ? '#3C3C3C' : '#D8D8D8';
   var showLeg = opts.showLegend && nS > 1, grid = !!opts.gridlines;
@@ -3512,7 +3598,7 @@ function chartColEls(els, cfg, X, Y, W, H, dark) {
       var v = +s.values[gi] || 0;
       var bh = v > 0 ? Math.max((v / axisMax) * ph, 0.02) : 0;
       var bx = gx + si * (bw + inner);
-      var fill = (nS === 1) ? PAL[0] : PAL[si % PAL.length];
+      var fill = cf ? cf.fill(si, gi) : (nS === 1) ? PAL[0] : PAL[si % PAL.length];
       if (bh) els.push({ type:'s', x:bx, y:py + ph - bh, w:bw, h:bh, fill:fill });
       if (opts.showValue) {
         els.push({ type:'t', text:String(v), x:bx - 0.3, y:py + ph - bh - 0.22, w:bw + 0.6, h:0.2,
@@ -3528,7 +3614,7 @@ function chartColEls(els, cfg, X, Y, W, H, dark) {
   if (showLeg) {
     var lx = px;
     data.forEach(function (s, si) {
-      els.push({ type:'s', x:lx, y:Y + 0.06, w:0.16, h:0.16, fill:PAL[si % PAL.length], radius:0.03 });
+      els.push({ type:'s', x:lx, y:Y + 0.06, w:0.16, h:0.16, fill:cf ? cf.legend(si) : PAL[si % PAL.length], radius:0.03 });
       var name = String(s.name || ('Series ' + (si + 1)));
       els.push({ type:'t', text:name, x:lx + 0.22, y:Y - 0.02, w:2.4, h:0.32, font:'B', size:8.5,
         color:axisCol, align:'left', valign:'middle', caps:false, insets:{l:0.02,t:0.02,r:0.02,b:0.02} });
@@ -3558,6 +3644,7 @@ function chartDoughnutEls(els, cfg, X, Y, W, H, dark) {
   // are dropped while the slice labels show (a 2026-10 deck turned them on).
   if (opts.showPercent !== false) opts.showValue = false;
   if (opts.showLabel !== false) opts.showLegend = false;
+  opts.chartColors = _nativeColors(ch, dark, cols, 'slice');
   var D = Math.min(W, H);                      // square frame, centred in the well
   var fx = X + (W - D) / 2, fy = Y + (H - D) / 2;
   els.push({ type:'chart', x:fx, y:fy, w:D, h:D, chartType:'doughnut', data:ch.data || [], opts:opts });
@@ -3567,6 +3654,28 @@ function chartDoughnutEls(els, cfg, X, Y, W, H, dark) {
       font:'H', size:ch.title.length > 12 ? 16 : 24, color:'titleGray', align:'center', valign:'middle',
       caps:false, lineSpacing:1, insets:{l:0.04,t:0.04,r:0.04,b:0.04} });
   }
+}
+
+// Native charts (pie, doughnut, line, area) take a hex list: one per slice
+// for pie/doughnut, one per series for line/area. dflt is returned unchanged
+// when neither colors nor highlight is set (null = the engine's own ramp).
+function _nativeColors(ch, dark, dflt, per) {
+  var data = (ch.data || []).filter(function (s) { return s && s.values && s.values.length; });
+  if (!data.length) return dflt;
+  var labels = data[0].labels || data[0].values.map(function (_, i) { return String(i + 1); });
+  var one = per === 'slice' ? [data[0]] : data;
+  var greys = dark ? ['#5C5C5C', '#808080', '#4A4A4A', '#6E6E6E'] : ['#C8C8C8', '#A6A6A6', '#D9D9D9', '#B3B3B3'];
+  var cf = _chartFills(ch, dark, labels, one, function (si, gi) {
+    var i = per === 'slice' ? gi : si; return dflt ? dflt[i % dflt.length] : (dark ? CHART_BARS_DARK : CHART_BARS_LIGHT)[i % 6]; });
+  if (!cf) return dflt;
+  var n = per === 'slice' ? labels.length : data.length, out = [], g = 0;
+  for (var i = 0; i < n; i++) {
+    var c = per === 'slice' ? cf.fill(0, i) : cf.legend(i);
+    // Neighbouring grey slices need telling apart.
+    if (per === 'slice' && c === (dark ? '#5C5C5C' : '#C8C8C8')) c = greys[g++ % greys.length];
+    out.push(c);
+  }
+  return out;
 }
 
 // ---------- The chart well shared by reportGrayChart / reportDarkChart ----------
@@ -3615,6 +3724,8 @@ function chartWellEls(els, cfg, dark) {
     // Pie labels show the percent; the raw value on top of it is the same
     // number twice ("40 / 40%"), so it's dropped while percent shows.
     if (type === 'pie' && o.showPercent !== false) o.showValue = false;
+    var nc = _nativeColors(ch, dark, null, type === 'pie' ? 'slice' : 'series');
+    if (nc) o.chartColors = nc; else delete o.chartColors;
     els.push({ type:'chart', x:X, y:top, w:W, h:H, chartType:type, data:ch.data || [], opts:o });
   }
 }

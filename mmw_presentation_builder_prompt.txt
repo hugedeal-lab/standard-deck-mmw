@@ -280,7 +280,7 @@ families. Do not put both a top-level and a cfg-nested copy of the same key.
 Name	Template layout	Background	Use
 reportGray	Content Gray	#EEEEEE	Report chassis on #EEEEEE + open canvas y1.80-7.10. Use only when nothing below already fits.
 reportDark	Content Dark	#262626	Report chassis on #262626 + open canvas. Use only when nothing below already fits.
-reportGrayChart	Content Gray	#EEEEEE	Chart in a fixed well. cfg.chart = {type, data, opts, title?, subtitle?, note?}. type: 'bar' (horizontal) | 'column' | 'line' | 'area' | 'pie' | 'doughnut'. data: [{name, labels, values}] per series. title/subtitle = small centred heading above the plot (doughnut: title goes in the ring's centre); note = centred summary under it, '\n' for 2 lines. Bars/columns show no gridlines or values by default -- opts.showLegend / showValue / gridlines opt in.
+reportGrayChart	Content Gray	#EEEEEE	Chart in a fixed well. cfg.chart = {type, data, opts, title?, subtitle?, note?}. type: 'bar' (horizontal) | 'column' | 'line' | 'area' | 'pie' | 'doughnut'. data: [{name, labels, values}] per series. title/subtitle = small centred heading above the plot (doughnut: title goes in the ring's centre); note = centred summary under it, '\n' for 2 lines. Bars/columns show no gridlines or values by default -- opts.showLegend / showValue / gridlines opt in. opts.highlight / opts.colors recolour any chart type (§10).
 reportDarkChart	Content Dark	#262626	Same as reportGrayChart, dark.
 reportGrayTable	Content Gray	#EEEEEE	Simple 2-column table: one heading + optional bullets per side. cfg.headers[2], cfg.rows (≤4, each {left:{heading,bullets}, right:{heading,bullets}}).
 reportDarkTable	Content Dark	#262626	Same as reportGrayTable, dark.
@@ -680,7 +680,21 @@ Flag the headlineLight contrast exception here when you use it (§12).
 series, one object per series, EACH carrying its own category array:
   data:[{ name:'Spend', labels:['Q1','Q2','Q3','Q4'], values:[42,58,35,64] }]
 labels is required on every series (a series with no labels is dropped on
-export). pie/doughnut take a single series. Tables: raw tbl elements only. Host
+export). pie/doughnut take a single series.
+Chart colours (opts, every chart type). DEFAULT: set nothing -- each type keeps
+the template palette (one-series columns are ink: asphalt on light, paper on dark).
+  highlight: 'CX-90' | 2 | ['Q3','Q4'] | a series name -- that category/series
+    draws Spark, the rest grey. Use it whenever ONE value is the point
+    ("our share vs the segment"). The best default for an emphasis chart.
+  colors: ['canopy'] | ['tide','tide-light'] -- names: spark, canopy, tide,
+    aurora (each also -light / -dark), asphalt, paper, gray, gray-light, ink;
+    or hex. Multi-series: one per series. One series: one colour for all bars,
+    or several to cycle per category. Pie/doughnut: per slice.
+  Rules: one colour family per chart (a ramp like canopy-dark/canopy/
+  canopy-light, or one family + gray). Match the section's mood -- a chart in
+  a Canopy-divider section may go canopy; otherwise keep the default or use
+  highlight. On dark slides use mid or -light shades (-dark ones disappear).
+  Never pick colours to encode meaning the data doesn't have. Tables: raw tbl elements only. Host
 them on reportGray/reportDark, which exist for exactly this. The ONE table shape:
   {type:'tbl', x:0.76, y:1.95, w:11.8, headers:['Market','Spend','Reach'],
    rows:[['Los Angeles','$1.2M','4.1M'], ['Dallas','$0.8M','2.9M']],
