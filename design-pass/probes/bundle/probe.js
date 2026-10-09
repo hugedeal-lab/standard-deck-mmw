@@ -1,39 +1,4 @@
-<!doctype html>
-<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>Design Pass Probe v2</title>
-<style>
-:root{--bg:#EEEEEE;--ink:#262626;--muted:#808080;--accent:#BFA588;--ok:#2E7D32;--bad:#C12638;--card:#FFFFFF}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1C1C1C;--ink:#EEEEEE;--muted:#9A9A9A;--card:#262626}}
-*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Arial,Helvetica,sans-serif}
-main{max-width:860px;margin:0 auto;padding:24px 16px 48px}h1{font-size:22px;margin:0 0 4px}p.lead{color:var(--muted);margin:0 0 20px}
-#drop{border:2px dashed var(--accent);border-radius:10px;background:var(--card);padding:32px 16px;text-align:center;cursor:pointer}
-#drop.over{background:rgba(191,165,136,.15)}#drop strong{display:block;font-size:17px;margin-bottom:6px}
-button{font:inherit;background:var(--ink);color:var(--bg);border:0;border-radius:6px;padding:10px 16px;cursor:pointer;margin-top:16px}
-button:disabled{opacity:.4;cursor:default}
-ol#steps{padding-left:0;list-style:none}#log{font:12px/1.5 Menlo,Consolas,monospace;background:var(--card);padding:10px;white-space:pre-wrap;max-height:220px;overflow:auto}label.pick{display:inline-block;margin-top:14px}ol#steps li{margin:4px 0}.ok{color:var(--ok)}.bad{color:var(--bad)}.pend{color:var(--muted)}
-table{border-collapse:collapse;width:100%;background:var(--card);margin:8px 0 16px}td,th{padding:6px 10px;border-bottom:1px solid rgba(128,128,128,.25);text-align:left;vertical-align:top}
-th{font-size:12px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}code{font-size:13px}
-</style></head><body><main>
-<h1>Design Pass probe <span style="font-size:13px;color:var(--muted)">v2</span></h1>
-<p class="lead">Tests whether this page can take a .pptx in, read it, change it and hand a corrected copy back. Nothing leaves your browser.</p>
-<div id="drop" tabindex="0" role="button" aria-label="Choose or drop a PowerPoint file"><strong>Drop a .pptx here, or click to choose</strong><span class="pend">Use a non-confidential deck</span></div>
-<label class="pick">Or use the plain file picker: <input id="file2" type="file" accept=".pptx"></label>
-<input id="file" type="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
-<h2 style="font-size:16px;margin:24px 0 6px">Checks</h2>
-<ol id="steps">
-<li id="s1" class="pend">1. File received by the page</li>
-<li id="s2" class="pend">2. File opened and read</li>
-<li id="s3" class="pend">3. Fix applied (Calibri / Helvetica → Arial)</li>
-<li id="s4" class="pend">4. Corrected copy downloaded</li>
-</ol>
-<div id="report"></div>
-<button id="fix" disabled>Apply test fix and download</button>
-<h2 style="font-size:16px;margin:24px 0 6px">Event log</h2>
-<div id="log">Waiting for events...</div>
-<p class="lead" style="margin-top:8px">If something fails, screenshot this log.</p>
-</main>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script>
+
 var zip=null, fname='deck.pptx', logN=0;
 function log(m){var e=document.getElementById('log');if(!logN)e.textContent='';logN++;e.textContent+=new Date().toISOString().slice(11,19)+'  '+m+'\n';e.scrollTop=e.scrollHeight;}
 log('Page loaded. In iframe: '+(window.self!==window.top)+'. JSZip loaded: '+(typeof JSZip!=='undefined'));
@@ -90,4 +55,3 @@ var dragSeen={};
 document.addEventListener('dragover',function(e){e.preventDefault()});document.addEventListener('drop',function(e){e.preventDefault();log('drop landed outside the box')});
 ['dragleave','drop'].forEach(function(t){drop.addEventListener(t,function(e){e.preventDefault();drop.classList.remove('over')})});
 drop.addEventListener('drop',function(e){var n=e.dataTransfer?e.dataTransfer.files.length:-1;log('drop reached the box: '+n+' file(s)');if(n>0)load(e.dataTransfer.files[0]);else log('The drop carried no file -- the host is likely stripping it.')});
-</script></body></html>
