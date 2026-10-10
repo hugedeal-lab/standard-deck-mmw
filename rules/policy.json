@@ -20,7 +20,7 @@
       "brief": "Off-palette colour -> nearest palette token, only when unambiguous"
     },
     "theme_colours": {
-      "action": "flag",
+      "action": "info",
       "brief": "Theme colour scheme differs from the template's"
     },
     "background": {
@@ -166,5 +166,6 @@
       "#EC0076"
     ],
     "_note": "Template notes to the deck author, never content: text in these colours, and text-free lines/shapes drawn in them (the 'click here' arrows on the social dividers are #EC0076). Removed by the annotation fix."
-  }
+  },
+  "_actions": "fix = changed automatically; flag = designer queue; info = shown for context, not counted; never = not done."
 }

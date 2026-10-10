@@ -7,7 +7,7 @@
   "standard-deck.js": "08c4d42ecddf",
   "deck-layouts.js": "911a1c48d034",
   "COPY_BUDGETS.md": "ebbb14e9a26c",
-  "rules/policy.json": "400c6883b74a",
+  "rules/policy.json": "741dab25d487",
   "rules/template_snapshot.json": "3c99e1ba6da8"
  },
  "engine_version": "v2.3-20261008 (88 layouts; +2 map layouts in deck-maps.js; text fit)",
@@ -45,7 +45,7 @@
     "brief": "Off-palette colour -> nearest palette token, only when unambiguous"
    },
    "theme_colours": {
-    "action": "flag",
+    "action": "info",
     "brief": "Theme colour scheme differs from the template's"
    },
    "background": {
@@ -191,7 +191,8 @@
     "#EC0076"
    ],
    "_note": "Template notes to the deck author, never content: text in these colours, and text-free lines/shapes drawn in them (the 'click here' arrows on the social dividers are #EC0076). Removed by the annotation fix."
-  }
+  },
+  "_actions": "fix = changed automatically; flag = designer queue; info = shown for context, not counted; never = not done."
  },
  "theme": {
   "colors": {

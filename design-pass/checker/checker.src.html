@@ -20,7 +20,7 @@ button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line
 .list{background:var(--card);border-radius:8px;padding:4px 14px}.item{padding:10px 0;border-bottom:1px solid var(--line)}.item:last-child{border-bottom:0}
 .item h3{font-size:14px;margin:0 0 4px}.item ul{margin:4px 0 0;padding-left:18px}.item li{margin:2px 0}
 .tag{display:inline-block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;border-radius:4px;padding:1px 6px;margin-right:6px;background:rgba(128,128,128,.18)}
-.tag.fix{background:rgba(46,125,50,.16);color:var(--ok)}.tag.flag{background:rgba(193,38,56,.14);color:var(--bad)}
+.tag.fix{background:rgba(46,125,50,.16);color:var(--ok)}.tag.info{color:var(--muted)}.tag.flag{background:rgba(193,38,56,.14);color:var(--bad)}
 .rec{color:var(--muted)}.sample{color:var(--muted);font-style:italic}
 table{border-collapse:collapse;width:100%;background:var(--card);font-size:13px}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
 th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.scroll{overflow-x:auto}
@@ -74,7 +74,7 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
   function say(msg, cls) { var e = $('state'); e.className = cls || 'muted'; e.textContent = msg; }
   function times(f) { return f.count > 1 ? ' <span class="muted">×' + f.count + '</span>' : ''; }
   function findingHtml(f) {
-    return '<li><span class="tag ' + (f.action === 'fix' ? 'fix' : 'flag') + '">' + esc(LABEL[f.check] || f.check) + '</span>' + esc(f.msg) + times(f) +
+    return '<li><span class="tag ' + esc(f.action) + '">' + esc(LABEL[f.check] || f.check) + '</span>' + esc(f.msg) + times(f) +
       (f.rec ? '<br><span class="rec">→ ' + esc(f.rec) + '</span>' : '') +
       (f.items ? '<br><span class="rec">' + f.items.map(esc).join('<br>') + '</span>' : '') +
       (f.samples && f.samples.length && f.check !== 'density' ? '<br><span class="sample">“' + f.samples.map(esc).join('”, “') + '”</span>' : '') + '</li>';
@@ -85,15 +85,22 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
       [rep.deck.slides, 'slides'], [s.fix, 'would fix'], [s.flag, 'for a designer'], [s.queue, 'slides in queue'],
       [rep.deck.on_template ? 'Yes' : rep.slides.some(function (x) { return x.on === 'builder'; }) ? 'Builder' : 'No', 'on MMW template']
     ].map(function (c) { return '<div class="card"><b>' + c[0] + '</b><span>' + c[1] + '</span></div>'; }).join('');
-    $('deck').innerHTML = rep.deck.findings.length ? '<h2>Whole deck</h2><div class="list"><div class="item"><ul>' + rep.deck.findings.map(findingHtml).join('') + '</ul></div></div>' : '';
-    var q = rep.slides.filter(function (x) { return x.findings.some(function (f) { return f.action !== 'fix'; }); });
-    $('queue').innerHTML = q.length ? q.map(function (x) {
+    // Whole deck: what gets fixed and what is just context. Deck-level flags
+    // go to the top of the designer queue, so the queue matches the count.
+    var isFlag = function (f) { return f.action === 'flag'; };
+    var deckOther = rep.deck.findings.filter(function (f) { return !isFlag(f); }), deckFlags = rep.deck.findings.filter(isFlag);
+    $('deck').innerHTML = deckOther.length ? '<h2>Whole deck</h2><div class="list"><div class="item"><ul>' + deckOther.map(findingHtml).join('') + '</ul></div></div>' : '';
+    var q = rep.slides.filter(function (x) { return x.findings.some(isFlag); });
+    var qh = (deckFlags.length ? ['<div class="item"><h3>Whole deck</h3><ul>' + deckFlags.map(findingHtml).join('') + '</ul></div>'] : []).concat(q.map(function (x) {
       return '<div class="item"><h3>Slide ' + x.n + (x.title ? ' — ' + esc(x.title) : '') + ' <span class="muted" style="font-weight:normal">' + esc(x.layout) + '</span></h3><ul>' +
-        x.findings.filter(function (f) { return f.action !== 'fix'; }).map(findingHtml).join('') + '</ul></div>';
-    }).join('') : '<div class="item ok">Nothing for a designer.</div>';
+        x.findings.filter(isFlag).map(findingHtml).join('') + '</ul></div>';
+    }));
+    $('queue').innerHTML = qh.length ? qh.join('') : '<div class="item ok">Nothing for a designer.</div>';
     var l = rep.slides.filter(function (x) { return x.findings.some(function (f) { return f.action === 'fix'; }); });
+    var deckFix = rep.deck.findings.filter(function (f) { return f.action === 'fix'; });
+    if (deckFix.length) l = [{ n: 'deck', findings: deckFix }].concat(l);
     $('log').innerHTML = l.length ? l.map(function (x) {
-      return '<div class="item"><b>Slide ' + x.n + ':</b> ' + x.findings.filter(function (f) { return f.action === 'fix'; })
+      return '<div class="item"><b>' + (x.n === 'deck' ? 'Whole deck' : 'Slide ' + x.n) + ':</b> ' + x.findings.filter(function (f) { return f.action === 'fix'; })
         .map(function (f) { return esc(f.msg) + (f.count > 1 ? ' (×' + f.count + ')' : ''); }).join('; ') + '</div>';
     }).join('') : '<div class="item ok">Nothing to fix.</div>';
     $('slides').innerHTML = '<tr><th>#</th><th>Title</th><th>Layout</th><th>Source</th><th>Background</th><th>Fix</th><th>Flag</th></tr>' + rep.slides.map(function (x) {

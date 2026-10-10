@@ -329,15 +329,16 @@ function check(zip, rules, opts) {
     return seq;
   }).then(function () {
     rollUp();
-    var sum = { fix: 0, flag: 0, by_check: {}, slides_with_findings: 0, queue: 0 };
+    // fix = changed automatically; flag = designer queue; info = shown, not counted.
+    var sum = { fix: 0, flag: 0, info: 0, by_check: {}, slides_with_findings: 0, queue: 0 };
     report.deck.findings.concat.apply(report.deck.findings, report.slides.map(function (s) { return s.findings; })).forEach(function (f) {
-      sum[f.action === 'fix' ? 'fix' : 'flag']++;
-      var b = (sum.by_check[f.check] = sum.by_check[f.check] || { fix: 0, flag: 0, instances: 0 });
-      b[f.action === 'fix' ? 'fix' : 'flag']++; b.instances += f.count;
+      sum[f.action] = (sum[f.action] || 0) + 1;
+      var b = (sum.by_check[f.check] = sum.by_check[f.check] || { fix: 0, flag: 0, info: 0, instances: 0 });
+      b[f.action] = (b[f.action] || 0) + 1; b.instances += f.count;
     });
     report.slides.forEach(function (s) {
       if (s.findings.length) sum.slides_with_findings++;
-      if (s.findings.some(function (f) { return f.action !== 'fix'; })) sum.queue++;
+      if (s.findings.some(function (f) { return f.action === 'flag'; })) sum.queue++;
     });
     report.summary = sum;
     if (!applying) return report;
@@ -668,9 +669,11 @@ function toText(rep, fileName, applied) {
   L.push((applied ? 'Fixed' : 'Would fix automatically') + ': ' + (applied ? applied.deck.length + applied.slides.reduce(function (t, s) { return t + s.findings.length; }, 0) : rep.summary.fix) +
     ' | Designer queue: ' + rep.summary.flag + ' items on ' + rep.summary.queue + ' slides');
   L.push('');
-  if (rep.deck.findings.length) {
+  var deckFlags = rep.deck.findings.filter(function (f) { return f.action === 'flag'; });
+  var deckOther = rep.deck.findings.filter(function (f) { return f.action !== 'flag'; });
+  if (deckOther.length) {
     L.push('DECK');
-    rep.deck.findings.forEach(function (f) {
+    deckOther.forEach(function (f) {
       L.push('  [' + f.action + '] ' + f.msg + (f.rec ? ' -- ' + f.rec : ''));
       (f.items || []).forEach(function (i) { L.push('      ' + i); });
     });
@@ -683,8 +686,15 @@ function toText(rep, fileName, applied) {
     if (fx.length) L.push('  Slide ' + s.n + ': ' + fx.map(function (f) { return f.msg + pend(f); }).join('; '));
   });
   L.push('', 'DESIGNER QUEUE (beyond these fixes: use the MMW Presentation Builder agent in WPP Open)');
+  if (deckFlags.length) {
+    L.push('  Whole deck');
+    deckFlags.forEach(function (f) {
+      L.push('    - ' + f.msg + (f.rec ? ' -- ' + f.rec : ''));
+      (f.items || []).forEach(function (i) { L.push('        ' + i); });
+    });
+  }
   rep.slides.forEach(function (s) {
-    var fl = s.findings.filter(function (f) { return f.action !== 'fix'; });
+    var fl = s.findings.filter(function (f) { return f.action === 'flag'; });
     if (!fl.length) return;
     L.push('  Slide ' + s.n + (s.title ? ' "' + s.title + '"' : '') + ' [' + (s.layout || 'no layout') + ']');
     fl.forEach(function (f) { L.push('    - ' + f.msg + pend(f) + (f.rec ? ' -- ' + f.rec : '')); });
