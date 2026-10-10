@@ -164,7 +164,7 @@ function check(zip, rules, opts) {
   var deckFindings = []; report.deck.findings = deckFindings;
   var addDeck = bucket(deckFindings, 0);
 
-  var scale = 1, theme = null, clrMap = {}, deckOnTemplate = false, masters = {};
+  var scale = 1, theme = null, clrMap = {}, deckOnTemplate = false, masters = {}, slideWin = 13.33, slideHin = 7.5;
   function themeHex(name) {
     var n = clrMap[name] || name;
     return theme && theme.colors[n] || null;
@@ -286,6 +286,7 @@ function check(zip, rules, opts) {
     var sz = pres && kid(pres.documentElement, 'p', 'sldSz');
     if (!sz) throw new Error('Not a PowerPoint presentation (no ppt/presentation.xml)');
     var wIn = +sz.getAttribute('cx') / EMU, hIn = +sz.getAttribute('cy') / EMU;
+    slideWin = wIn; slideHin = hIn;
     scale = wIn / rules.canvas.engine_in[0];
     report.deck.slide_in = [+wIn.toFixed(3), +hIn.toFixed(3)];
     report.deck.scale = +scale.toFixed(4);
@@ -570,6 +571,10 @@ function check(zip, rules, opts) {
       });
       S.words = words; S.max_paras = maxParas;
 
+      // text fit: text that needs more room than its box and runs into other
+      // text or off the slide (measured with the real font widths)
+      if (rules.metrics) textFit();
+
       // density
       var maxW = POL.density.max_words_per_slide, maxP = POL.density.max_bullets;
       if (TL && TL.template_words) maxW = Math.max(maxW, Math.round(TL.template_words * POL.density.split_ratio));
@@ -634,6 +639,120 @@ function check(zip, rules, opts) {
           if (fh) hit = { hex: fh };
         }
         return hit;
+      }
+      function textFit() {
+        var TF = POL.text_fit, slideH = slideHin, slideW = slideWin;
+        var boxes = [];
+        all(csld, 'p', 'sp').forEach(function (sp) {
+          if (!sp.parentNode) return;
+          var tb = kid(sp, 'p', 'txBody');
+          if (!tb || !textOf(tb).trim()) return;
+          var ph = phOf(sp), lsp = ph && ldoc ? layoutPh(ldoc, ph) : null;
+          var box = absBox(sp) || (lsp && xfrmOf(lsp));
+          if (!box || box.w <= 0) return;
+          var bp = kid(tb, 'a', 'bodyPr'), lbp = lsp && path(lsp, 'p:txBody/a:bodyPr');
+          var ins = function (k, d) { var v = bp && bp.getAttribute(k); if (v == null && lbp) v = lbp.getAttribute(k); return v != null ? +v / EMU : d; };
+          var L = ins('lIns', 0.1), Rr = ins('rIns', 0.1), T = ins('tIns', 0.05), B = ins('bIns', 0.05);
+          if ((bp && bp.getAttribute('wrap')) === 'none') return;
+          var auto = bp && (kid(bp, 'a', 'normAutofit') || kid(bp, 'a', 'spAutoFit') || kid(bp, 'a', 'noAutofit'));
+          var fontScale = auto && auto.localName === 'normAutofit' && auto.getAttribute('fontScale') ? +auto.getAttribute('fontScale') / 100000 : 1;
+          var lnRed = auto && auto.localName === 'normAutofit' && auto.getAttribute('lnSpcReduction') ? +auto.getAttribute('lnSpcReduction') / 100000 : 0;
+          var mz = measure(tb, sp, lsp, box.w - L - Rr, fontScale, lnRed), need = mz.h + T + B;   // inches
+          var anchor = (bp && bp.getAttribute('anchor')) || (lbp && lbp.getAttribute('anchor')) || 't';
+          var top = anchor === 'ctr' ? box.y + (box.h - need) / 2 : anchor === 'b' ? box.y + box.h - need : box.y;
+          boxes.push({ sp: sp, box: box, need: need, top: top, bottom: top + need, textTop: top + T, textBottom: top + need - B, line: mz.line,
+            grows: auto && auto.localName === 'spAutoFit',
+            label: short(paraTexts(tb).join(' ')).slice(0, 40) });
+        });
+        // Real collisions overflow by whole lines; a 10% estimate error on a
+        // box that sits tight against its neighbour must not count. So: the
+        // overflow is at least most of a line, and it reaches half a line into
+        // the other box's text (not just its padding).
+        boxes.forEach(function (a) {
+          var over = a.need - a.box.h;
+          if (over < Math.max(TF.tolerance_in * scale, TF.min_overflow_lines * a.line)) return;
+          // what the overflowing text runs into
+          var hit = boxes.filter(function (b) {
+            if (b === a) return false;
+            var hx = Math.min(a.box.x + a.box.w, b.box.x + b.box.w) - Math.max(a.box.x, b.box.x);
+            var vy = Math.min(a.textBottom, b.textBottom) - Math.max(a.textTop, b.textTop);
+            // only text the overflow reaches: b starts inside a's spill, not a's own box
+            var spill = b.top >= a.box.y + a.box.h - TF.tolerance_in || b.bottom <= a.box.y + TF.tolerance_in;
+            return spill && hx > Math.min(a.box.w, b.box.w) * 0.1 && vy > TF.min_overlap_lines * Math.min(a.line, b.line);
+          })[0];
+          var offSlide = a.textBottom > slideH + a.line / 2 || a.textTop < -a.line / 2;
+          if (!hit && !offSlide) return;
+          var cut = Math.max(5, Math.round((1 - (a.box.h - 0.0) / a.need) * 100));
+          add('text_fit', 'fit-' + nameOf(a.sp).name, {
+            msg: '"' + a.label + '" needs ' + (a.need / scale).toFixed(2) + ' in but its box is ' + (a.box.h / scale).toFixed(2) + ' in' +
+              (hit ? ' -- it runs into "' + hit.label + '"' : ' -- it runs off the slide'),
+            sample: a.label, from: +(a.need / scale).toFixed(2), to: +(a.box.h / scale).toFixed(2),
+            rec: 'Cut about ' + cut + '% of this copy, or give it more room' + (S.on === 'builder' ? ' (regenerate the slide with the builder agent with shorter copy)' : '') + '.' });
+        });
+      }
+      // Height (inches) the paragraphs of a text body need at width w (inches).
+      function measure(tb, sp, lsp, w, fontScale, lnRed) {
+        var M = rules.metrics, h = 0, maxLine = 0;
+        var lst = function (el, lvl, attr, sub) {
+          var d = el && path(el, 'p:txBody/a:lstStyle/a:lvl' + lvl + 'pPr' + (sub ? '/' + sub : ''));
+          return d ? d.getAttribute(attr) : null;
+        };
+        kids(tb, 'a', 'p').forEach(function (p, i) {
+          var ppr = kid(p, 'a', 'pPr'), lvl = (ppr && +ppr.getAttribute('lvl') || 0) + 1;
+          var runs = kids(p, 'a', 'r'), text = runs.map(textOf).join('');
+          var r0 = runs[0] && kid(runs[0], 'a', 'rPr'), end = kid(p, 'a', 'endParaRPr');
+          var szA = (r0 && r0.getAttribute('sz')) || (!runs.length && end && end.getAttribute('sz')) || (ppr && path(ppr, 'a:defRPr') && path(ppr, 'a:defRPr').getAttribute('sz')) ||
+            lst(sp, lvl, 'sz', 'a:defRPr') || lst(lsp, lvl, 'sz', 'a:defRPr') || 1800;
+          var pt = +szA / 100 * fontScale;
+          var lat = r0 && kid(r0, 'a', 'latin'), face = (lat && lat.getAttribute('typeface')) || theme.fonts.minor || 'Arial';
+          if (face.charAt(0) === '+') face = face.indexOf('mj') > 0 ? theme.fonts.major : theme.fonts.minor;
+          var bold = r0 && r0.getAttribute('b') === '1';
+          var F = M[bold && M[face + ' Bold'] ? face + ' Bold' : face] || M[bold ? 'Arial Bold' : 'Arial'];
+          var spc = r0 && r0.getAttribute('spc') ? +r0.getAttribute('spc') / 100 : 0;   // pt per char
+          var cap = r0 && r0.getAttribute('cap') === 'all';
+          // line spacing: paragraph, then shape / layout list styles; 100% default
+          var ls = ppr && path(ppr, 'a:lnSpc'), pct = 1, pts = null;
+          var lsEl = ls || (sp && path(sp, 'p:txBody/a:lstStyle/a:lvl' + lvl + 'pPr/a:lnSpc')) || (lsp && path(lsp, 'p:txBody/a:lstStyle/a:lvl' + lvl + 'pPr/a:lnSpc'));
+          if (lsEl) { var a1 = kid(lsEl, 'a', 'spcPct'), a2 = kid(lsEl, 'a', 'spcPts'); if (a1) pct = +a1.getAttribute('val') / 100000; if (a2) pts = +a2.getAttribute('val') / 100; }
+          pct = Math.max(0.5, pct - lnRed);
+          var lineH = pts != null ? pts : pt * F.line * pct;   // pt
+          var space = function (tag) { var e = ppr && path(ppr, 'a:' + tag); if (!e) return 0; var q = kid(e, 'a', 'spcPts'), r = kid(e, 'a', 'spcPct'); return q ? +q.getAttribute('val') / 100 : r ? +r.getAttribute('val') / 100000 * pt : 0; };
+          var marL = ppr && ppr.getAttribute('marL') ? +ppr.getAttribute('marL') / EMU : 0;
+          var avail = (w - marL) * 72;   // pt
+          var cw = function (ch) { var c = (cap ? ch.toUpperCase() : ch).charCodeAt(0), v = F.w[c]; return (v != null ? v : 550) / 1000 * pt + spc; };
+          // segments between line breaks (<a:br>), each wrapped on its own
+          var segs = [''];
+          kids(p, 'a').forEach(function (c) { if (c.localName === 'br') segs.push(''); else if (c.localName === 'r' || c.localName === 'fld') segs[segs.length - 1] += textOf(c); });
+          var lines = 0;
+          segs.forEach(function (seg) {
+            if (!seg) { lines++; return; }
+            var x = 0, n = 1;
+            seg.split(/(\s+)/).forEach(function (tok) {
+              if (!tok) return;
+              var tw = 0; for (var k = 0; k < tok.length; k++) tw += cw(tok.charAt(k));
+              if (/^\s+$/.test(tok)) { x += tw; return; }
+              if (x > 0 && x + tw > avail) { n++; x = tw; } else x += tw;
+            });
+            lines += n;
+          });
+          h += lines * lineH + (i ? space('spcBef') : 0) + space('spcAft');
+          maxLine = Math.max(maxLine, lineH);
+        });
+        return { h: h / 72, line: maxLine / 72 };
+      }
+      // Absolute box (inches) of a shape, through any group transforms.
+      function absBox(sp) {
+        var b = xfrmOf(sp);
+        if (!b) return null;
+        for (var g = sp.parentNode; g && g.localName === 'grpSp'; g = g.parentNode) {
+          var x = path(g, 'p:grpSpPr/a:xfrm');
+          if (!x) continue;
+          var o = kid(x, 'a', 'off'), e = kid(x, 'a', 'ext'), co = kid(x, 'a', 'chOff'), ce = kid(x, 'a', 'chExt');
+          if (!o || !e || !co || !ce) continue;
+          var sx = +ce.getAttribute('cx') ? +e.getAttribute('cx') / +ce.getAttribute('cx') : 1, sy = +ce.getAttribute('cy') ? +e.getAttribute('cy') / +ce.getAttribute('cy') : 1;
+          b = { x: +o.getAttribute('x') / EMU + (b.x - +co.getAttribute('x') / EMU) * sx, y: +o.getAttribute('y') / EMU + (b.y - +co.getAttribute('y') / EMU) * sy, w: b.w * sx, h: b.h * sy };
+        }
+        return b;
       }
       // Point this slide's picture at the other variant, added to ppt/media once.
       function swapLogo(rid, asset) {

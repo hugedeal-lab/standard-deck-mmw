@@ -68,7 +68,7 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
   var current = null, fileLabel = 'deck', fileBuf = null, applied = null;
   var LABEL = { font_face: 'Font', theme_fonts: 'Theme font', type_scale: 'Type size', colour: 'Colour', theme_colours: 'Theme colours',
     background: 'Background', logo_variant: 'Logo', casing: 'Caps', placeholder_text: 'Placeholder', annotation: 'Annotation',
-    position: 'Position', copy_fit: 'Copy fit', density: 'Density', off_template: 'Off template', chart_image: 'Chart image' };
+    position: 'Position', copy_fit: 'Copy fit', text_fit: 'Text overflow', density: 'Density', off_template: 'Off template', chart_image: 'Chart image' };
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function say(msg, cls) { var e = $('state'); e.className = cls || 'muted'; e.textContent = msg; }

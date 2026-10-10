@@ -211,5 +211,18 @@ Technical:
   template and on damaged copies (fonts, colours, background, logo swap,
   annotations, leftovers): re-check of the output is clean, LibreOffice
   renders all slides. Not yet opened in PowerPoint itself.
+- Text-fit check (2026-10-09): measures wrapped text with real font widths
+  and flags text that runs into other text or off the slide. 0 false
+  positives on the template + 25 builder decks; 6 real collisions found.
+- **Builder bugs for the `main` session** (engine text fit misses these;
+  all in decks the builder produced):
+  - Motorsports Kickoff s8 (roadmap phases): Deliverables bullets wrap and run
+    into "DEFINE REVIEW TIMELINE" (phases 1, 2); "VISIBLE PROGRESS DOES NOT
+    WAIT FOR PHASE 3" wraps into the proof points.
+  - Comparison_Layouts_Set_Two s8: long paragraph into the gold caption.
+  - Chart_variants s9 (spend bars): wrapped bar label into the override note.
+  - MMW_Layout_Inventory_84slides (4) s23: wrapped title into the body.
+  Common cause to check: fitTexts measures each box alone and assumes
+  single-line bullets/labels; wrapped lines push into the next fixed box.
 - Next: designer-reviewed decks from the user; open a corrected copy in
   PowerPoint.

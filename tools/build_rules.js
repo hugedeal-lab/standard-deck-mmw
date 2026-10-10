@@ -29,7 +29,7 @@ const spec = JSON.parse(fs.readFileSync(R('mmw_layouts.json'), 'utf8'));
 const policy = JSON.parse(fs.readFileSync(R('rules/policy.json'), 'utf8'));
 
 const SOURCES = ['mmw_layouts.json', 'standard-deck.js', 'deck-layouts.js', 'COPY_BUDGETS.md',
-  'rules/policy.json', 'rules/template_snapshot.json'];
+  'rules/policy.json', 'rules/template_snapshot.json', 'rules/font_metrics.json'];
 const blob = (p) => (fs.existsSync(R(p)) ? cp.execFileSync('git', ['hash-object', R(p)]).toString().trim().slice(0, 12) : null);
 const up = (h) => (typeof h === 'string' && /^#[0-9A-Fa-f]{6}$/.test(h) ? h.toUpperCase() : null);
 
@@ -172,6 +172,7 @@ function build(snap) {
       annotation,
       annotations
     },
+    metrics: fs.existsSync(R('rules/font_metrics.json')) ? JSON.parse(fs.readFileSync(R('rules/font_metrics.json'), 'utf8')).faces : null,
     furniture: spec.furniture,
     brand_marks: brandMarks,
     template_layouts: byTemplate,

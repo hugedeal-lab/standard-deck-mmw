@@ -51,6 +51,10 @@
       "action": "flag",
       "brief": "Text past copy-fit limits"
     },
+    "text_fit": {
+      "action": "flag",
+      "brief": "Text that needs more room than its box and runs into other text or off the slide"
+    },
     "density": {
       "action": "flag",
       "brief": "Content that wants splitting: propose the split"
@@ -167,5 +171,11 @@
     ],
     "_note": "Template notes to the deck author, never content: text in these colours, and text-free lines/shapes drawn in them (the 'click here' arrows on the social dividers are #EC0076). Removed by the annotation fix."
   },
-  "_actions": "fix = changed automatically; flag = designer queue; info = shown for context, not counted; never = not done."
+  "_actions": "fix = changed automatically; flag = designer queue; info = shown for context, not counted; never = not done.",
+  "text_fit": {
+    "tolerance_in": 0.08,
+    "min_overflow_lines": 0.75,
+    "min_overlap_lines": 0.5,
+    "_note": "Text is measured with the real font widths (rules/font_metrics.json). Flagged when it overflows its box by at least min_overflow_lines of its own line height (and tolerance_in engine inches) AND its text reaches min_overlap_lines into another box's text, or leaves the slide. Tuned on the template: its tight social-sheet and spend-bar boxes overflow by ~10% on paper but render cleanly. Never auto-fixed."
+  }
 }

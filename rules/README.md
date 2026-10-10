@@ -49,6 +49,7 @@ deck) before comparing.
 | `template_layouts` | layouts + snapshot | Per **PowerPoint layout name** (what a template deck's slide carries): the specs that sit on it, every background allowed on it, `template_words` / `template_paras` (density baseline), `ph_positions` (placeholder boxes on its demo slides) |
 | `layouts` | `mmw_layouts.json`, `deck-layouts.js`, `COPY_BUDGETS.md` | Per **spec** (84): engine `slug`, `template_layout`, family, background (+ `dark`), fields, `copy_budgets` (`fits` = template look, `max` = hard limit, `null` = no practical limit), elements |
 | `furniture` | `mmw_layouts.json` | Logo, lockup and draft-date positions |
+| `metrics` | `font_metrics.json` (`tools/font_metrics.js`, from the installed fonts) | Character widths and line heights for Arial and the Mazda Type weights: the text-fit check measures wrapped text with them. Widths only, no font data. |
 | `assets_base` | builder prompt's CDN pin | Where the logo fix fetches the other logo variant (the builder's immutable jsDelivr commit) |
 
 **Why two layout tables.** Several specs share one PowerPoint layout (seven
