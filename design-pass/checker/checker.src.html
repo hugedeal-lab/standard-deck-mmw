@@ -3,60 +3,101 @@
 <title>Design Pass Checker</title>
 <!-- SOURCE. Build checker.html with: node design-pass/checker/build_page.js -->
 <style>
-:root{--bg:#EEEEEE;--ink:#262626;--muted:#6B6B6B;--accent:#BFA588;--ok:#2E7D32;--bad:#C12638;--card:#FFFFFF;--line:rgba(128,128,128,.25)}
-@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1C1C1C;--ink:#EEEEEE;--muted:#A0A0A0;--card:#262626}}
-:root[data-theme="dark"]{--bg:#1C1C1C;--ink:#EEEEEE;--muted:#A0A0A0;--card:#262626}
+:root{--bg:#EEEEEE;--ink:#262626;--muted:#6B6B6B;--accent:#BFA588;--card:#FFFFFF;--line:rgba(128,128,128,.22);
+  --pass:#0CCE6B;--pass-t:#018642;--avg:#FFA400;--avg-t:#B35A00;--fail:#FF4E42;--fail-t:#D60F00;--track:rgba(128,128,128,.18)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#1C1C1C;--ink:#EEEEEE;--muted:#A0A0A0;--card:#262626;--pass-t:#0CCE6B;--avg-t:#FFA400;--fail-t:#FF6B5F}}
+:root[data-theme="dark"]{--bg:#1C1C1C;--ink:#EEEEEE;--muted:#A0A0A0;--card:#262626;--pass-t:#0CCE6B;--avg-t:#FFA400;--fail-t:#FF6B5F}
 *{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.45 Arial,Helvetica,sans-serif}
-main{max-width:960px;margin:0 auto;padding:24px 16px 48px}h1{font-size:22px;margin:0 0 4px}h2{font-size:16px;margin:28px 0 8px}
-p.lead{color:var(--muted);margin:0 0 20px}.muted{color:var(--muted)}
-#drop{border:2px dashed var(--accent);border-radius:10px;background:var(--card);padding:28px 16px;text-align:center;cursor:pointer}
-#drop.over{background:rgba(191,165,136,.15)}#drop strong{display:block;font-size:17px;margin-bottom:6px}
-label.pick{display:inline-block;margin-top:12px;font-size:13px}
-button{font:inherit;background:var(--ink);color:var(--bg);border:0;border-radius:6px;padding:9px 14px;cursor:pointer;margin:0 8px 8px 0}
-button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
-#state{margin-top:14px;min-height:1.4em}.bad{color:var(--bad)}.ok{color:var(--ok)}
-.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px;margin:16px 0}
-.card{background:var(--card);border-radius:8px;padding:12px 14px}.card b{display:block;font-size:26px;line-height:1.1}.card span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
-.list{background:var(--card);border-radius:8px;padding:4px 14px}.item{padding:10px 0;border-bottom:1px solid var(--line)}.item:last-child{border-bottom:0}
-.item h3{font-size:14px;margin:0 0 4px}.item ul{margin:4px 0 0;padding-left:18px}.item li{margin:2px 0}
-.tag{display:inline-block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;border-radius:4px;padding:1px 6px;margin-right:6px;background:rgba(128,128,128,.18)}
-.tag.fix{background:rgba(46,125,50,.16);color:var(--ok)}.tag.info{color:var(--muted)}.tag.flag{background:rgba(193,38,56,.14);color:var(--bad)}
-.rec{color:var(--muted)}.sample{color:var(--muted);font-style:italic}
-table{border-collapse:collapse;width:100%;background:var(--card);font-size:13px}td,th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
-th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.scroll{overflow-x:auto}
-details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12px;color:var(--muted)}
+main{max-width:980px;margin:0 auto;padding:24px 16px 48px}h1{font-size:22px;margin:0 0 4px}h2{font-size:17px;margin:32px 0 10px}
+p.lead{color:var(--muted);margin:0 0 18px}.muted{color:var(--muted)}
+#drop{border:2px dashed var(--accent);border-radius:10px;background:var(--card);padding:22px 16px;text-align:center;cursor:pointer}
+#drop.over{background:rgba(191,165,136,.15)}#drop strong{display:block;font-size:16px;margin-bottom:4px}
+label.pick{display:inline-block;margin-top:10px;font-size:13px}
+button{font:inherit;background:var(--ink);color:var(--bg);border:0;border-radius:6px;padding:9px 14px;cursor:pointer}
+button.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}button:disabled{opacity:.5;cursor:default}
+#state{margin-top:12px;min-height:1.4em}.bad{color:var(--fail-t)}.ok{color:var(--pass-t)}
 #results{display:none}
-.fixbox{background:var(--card);border-radius:8px;padding:12px 14px;margin:12px 0}.fixbox label{display:inline-block;margin:4px 16px 4px 0;font-size:14px}
-.fixbox .note{font-size:13px;color:var(--muted);margin:6px 0 10px}#fixstate{font-size:14px;margin-top:4px}
-.agent{border-left:3px solid var(--accent);padding:8px 12px;background:var(--card);border-radius:0 8px 8px 0;margin:12px 0;font-size:14px}
+/* score summary */
+.hero{background:var(--card);border-radius:12px;padding:22px 16px 16px;margin-top:16px;text-align:center}
+.gauges{display:flex;flex-wrap:wrap;justify-content:center;gap:8px 4px}
+.gauge{width:118px;cursor:pointer;border-radius:10px;padding:6px 0;background:none;color:inherit;border:0}
+.gauge:hover,.gauge.on{background:rgba(128,128,128,.10)}
+.gauge svg{display:block;margin:0 auto}.gauge .lbl{font-size:13px;margin-top:6px;line-height:1.25}
+.gauge .aft{font-size:12px;color:var(--muted);min-height:16px}
+.overall{display:flex;flex-direction:column;align-items:center;margin-bottom:14px}
+.overall .lbl{font-size:16px;font-weight:bold;margin-top:6px}.overall .aft{font-size:13px;color:var(--muted)}
+.legend{display:flex;justify-content:center;gap:18px;font-size:12px;color:var(--muted);margin-top:14px;flex-wrap:wrap}
+.legend i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+.legend .t-fail{background:var(--fail);border-radius:0;clip-path:polygon(50% 0,100% 100%,0 100%)}.legend .t-avg{background:var(--avg)}.legend .t-pass{background:var(--pass);border-radius:50%}
+.meta{font-size:13px;color:var(--muted);margin-top:10px}
+.rebuild{border-left:5px solid var(--fail);text-align:left;padding:16px 18px}.rebuild b{font-size:17px}
+/* actions */
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:16px 0 0}
+.fixpanel{background:var(--card);border-radius:10px;padding:14px 16px;margin-top:14px}
+.fixpanel .row{display:flex;flex-wrap:wrap;gap:10px;align-items:center}
+.fixpanel details{margin-top:8px;font-size:14px}.fixpanel label{display:inline-block;margin:4px 16px 4px 0}
+#fixstate{font-size:14px;margin-top:8px}
+.agent{border-left:3px solid var(--accent);padding:10px 14px;background:var(--card);border-radius:0 8px 8px 0;margin:14px 0 0;font-size:14px}
+/* audits */
+.audits{background:var(--card);border-radius:10px}
+.audit{border-bottom:1px solid var(--line)}.audit:last-child{border-bottom:0}
+.audit>summary{list-style:none;display:flex;gap:10px;align-items:center;padding:12px 16px;cursor:pointer}
+.audit>summary::-webkit-details-marker{display:none}
+.audit>summary .ttl{flex:1}.audit>summary .ttl small{display:block;color:var(--muted);font-size:13px}
+.audit>summary .cnt{font-size:13px;color:var(--muted);white-space:nowrap;text-align:right}
+.audit>summary:after{content:'▾';color:var(--muted);margin-left:4px}.audit[open]>summary:after{content:'▴'}
+.ico{width:12px;height:12px;flex:none}.ico.fail{background:var(--fail);clip-path:polygon(50% 0,100% 100%,0 100%)}
+.ico.avg{background:var(--avg)}.ico.pass{background:var(--pass);border-radius:50%}
+.audit .body{padding:0 16px 12px 38px;font-size:14px}
+.audit .body table{width:100%;border-collapse:collapse}.audit .body td{padding:6px 8px 6px 0;border-top:1px solid var(--line);vertical-align:top}
+.audit .body td.n{white-space:nowrap;color:var(--muted);width:70px}
+.rec{color:var(--muted)}.sample{color:var(--muted);font-style:italic}
+.sect-note{color:var(--muted);margin:-4px 0 10px;font-size:14px}
+.filter{font-size:13px;margin:-2px 0 10px}.filter a{color:inherit}
+details.more{margin-top:28px}details.more>summary{cursor:pointer;font-weight:bold;font-size:16px}
+.list{background:var(--card);border-radius:8px;padding:4px 14px;margin-top:10px}.item{padding:10px 0;border-bottom:1px solid var(--line)}.item:last-child{border-bottom:0}
+.item h3{font-size:14px;margin:0 0 4px}.item ul{margin:4px 0 0;padding-left:18px}
+.tag{display:inline-block;font-size:11px;letter-spacing:.05em;text-transform:uppercase;border-radius:4px;padding:1px 6px;margin-right:6px;background:rgba(128,128,128,.18)}
+.tag.fix{color:var(--pass-t)}.tag.flag{color:var(--fail-t)}.tag.info{color:var(--muted)}
+table.slides{border-collapse:collapse;width:100%;background:var(--card);font-size:13px;margin-top:10px}
+table.slides td,table.slides th{padding:6px 8px;border-bottom:1px solid var(--line);text-align:left;vertical-align:top}
+table.slides th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.scroll{overflow-x:auto}
+footer{margin-top:32px;font-size:12px;color:var(--muted)}
+@media (max-width:600px){.gauge{width:100px}.audit .body{padding-left:16px}.audit>summary{flex-wrap:wrap}
+  .audit>summary .cnt{order:3;flex-basis:100%;text-align:left;padding-left:22px}.audit>summary:after{order:2}
+  .audit .body td.n{width:56px}}
 </style></head><body><main>
 <h1>Design Pass checker</h1>
-<p class="lead">Checks a deck against the MMW template, fixes the mechanical things (fonts, colours, backgrounds, logos, leftovers) in a corrected copy, and lists what needs a designer. Your original is never changed, and the file never leaves your browser.</p>
+<p class="lead">Checks a deck against the MMW template, fixes the mechanical things in a corrected copy, and lists what needs a designer. Your original is never changed, and the file never leaves your browser.</p>
 <div id="drop" tabindex="0" role="button" aria-label="Choose or drop a PowerPoint file"><strong>Drop a .pptx here, or click to choose</strong><span class="muted">One deck at a time</span></div>
 <label class="pick">Or use the plain file picker: <input id="file2" type="file" accept=".pptx"></label>
 <input id="file" type="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
 <div id="state" class="muted"></div>
 
 <div id="results">
-  <div class="cards" id="cards"></div>
-  <div>
-    <button id="copy">Copy summary</button><button id="dl" class="ghost">Download report (JSON)</button><button id="dlt" class="ghost">Download report (text)</button>
-  </div>
-  <div id="deck"></div>
-  <h2>Fix</h2>
-  <div class="fixbox" id="fixbox">
-    <div id="fixcats"></div>
-    <div class="note">Only the items in the change log below are changed. Wording and data are never touched. You get a new file; the original stays as it was.</div>
-    <button id="apply">Apply fixes and download corrected copy</button>
+  <div class="hero" id="hero"></div>
+
+  <div class="fixpanel" id="fixpanel">
+    <div class="row"><button id="apply">Apply fixes and download corrected copy</button><span class="muted" id="fixsum"></span></div>
+    <details id="fixchoose"><summary>Choose which fixes</summary><div id="fixcats"></div></details>
     <div id="fixstate" class="muted"></div>
   </div>
   <div class="agent" id="agent">For anything beyond these fixes — rewriting copy, splitting dense slides, rebuilding off-brand slides or recreating charts — use the <b>MMW Presentation Builder</b> agent in WPP Open.</div>
-  <h2>Designer queue</h2>
-  <p class="muted" style="margin:0 0 8px">Slides it would not fix, each with a recommendation.</p>
-  <div class="list" id="queue"></div>
-  <h2>Change log <span class="muted" style="font-size:13px;font-weight:normal" id="logsub">what Apply fixes will change</span></h2>
-  <div class="list" id="log"></div>
-  <details><summary>All slides</summary><div class="scroll"><table id="slides"></table></div></details>
+
+  <h2>Needs a designer</h2>
+  <div class="filter" id="filter1"></div>
+  <div class="audits" id="flagged"></div>
+  <h2 id="fixedh">Fixed automatically <span class="muted" style="font-size:13px;font-weight:normal" id="fixedsub">by Apply fixes</span></h2>
+  <div class="filter" id="filter2"></div>
+  <div class="audits" id="fixable"></div><div id="fixedend"></div>
+
+  <details class="more"><summary>Details</summary>
+    <h2>Designer queue, slide by slide</h2><div class="list" id="queue"></div>
+    <h2>Change log <span class="muted" style="font-size:13px;font-weight:normal" id="logsub">what Apply fixes will change</span></h2><div class="list" id="log"></div>
+    <div id="deck"></div>
+    <h2>All slides</h2><div class="scroll"><table class="slides" id="slides"></table></div>
+  </details>
+  <div class="actions"><button id="copy" class="ghost">Copy summary</button><button id="dlt" class="ghost">Download report (text)</button><button id="dl" class="ghost">Download report (JSON)</button></div>
 </div>
 <footer id="foot"></footer>
 </main>
@@ -65,72 +106,150 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
 <script>var MMW_RULES = /*RULES_JSON*/;</script>
 <script>
 (function () {
-  var current = null, fileLabel = 'deck', fileBuf = null, applied = null;
-  var LABEL = { font_face: 'Font', theme_fonts: 'Theme font', type_scale: 'Type size', colour: 'Colour', theme_colours: 'Theme colours',
-    background: 'Background', logo_variant: 'Logo', casing: 'Caps', placeholder_text: 'Placeholder', annotation: 'Annotation',
-    position: 'Position', copy_fit: 'Copy fit', text_fit: 'Text overflow', density: 'Density', off_template: 'Off template', chart_image: 'Chart image' };
+  var current = null, fileLabel = 'deck', fileBuf = null, applied = null, catFilter = null, checkedIn = 0;
+  var LABEL = { font_face: 'Fonts outside the MMW set', theme_fonts: 'Theme fonts', type_scale: 'Type sizes off the scale', colour: 'Off-palette colours',
+    theme_colours: 'Theme colour scheme', background: 'Backgrounds', logo_variant: 'Logo on the wrong background', casing: 'Caps the layout sets',
+    placeholder_text: 'Leftover placeholders', annotation: 'Template annotations', position: 'Boxes moved off the template',
+    copy_fit: 'Copy longer than the layout holds', text_fit: 'Text overflowing into other text', density: 'Slides too dense',
+    off_template: 'Not on the MMW template', chart_image: 'Charts pasted as pictures' };
+  var HELP = { font_face: 'MMW uses Mazda Type Bold for display and Arial for body.', theme_fonts: 'New text boxes pick up the theme fonts.',
+    type_scale: 'Sizes the template does not use.', colour: 'Colours outside the MMW palette.', background: 'Each layout has its own template background.',
+    logo_variant: 'Black marks on light backgrounds, white on dark.', casing: 'The layout sets ALL CAPS; this text switched it off.',
+    placeholder_text: 'Lorem ipsum, "click here", empty placeholders.', annotation: 'Notes to the deck author in the template.',
+    position: 'Placeholders nudged off their template position.', copy_fit: 'Past what the layout holds at its design size.',
+    text_fit: 'Measured with the real fonts: the text needs more room than its box.', density: 'More copy than the layout is built for: split or cut.',
+    off_template: 'Rebuild with the MMW Presentation Builder agent.', chart_image: 'Rebuild as a native chart and verify the numbers.' };
   function $(id) { return document.getElementById(id); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"]/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]; }); }
   function say(msg, cls) { var e = $('state'); e.className = cls || 'muted'; e.textContent = msg; }
-  function times(f) { return f.count > 1 ? ' <span class="muted">×' + f.count + '</span>' : ''; }
-  function findingHtml(f) {
-    return '<li><span class="tag ' + esc(f.action) + '">' + esc(LABEL[f.check] || f.check) + '</span>' + esc(f.msg) + times(f) +
-      (f.rec ? '<br><span class="rec">→ ' + esc(f.rec) + '</span>' : '') +
-      (f.items ? '<br><span class="rec">' + f.items.map(esc).join('<br>') + '</span>' : '') +
-      (f.samples && f.samples.length && f.check !== 'density' ? '<br><span class="sample">“' + f.samples.map(esc).join('”, “') + '”</span>' : '') + '</li>';
+  function band(v) { return v >= 90 ? 'pass' : v >= 50 ? 'avg' : 'fail'; }
+  function gauge(v, size, stroke) {
+    var r = (size - stroke) / 2, c = 2 * Math.PI * r, b = band(v);
+    return '<svg width="' + size + '" height="' + size + '" viewBox="0 0 ' + size + ' ' + size + '" role="img" aria-label="' + v + ' out of 100">' +
+      '<circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="var(--track)" stroke-width="' + stroke + '"/>' +
+      '<circle cx="' + size / 2 + '" cy="' + size / 2 + '" r="' + r + '" fill="none" stroke="var(--' + b + ')" stroke-width="' + stroke + '" stroke-linecap="round"' +
+      ' stroke-dasharray="' + (c * v / 100).toFixed(1) + ' ' + c.toFixed(1) + '" transform="rotate(-90 ' + size / 2 + ' ' + size / 2 + ')"/>' +
+      '<text x="50%" y="50%" dominant-baseline="central" text-anchor="middle" fill="var(--' + b + '-t)" font-size="' + Math.round(size * 0.3) + '" font-family="Arial">' + v + '</text></svg>';
   }
-  function render(rep) {
-    var s = rep.summary;
-    $('cards').innerHTML = [
-      [rep.deck.slides, 'slides'], [s.fix, 'would fix'], [s.flag, 'for a designer'], [s.queue, 'slides in queue'],
-      [rep.deck.on_template ? 'Yes' : rep.slides.some(function (x) { return x.on === 'builder'; }) ? 'Builder' : 'No', 'on MMW template']
-    ].map(function (c) { return '<div class="card"><b>' + c[0] + '</b><span>' + c[1] + '</span></div>'; }).join('');
-    // Whole deck: what gets fixed and what is just context. Deck-level flags
-    // go to the top of the designer queue, so the queue matches the count.
+  function slideList(ns) { return ns.length > 8 ? ns.slice(0, 8).join(', ') + ' +' + (ns.length - 8) : ns.join(', '); }
+  function allFindings(rep) {   // [{slide, f}] with deck items as slide 0
+    var out = rep.deck.findings.map(function (f) { return { n: 0, f: f }; });
+    rep.slides.forEach(function (s) { s.findings.forEach(function (f) { out.push({ n: s.n, f: f, s: s }); }); });
+    return out;
+  }
+  function catOf(check) { var c = (MMW_RULES.policy.scores.categories || []).filter(function (c) { return c.checks.indexOf(check) >= 0; })[0]; return c ? c.id : null; }
+
+  function renderHero(rep) {
+    var sc = rep.scores, builder = rep.slides.filter(function (x) { return x.on === 'builder'; }), ided = builder.filter(function (x) { return x.layout_match; }).length;
+    var src = rep.deck.on_template ? 'built on the MMW template' : builder.length ? 'made with the Presentation Builder · ' + ided + ' of ' + builder.length + ' layouts identified' : 'not on the MMW template';
+    var meta = '<div class="meta">' + esc(fileLabel) + ' · ' + rep.deck.slides + ' slides · ' + src + ' · checked in ' + checkedIn + ' s</div>';
+    if (sc.rebuild) {
+      $('hero').className = 'hero rebuild';
+      $('hero').innerHTML = '<b>Rebuild recommended</b><p style="margin:6px 0 0">This deck is not built on the MMW template, so fixing it slide by slide would not make it on-brand. ' +
+        'Rebuild it with the <b>MMW Presentation Builder</b> agent in WPP Open: give it this deck\'s content and it produces on-brand MMW slides. ' +
+        'The list below shows slides to split or charts to recreate while you do.</p>' + meta;
+      return;
+    }
+    $('hero').className = 'hero';
+    var o = sc.overall;
+    $('hero').innerHTML = '<div class="overall">' + gauge(o.before, 132, 11) + '<div class="lbl">Brand readiness</div>' +
+      '<div class="aft">' + (o.after !== o.before ? o.after + ' after Apply fixes' : '&nbsp;') + '</div></div>' +
+      '<div class="gauges">' + sc.categories.map(function (c) {
+        return '<button class="gauge' + (catFilter === c.id ? ' on' : '') + '" data-cat="' + c.id + '" title="Show ' + esc(c.label) + ' items">' + gauge(c.before, 76, 7) +
+          '<div class="lbl">' + esc(c.label) + '</div><div class="aft">' + (c.after !== c.before ? '→ ' + c.after + ' after fixes' : '') + '</div></button>';
+      }).join('') + '</div>' +
+      '<div class="legend"><span><i class="t-fail"></i>0–49</span><span><i class="t-avg"></i>50–89</span><span><i class="t-pass"></i>90–100</span><span>Each issue costs points per slide, more the more visible it is</span></div>' + meta;
+    Array.prototype.forEach.call(document.querySelectorAll('.gauge'), function (g) {
+      g.onclick = function () { catFilter = catFilter === g.getAttribute('data-cat') ? null : g.getAttribute('data-cat'); renderHero(rep); renderAudits(rep); };
+    });
+  }
+
+  // Lighthouse-style audit rows: one per kind of issue, biggest first, each
+  // expanding to the slides it is on.
+  function audits(rep, action) {
+    var groups = {};
+    allFindings(rep).forEach(function (x) {
+      if (x.f.action !== action) return;
+      if (catFilter && catOf(x.f.check) !== catFilter) return;
+      var g = (groups[x.f.check] = groups[x.f.check] || { check: x.f.check, rows: [], slides: [], count: 0 });
+      g.rows.push(x); g.count += x.f.count;
+      if (x.n && g.slides.indexOf(x.n) < 0) g.slides.push(x.n);
+    });
+    return Object.keys(groups).map(function (k) { return groups[k]; }).sort(function (a, b) { return b.slides.length - a.slides.length || b.count - a.count; });
+  }
+  function auditHtml(g, action) {
+    var ico = action === 'flag' ? (g.slides.length > 2 || g.rows.some(function (r) { return !r.n; }) ? 'fail' : 'avg') : 'pass';
+    var where = g.slides.length ? 'slide' + (g.slides.length > 1 ? 's ' : ' ') + slideList(g.slides) : 'whole deck';
+    return '<details class="audit"><summary><span class="ico ' + ico + '"></span><span class="ttl">' + esc(LABEL[g.check] || g.check) +
+      '<small>' + esc(HELP[g.check] || '') + '</small></span><span class="cnt">' + where + '</span></summary><div class="body"><table>' +
+      g.rows.map(function (r) {
+        var f = r.f;
+        return '<tr><td class="n">' + (r.n ? 'Slide ' + r.n : 'Deck') + '</td><td>' + esc(f.msg) + (f.count > 1 ? ' <span class="muted">×' + f.count + '</span>' : '') +
+          (f.rec ? '<br><span class="rec">→ ' + esc(f.rec) + '</span>' : '') +
+          (f.items ? '<br><span class="rec">' + f.items.map(esc).join('<br>') + '</span>' : '') + '</td></tr>';
+      }).join('') + '</table></div></details>';
+  }
+  function renderAudits(rep) {
+    var cat = catFilter && rep.scores.categories.filter(function (c) { return c.id === catFilter; })[0];
+    var note = cat ? 'Showing ' + esc(cat.label) + ' only · <a href="#" class="clr">show all</a>' : '';
+    $('filter1').innerHTML = note; $('filter2').innerHTML = note;
+    Array.prototype.forEach.call(document.querySelectorAll('a.clr'), function (a) { a.onclick = function (e) { e.preventDefault(); catFilter = null; renderHero(rep); renderAudits(rep); }; });
+    var fl = audits(rep, 'flag'), fx = audits(rep, 'fix');
+    $('flagged').innerHTML = fl.length ? fl.map(function (g) { return auditHtml(g, 'flag'); }).join('') : '<div class="audit"><div style="padding:12px 16px" class="ok">Nothing for a designer.</div></div>';
+    $('fixable').innerHTML = fx.length ? fx.map(function (g) { return auditHtml(g, 'fix'); }).join('') : '<div class="audit"><div style="padding:12px 16px" class="muted">Nothing to fix automatically.</div></div>';
+  }
+
+  function findingHtml(f) {
+    return '<li><span class="tag ' + esc(f.action) + '">' + esc(f.action === 'fix' ? 'fix' : f.action === 'flag' ? 'designer' : 'note') + '</span>' + esc(f.msg) + (f.count > 1 ? ' <span class="muted">×' + f.count + '</span>' : '') +
+      (f.rec ? '<br><span class="rec">→ ' + esc(f.rec) + '</span>' : '') +
+      (f.items ? '<br><span class="rec">' + f.items.map(esc).join('<br>') + '</span>' : '') + '</li>';
+  }
+  function renderDetails(rep) {
     var isFlag = function (f) { return f.action === 'flag'; };
-    var deckOther = rep.deck.findings.filter(function (f) { return !isFlag(f); }), deckFlags = rep.deck.findings.filter(isFlag);
-    $('deck').innerHTML = deckOther.length ? '<h2>Whole deck</h2><div class="list"><div class="item"><ul>' + deckOther.map(findingHtml).join('') + '</ul></div></div>' : '';
+    var deckFlags = rep.deck.findings.filter(isFlag), info = rep.deck.findings.filter(function (f) { return f.action === 'info'; });
     var q = rep.slides.filter(function (x) { return x.findings.some(isFlag); });
     var qh = (deckFlags.length ? ['<div class="item"><h3>Whole deck</h3><ul>' + deckFlags.map(findingHtml).join('') + '</ul></div>'] : []).concat(q.map(function (x) {
-      return '<div class="item"><h3>Slide ' + x.n + (x.title ? ' — ' + esc(x.title) : '') + ' <span class="muted" style="font-weight:normal">' + esc(x.layout) + '</span></h3><ul>' +
+      return '<div class="item"><h3>Slide ' + x.n + (x.title ? ' — ' + esc(x.title) : '') + ' <span class="muted" style="font-weight:normal">' + esc(x.layout_match || x.layout) + '</span></h3><ul>' +
         x.findings.filter(isFlag).map(findingHtml).join('') + '</ul></div>';
     }));
     $('queue').innerHTML = qh.length ? qh.join('') : '<div class="item ok">Nothing for a designer.</div>';
-    var l = rep.slides.filter(function (x) { return x.findings.some(function (f) { return f.action === 'fix'; }); });
-    var deckFix = rep.deck.findings.filter(function (f) { return f.action === 'fix'; });
-    if (deckFix.length) l = [{ n: 'deck', findings: deckFix }].concat(l);
-    $('log').innerHTML = l.length ? l.map(function (x) {
-      return '<div class="item"><b>' + (x.n === 'deck' ? 'Whole deck' : 'Slide ' + x.n) + ':</b> ' + x.findings.filter(function (f) { return f.action === 'fix'; })
-        .map(function (f) { return esc(f.msg) + (f.count > 1 ? ' (×' + f.count + ')' : ''); }).join('; ') + '</div>';
-    }).join('') : '<div class="item ok">Nothing to fix.</div>';
-    $('slides').innerHTML = '<tr><th>#</th><th>Title</th><th>Layout</th><th>Source</th><th>Background</th><th>Fix</th><th>Flag</th></tr>' + rep.slides.map(function (x) {
-      var fx = x.findings.filter(function (f) { return f.action === 'fix'; }).length;
-      return '<tr><td>' + x.n + '</td><td>' + esc(x.title) + '</td><td>' + esc(x.layout) + '</td><td>' + esc(x.on) + '</td><td>' +
-        esc(x.background ? (x.background.hex || x.background.kind) : '') + '</td><td>' + fx + '</td><td>' + (x.findings.length - fx) + '</td></tr>';
+    if (!applied) {
+      var l = rep.slides.filter(function (x) { return x.findings.some(function (f) { return f.action === 'fix'; }); });
+      var deckFix = rep.deck.findings.filter(function (f) { return f.action === 'fix'; });
+      if (deckFix.length) l = [{ n: 'deck', findings: deckFix }].concat(l);
+      $('log').innerHTML = l.length ? l.map(function (x) {
+        return '<div class="item"><b>' + (x.n === 'deck' ? 'Whole deck' : 'Slide ' + x.n) + ':</b> ' + x.findings.filter(function (f) { return f.action === 'fix'; })
+          .map(function (f) { return esc(f.msg) + (f.count > 1 ? ' (×' + f.count + ')' : ''); }).join('; ') + '</div>';
+      }).join('') : '<div class="item">Nothing to fix.</div>';
+    }
+    $('deck').innerHTML = info.length ? '<h2>Notes</h2><div class="list"><div class="item"><ul>' + info.map(findingHtml).join('') + '</ul></div></div>' : '';
+    $('slides').innerHTML = '<tr><th>#</th><th>Title</th><th>Layout</th><th>Source</th><th>Fix</th><th>Designer</th></tr>' + rep.slides.map(function (x) {
+      var fx = x.findings.filter(function (f) { return f.action === 'fix'; }).length, fl = x.findings.filter(isFlag).length;
+      return '<tr><td>' + x.n + '</td><td>' + esc(x.title) + '</td><td>' + esc(x.layout_match || x.layout) + '</td><td>' + esc(x.on) + '</td><td>' + fx + '</td><td>' + fl + '</td></tr>';
     }).join('');
-    renderFix(rep);
-    $('results').style.display = 'block';
   }
   function fixCounts(rep) {
     var c = {};
-    rep.deck.findings.concat.apply(rep.deck.findings, rep.slides.map(function (s) { return s.findings; }))
-      .forEach(function (f) { if (f.action === 'fix') c[f.check] = (c[f.check] || 0) + f.count; });
+    allFindings(rep).forEach(function (x) { if (x.f.action === 'fix') c[x.f.check] = (c[x.f.check] || 0) + x.f.count; });
     return c;
   }
   function renderFix(rep) {
-    var c = fixCounts(rep), keys = Object.keys(c);
+    var c = fixCounts(rep), keys = Object.keys(c), n = allFindings(rep).filter(function (x) { return x.f.action === 'fix'; }).length;
     $('fixstate').textContent = ''; $('fixstate').className = 'muted';
-    if (rep.deck.rebuild) {
-      $('fixcats').innerHTML = '<b>No automatic fixes for this deck.</b> It is not built on the MMW template, so fixing it slide by slide would not make it on-brand.';
-      $('apply').style.display = 'none';
-      $('agent').innerHTML = 'Rebuild it with the <b>MMW Presentation Builder</b> agent in WPP Open: give it this deck\'s content and it produces on-brand MMW slides. Use the designer queue above for slides that need splitting.';
-      return;
-    }
-    $('apply').style.display = keys.length ? '' : 'none';
-    $('fixcats').innerHTML = keys.length ? keys.map(function (k) {
+    $('fixpanel').style.display = rep.deck.rebuild || !keys.length ? 'none' : '';
+    $('agent').style.display = rep.deck.rebuild ? 'none' : '';
+    ['fixedh', 'fixable', 'filter2'].forEach(function (id) { $(id).style.display = rep.deck.rebuild ? 'none' : ''; });
+    var sc = rep.scores;
+    $('fixsum').textContent = n + ' fix' + (n === 1 ? '' : 'es') + (sc && !sc.rebuild && sc.overall.after !== sc.overall.before ? ' · brand readiness ' + sc.overall.before + ' → ' + sc.overall.after : '');
+    $('fixcats').innerHTML = keys.map(function (k) {
       return '<label><input type="checkbox" data-check="' + esc(k) + '" checked> ' + esc(LABEL[k] || k) + ' <span class="muted">(' + c[k] + ')</span></label>';
-    }).join('') : '<span class="ok">Nothing to fix automatically.</span>';
+    }).join('');
   }
+  function render(rep) {
+    renderHero(rep); renderFix(rep); renderAudits(rep); renderDetails(rep);
+    $('results').style.display = 'block';
+  }
+
   $('apply').onclick = async function () {
     if (!current || !fileBuf) return;
     var checks = Array.prototype.filter.call(document.querySelectorAll('#fixcats input'), function (i) { return i.checked; }).map(function (i) { return i.getAttribute('data-check'); });
@@ -154,12 +273,12 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
       st.className = rep.failed.length ? 'bad' : 'ok';
       st.textContent = 'Downloaded ' + name + ': ' + n + ' fixes applied' + (rep.failed.length ? '; ' + rep.failed.length + ' could not be applied: ' + rep.failed.map(function (f) { return 'slide ' + f.slide + ' ' + f.msg; }).join('; ') : '') +
         '. Open it in PowerPoint to check.';
-      renderApplied(rep.applied, rep.failed);
+      renderApplied(rep.applied);
     } catch (e) { st.className = 'bad'; st.textContent = 'Could not apply fixes: ' + e.message; }
     btn.disabled = false;
   };
-  function renderApplied(ap, failed) {
-    $('logsub').textContent = 'what was changed in the corrected copy';
+  function renderApplied(ap) {
+    $('logsub').textContent = 'what was changed in the corrected copy'; $('fixedsub').textContent = 'applied in the corrected copy';
     var rows = ap.deck.length ? ['<div class="item"><b>Whole deck:</b> ' + ap.deck.map(function (f) { return esc(f.msg); }).join('; ') + '</div>'] : [];
     ap.slides.forEach(function (s) {
       rows.push('<div class="item"><b>Slide ' + s.n + ':</b> ' + s.findings.map(function (f) { return esc(f.msg) + (f.count > 1 ? ' (×' + f.count + ')' : ''); }).join('; ') + '</div>');
@@ -188,7 +307,8 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
   async function load(f) {
     if (!f) return;
     if (!/\.pptx$/i.test(f.name)) { say('That is not a .pptx file. Save it from PowerPoint, Keynote or Google Slides as .pptx first.', 'bad'); return; }
-    $('results').style.display = 'none'; current = null; applied = null; fileLabel = f.name; $('logsub').textContent = 'what Apply fixes will change';
+    $('results').style.display = 'none'; current = null; applied = null; catFilter = null; fileLabel = f.name;
+    $('logsub').textContent = 'what Apply fixes will change'; $('fixedsub').textContent = 'by Apply fixes';
     say('Reading ' + f.name + ' (' + Math.round(f.size / 1024 / 1024 * 10) / 10 + ' MB)...');
     try {
       fileBuf = await f.arrayBuffer();
@@ -196,8 +316,9 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
       say('Checking ' + f.name + '...');
       var t0 = Date.now();
       current = await DesignPassCheck.check(zip, MMW_RULES);
+      checkedIn = ((Date.now() - t0) / 1000).toFixed(1);
       render(current);
-      say('Checked ' + f.name + ' in ' + ((Date.now() - t0) / 1000).toFixed(1) + ' s.', 'ok');
+      say('');
     } catch (e) { say('Could not check this file: ' + e.message, 'bad'); }
   }
   var drop = $('drop'), inp = $('file'), inp2 = $('file2');

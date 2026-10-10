@@ -224,5 +224,14 @@ Technical:
   - MMW_Layout_Inventory_84slides (4) s23: wrapped title into the body.
   Common cause to check: fitTexts measures each box alone and assumes
   single-line bullets/labels; wrapped lines push into the next fixed box.
+- Builder-deck layout matching: fingerprints from the engine
+  (tools/build_fingerprints.js) matched by box geometry; twins (Light/Dark,
+  divider moods) split by master + background. QA deck and a perturbed export:
+  92/92 matchable slides right, 0 wrong; real builder decks ~85% identified,
+  the rest (content-sized charts/tables/bars) left unidentified on purpose.
+  Turns on per-field copy budgets and background checks for builder slides.
+- Report reworked Lighthouse-style (user request): Brand readiness gauge +
+  five category gauges (now -> after fixes), audits grouped by issue, details
+  collapsed. Weights in policy.scores.
 - Next: designer-reviewed decks from the user; open a corrected copy in
   PowerPoint.

@@ -177,5 +177,115 @@
     "min_overflow_lines": 0.75,
     "min_overlap_lines": 0.5,
     "_note": "Text is measured with the real font widths (rules/font_metrics.json). Flagged when it overflows its box by at least min_overflow_lines of its own line height (and tolerance_in engine inches) AND its text reaches min_overlap_lines into another box's text, or leaves the slide. Tuned on the template: its tight social-sheet and spend-bar boxes overflow by ~10% on paper but render cleanly. Never auto-fixed."
+  },
+  "fingerprint": {
+    "tol_in": 0.03,
+    "tol_h_in": 0.15,
+    "min_score": 0.6,
+    "min_margin": 0.05,
+    "_note": "Builder slides: layout identified by matching their boxes to the engine's fingerprints (rules/fingerprints.json). Engine inches. F1 over matched boxes; accepted when >= min_score and ahead of the next layout by min_margin, otherwise left unidentified.",
+    "fix_min_score": 0.9
+  },
+  "scores": {
+    "categories": [
+      {
+        "id": "typography",
+        "label": "Typography",
+        "checks": [
+          "font_face",
+          "theme_fonts",
+          "type_scale",
+          "casing"
+        ]
+      },
+      {
+        "id": "colour",
+        "label": "Colour",
+        "checks": [
+          "colour",
+          "theme_colours"
+        ]
+      },
+      {
+        "id": "layout",
+        "label": "Layout",
+        "checks": [
+          "background",
+          "position",
+          "logo_variant",
+          "off_template"
+        ]
+      },
+      {
+        "id": "copy",
+        "label": "Copy fit",
+        "checks": [
+          "copy_fit",
+          "text_fit",
+          "density"
+        ]
+      },
+      {
+        "id": "cleanup",
+        "label": "Cleanup",
+        "checks": [
+          "placeholder_text",
+          "annotation",
+          "chart_image"
+        ]
+      }
+    ],
+    "_note": "Lighthouse-style: each category starts at 100; each kind of issue costs its weight once per slide it is on (deck-level: once). 'after' = what remains after Apply fixes. Overall = mean of categories, capped at the worst category + overall_cap_above_worst. Weights: how visible the problem is in the room -- text running into text 20, a stray colour 2-4. Decks flagged for a rebuild get no score.",
+    "weights": {
+      "_default": {
+        "fix": 2,
+        "flag": 6
+      },
+      "text_fit": {
+        "flag": 20
+      },
+      "off_template": {
+        "flag": 25
+      },
+      "logo_variant": {
+        "fix": 8,
+        "flag": 8
+      },
+      "background": {
+        "fix": 6,
+        "flag": 10
+      },
+      "copy_fit": {
+        "flag": 8
+      },
+      "density": {
+        "flag": 6
+      },
+      "chart_image": {
+        "flag": 8
+      },
+      "colour": {
+        "fix": 2,
+        "flag": 4
+      },
+      "type_scale": {
+        "flag": 3
+      },
+      "position": {
+        "fix": 1,
+        "flag": 3
+      },
+      "theme_fonts": {
+        "fix": 5
+      },
+      "placeholder_text": {
+        "fix": 2,
+        "flag": 4
+      },
+      "annotation": {
+        "fix": 2
+      }
+    },
+    "overall_cap_above_worst": 15
   }
 }

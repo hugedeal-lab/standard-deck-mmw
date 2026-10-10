@@ -268,6 +268,8 @@ function check(zip, rules, opts) {
       ct.documentElement.insertBefore(d, ct.documentElement.firstChild); touch(d);
     });
   }
+  var specBySlug = {};
+  Object.keys(rules.layouts).forEach(function (n) { if (rules.layouts[n].slug) specBySlug[rules.layouts[n].slug] = n; });
   function isAnnotation(hex) { return (rules.palette.annotations || [rules.palette.annotation]).some(function (a) { return de2000(hex, a) <= POL.colour.exact_de; }); }
   function useMaster(M) { if (M) { theme = M.theme; clrMap = M.clrMap; } }
   // Replace a colour element with a plain srgbClr, keeping its transparency.
@@ -342,6 +344,7 @@ function check(zip, rules, opts) {
       if (s.findings.some(function (f) { return f.action === 'flag'; })) sum.queue++;
     });
     report.summary = sum;
+    report.scores = scoreReport(report, POL);
     if (!applying) return report;
     var XS = opts.XMLSerializer || root.XMLSerializer;
     Object.keys(dirty).forEach(function (p) {
@@ -394,16 +397,20 @@ function check(zip, rules, opts) {
 
   // ---- slide level ----
   function checkSlide(slidePath, n) {
-    var S = { n: n, part: slidePath, findings: [] }, add = bucket(S.findings, n);
+    var S = { n: n, part: slidePath, findings: [] }, add = bucket(S.findings, n), bgAsset = null;
     report.slides.push(S);
     return Promise.all([read(slidePath), rels(slidePath)]).then(function (r) {
       var doc = r[0], srels = r[1], layoutPath = relOfType(srels, 'slideLayout');
       return Promise.all([read(layoutPath), rels(layoutPath)]).then(function (lr) {
         var ldoc = lr[0], mpath = relOfType(lr[1], 'slideMaster');
-        return read(mpath).then(function (mdoc) {
+        // hash of a picture background, if any (builder layout tie-break)
+        var bgBlip = doc && path(doc.documentElement, 'p:cSld/p:bg/p:bgPr/a:blipFill/a:blip');
+        var bgRid = bgBlip && bgBlip.getAttributeNS(NS.r, 'embed'), bgTgt = bgRid && srels[bgRid] && srels[bgRid].target;
+        return Promise.all([read(mpath), bgTgt ? hashOf(bgTgt) : null]).then(function (mm) {
           var M = masters[mpath];
           useMaster(M);
-          return run(doc, srels, ldoc, lr[1], mdoc, M && M.mmw);
+          bgAsset = mm[1] && rules.bg_marks ? rules.bg_marks[mm[1]] || null : null;
+          return run(doc, srels, ldoc, lr[1], mm[0], M && M.mmw);
         });
       });
     });
@@ -427,12 +434,53 @@ function check(zip, rules, opts) {
       if (S.on === 'other')
         add('off_template', 'layout', { msg: 'Not on an MMW layout (layout "' + (lname || 'unnamed') + '")', force_flag: true,
           rec: 'Rebuild this slide with the MMW Presentation Builder agent in WPP Open.' });
-      if (S.on === 'builder')
-        S.note = 'Builder output: MMW layout identified by geometry (not yet implemented).';
+      // Builder slides carry no MMW layout name: identify the layout by
+      // matching the slide's boxes against the engine's own fingerprints.
+      var bg = bgOf(doc) || bgOf(ldoc) || bgOf(mdoc);
+      var BM = S.on === 'builder' && rules.fingerprints ? matchBuilder() : null, BL = null;
+      if (BM) {
+        S.match = { slug: BM.slug, score: BM.score, runner_up: BM.second };
+        if (BM.ok) {
+          S.spec = specBySlug[BM.slug] || null;
+          S.layout_match = BM.slug;
+          BL = S.spec ? rules.template_layouts[rules.layouts[S.spec].template_layout] : null;
+        } else if (BM.family && bg && bg.kind === 'picture' && BM.family.every(function (k) { var b = BM.lbgOf(k); return b && b.kind !== 'solid'; })) {
+          // a picture background on twins that all use pictures: an older or
+          // re-encoded version of the image -- the geometry is enough
+          S.layout_match = BM.family.join(' / ');
+          BM.ok = true; BM.familyOnly = true;
+        } else if (BM.family && bg && bg.kind === 'solid' && classify(bg.hex).on) {
+          S.layout_match = BM.family.join(' / ');   // an on-palette override: fine
+          BM.ok = true; BM.familyOnly = true;
+        } else if (BM.family) {
+          // Geometry is certain, the twin is not: its background (the only
+          // difference between twins) matches none of them.
+          S.layout_match = BM.family.join(' / ');
+          var opts_ = BM.family.map(function (k) { return BM.lbgOf(k); }).filter(Boolean);
+          add('background', 'bg-family', { msg: 'Background ' + fmtBg(bg) + ' is none of the backgrounds this layout comes in (' +
+              BM.family.map(function (k, i) { return k + ': ' + (opts_[i] ? fmtBg(opts_[i]) : '?'); }).join(', ') + ')', force_flag: true,
+            rec: (bg && bg.kind === 'solid' && bg.hex === '#000000' ? 'Pure black is what older builder exports wrote for a colour they could not read. ' : '') +
+              'Pick the intended one, or regenerate the slide with the builder agent.' });
+          BM.ok = true; BM.familyOnly = true;
+        }
+      }
 
       // background
-      var bg = bgOf(doc) || bgOf(ldoc) || bgOf(mdoc);
       S.background = bg;
+      if (BM && BM.ok && !BM.familyOnly && S.spec && bg) {
+        var want = rules.layouts[S.spec].background;
+        // The builder lets authors override a slide's background with a palette
+        // colour, so only an off-palette one (e.g. old exports' #000000) is wrong.
+        if (want && want.kind === 'solid' && bg.kind === 'solid' && de2000(want.hex, bg.hex) > POL.colour.exact_de && !classify(bg.hex).on) {
+          // a geometry match only drives a fix when it is near-certain
+          var sure = BM.score >= POL.fingerprint.fix_min_score;
+          if (add('background', 'bg', { msg: 'Background ' + fmtBg(bg) + ' -> ' + fmtBg(want) + ' (' + BM.slug + ')', from: fmtBg(bg), to: fmtBg(want), force_flag: !sure,
+                rec: sure ? null : 'Looks like ' + BM.slug + ' (match ' + BM.score + '): confirm the layout, then use its background.' }))
+            setBg(doc, want.hex);
+        } else if (want && want.kind !== 'solid' && bg.kind === 'solid')
+          add('background', 'bg-img', { msg: 'Background ' + fmtBg(bg) + ' replaces the ' + BM.slug + ' background image (' + want.asset + ')', force_flag: true,
+            rec: 'Reapply the layout background, or regenerate the slide with the builder agent.' });
+      }
       if (TL && bg) {
         var allowed = TL.backgrounds;
         var ok = allowed.some(function (a) { return bg.kind === 'solid' ? a.kind === 'solid' && de2000(a.hex, bg.hex) <= POL.colour.exact_de : a.kind !== 'solid' && bg.kind === 'picture'; });
@@ -575,11 +623,25 @@ function check(zip, rules, opts) {
       // text or off the slide (measured with the real font widths)
       if (rules.metrics) textFit();
 
+      // copy budgets for builder slides, per field of the matched layout
+      if (BM && BM.ok) {
+        var budgets = (S.spec && rules.layouts[S.spec].copy_budgets) || rules.slug_budgets[BM.slug] || {};
+        BM.pairs.forEach(function (pr) {
+          var f = pr.f[5], B = f && budgets[f];
+          if (!B || !B.max || !pr.sp) return;
+          var t = paraTexts(kid(pr.sp, 'p', 'txBody')).join(' ').trim();
+          if (t.length > B.max * POL.density.over_budget_ratio)
+            add('copy_fit', 'field-' + f, { msg: f + ' is ' + t.length + ' characters; ' + BM.slug + ' holds ' + B.max + (B.fits && B.fits !== B.max ? ' (' + B.fits + ' at full size)' : ''),
+              sample: short(t), rec: 'Shorten to about ' + (B.fits || B.max) + ' characters, or regenerate with the builder agent using a layout that holds more.' });
+        });
+      }
+
       // density
+      var DTL = TL || BL;
       var maxW = POL.density.max_words_per_slide, maxP = POL.density.max_bullets;
-      if (TL && TL.template_words) maxW = Math.max(maxW, Math.round(TL.template_words * POL.density.split_ratio));
-      if (TL && TL.template_paras) maxP = Math.max(maxP, TL.template_paras);
-      if (!TL) maxP = Infinity;   // no layout to compare a list length against
+      if (DTL && DTL.template_words) maxW = Math.max(maxW, Math.round(DTL.template_words * POL.density.split_ratio));
+      if (DTL && DTL.template_paras) maxP = Math.max(maxP, DTL.template_paras);
+      if (!DTL) maxP = Infinity;   // no layout to compare a list length against
       if (words > maxW || maxParas > maxP) {
         var k = Math.ceil(bodyParas.length / 2);
         add('density', 'dense', { msg: words + ' words (this layout holds about ' + maxW + ')' + (maxParas > maxP ? ', ' + maxParas + ' points in one block' : ''),
@@ -639,6 +701,62 @@ function check(zip, rules, opts) {
           if (fh) hit = { hex: fh };
         }
         return hit;
+      }
+      // Score this slide against every fingerprint: boxes that line up (same
+      // kind, x/y/w within tolerance) over all boxes on both sides (F1).
+      function matchBuilder() {
+        var FP = POL.fingerprint, sb = [];
+        all(csld, 'p', 'sp').concat(all(csld, 'p', 'pic'), all(csld, 'p', 'cxnSp')).forEach(function (sp) {
+          var bx = absBox(sp);
+          if (!bx) return;
+          var tb = kid(sp, 'p', 'txBody');
+          sb.push({ sp: sp, x: bx.x / scale, y: bx.y / scale, w: bx.w / scale, h: bx.h / scale, t: tb && textOf(tb).trim() ? 1 : 0 });
+        });
+        all(csld, 'p', 'graphicFrame').forEach(function (g) {
+          var x = path(g, 'p:xfrm'), o = x && kid(x, 'a', 'off'), e = x && kid(x, 'a', 'ext');
+          if (o && e) sb.push({ sp: null, x: +o.getAttribute('x') / EMU / scale, y: +o.getAttribute('y') / EMU / scale, w: +e.getAttribute('cx') / EMU / scale, h: +e.getAttribute('cy') / EMU / scale, t: 0 });
+        });
+        if (!sb.length) return null;
+        var best = {}, bestPairs = {};
+        rules.fingerprints.forEach(function (F) {
+          var used = [], pairs = [];
+          F.boxes.forEach(function (f) {
+            for (var i = 0; i < sb.length; i++) {
+              var b = sb[i];
+              if (used[i] || b.t !== f[4]) continue;
+              if (Math.abs(b.x - f[0]) <= FP.tol_in && Math.abs(b.y - f[1]) <= FP.tol_in && Math.abs(b.w - f[2]) <= FP.tol_in && Math.abs(b.h - f[3]) <= FP.tol_h_in) {
+                used[i] = 1; pairs.push({ f: f, sp: b.sp }); return;
+              }
+            }
+          });
+          var m = pairs.length, f1 = m ? 2 * m / (F.boxes.length + sb.length) : 0;
+          if (!(F.slug in best) || f1 > best[F.slug]) { best[F.slug] = f1; bestPairs[F.slug] = pairs; }
+        });
+        var ranked = Object.keys(best).sort(function (a, b) { return best[b] - best[a]; });
+        var s1 = best[ranked[0]] || 0;
+        // Geometric twins (Light/Dark pairs, divider moods) score the same:
+        // tell them apart by the master (SD_DARK_* / SD_LIGHT_*) and the background.
+        var twins = ranked.filter(function (k) { return best[k] >= s1 - 0.001; });
+        var rest = ranked.filter(function (k) { return twins.indexOf(k) < 0; });
+        var s2 = rest.length ? best[rest[0]] : 0, pick = twins, bgKnown = true;
+        if (twins.length > 1) {
+          var isDark = /DARK/i.test(lname);
+          var lbgOf = function (k) { var n = specBySlug[k]; return n ? rules.layouts[n].background : rules.slug_bg[k] || null; };
+          var byDark = pick.filter(function (k) { var b = lbgOf(k); return !b || b.dark === undefined || !!b.dark === isDark; });
+          if (byDark.length) pick = byDark;
+          var byBg = pick.filter(function (k) {
+            var b = lbgOf(k);
+            if (!b || !bg) return false;
+            if (b.kind === 'solid') return bg.kind === 'solid' && de2000(b.hex, bg.hex) <= POL.colour.exact_de;
+            return bg.kind === 'picture' && bgAsset === b.asset;
+          });
+          if (byBg.length) pick = byBg; else bgKnown = false;
+        }
+        var slug = pick[0];
+        var family = s1 >= FP.min_score && s1 - s2 >= FP.min_margin;
+        return { slug: slug, score: +s1.toFixed(2), second: rest[0] ? rest[0] + ' ' + s2.toFixed(2) : null, twins: twins.length > 1 ? twins : null,
+          ok: family && pick.length === 1, family: family ? pick : null, bgKnown: bgKnown, lbgOf: lbgOf,
+          pairs: bestPairs[slug] || [] };
       }
       function textFit() {
         var TF = POL.text_fit, slideH = slideHin, slideW = slideWin;
@@ -781,10 +899,53 @@ function check(zip, rules, opts) {
   }
 }
 
+// Lighthouse-style scores, 0-100 per category: each kind of issue costs
+// points once per slide it is on, weighted by how visible it is (text
+// running into text costs far more than a stray colour). 'after' drops what
+// Apply fixes removes. Deck-level items cost their weight once.
+function scoreReport(rep, POL) {
+  var C = POL.scores, cats = [];
+  if (rep.deck.rebuild) return { rebuild: true, categories: [] };
+  var w = function (f) { var W = C.weights[f.check] || {}; return W[f.action] != null ? W[f.action] : C.weights._default[f.action] || 0; };
+  C.categories.forEach(function (c) {
+    var inCat = function (f) { return c.checks.indexOf(f.check) >= 0; };
+    var before = 100, after = 100, fix = 0, flag = 0, slidesFix = [], slidesFlag = [];
+    var cost = function (fs) {   // once per check per slide: the heaviest finding of that check
+      var by = {};
+      fs.forEach(function (f) { if (f.action === 'fix' || f.action === 'flag') { var k = f.check, v = w(f); if (!by[k] || v > by[k].v) by[k] = { v: v, fix: f.action === 'fix' }; } });
+      Object.keys(by).forEach(function (k) { before -= by[k].v; if (!by[k].fix) after -= by[k].v; });
+    };
+    rep.slides.forEach(function (s) {
+      var fs = s.findings.filter(inCat);
+      cost(fs);
+      if (fs.some(function (f) { return f.action === 'fix'; })) slidesFix.push(s.n);
+      if (fs.some(function (f) { return f.action === 'flag'; })) slidesFlag.push(s.n);
+      fs.forEach(function (f) { if (f.action === 'fix') fix += f.count; else if (f.action === 'flag') flag += f.count; });
+    });
+    rep.deck.findings.filter(inCat).forEach(function (f) {
+      if (f.action === 'fix') { before -= w(f); fix += f.count; }
+      else if (f.action === 'flag') { before -= w(f); after -= w(f); flag += f.count; }
+    });
+    cats.push({ id: c.id, label: c.label, before: Math.max(0, Math.round(before)), after: Math.max(0, Math.round(after)),
+      fix: fix, flag: flag, slides_fix: slidesFix, slides_flag: slidesFlag });
+  });
+  // Overall: the mean, but never more than the worst category + cap, so one
+  // bad area (text running into text) cannot hide behind four good ones.
+  var avg = function (k) {
+    var mean = cats.reduce(function (t, c) { return t + c[k]; }, 0) / cats.length, worst = Math.min.apply(null, cats.map(function (c) { return c[k]; }));
+    return Math.round(Math.min(mean, worst + C.overall_cap_above_worst));
+  };
+  return { overall: { before: avg('before'), after: avg('after') }, categories: cats };
+}
+
 // Plain-text change log + designer queue, for people and for the Open agent.
 function toText(rep, fileName, applied) {
   var L = [], pend = function (f) { return f.count > 1 ? ' (x' + f.count + ')' : ''; };
   L.push('DESIGN PASS REPORT -- ' + (fileName || 'deck') + ' -- ' + rep.deck.slides + ' slides');
+  var sc = rep.scores;
+  if (sc && sc.rebuild) L.push('Brand readiness: not on the MMW template -- rebuild with the MMW Presentation Builder agent');
+  else if (sc) L.push('Brand readiness ' + sc.overall.before + '/100' + (sc.overall.after !== sc.overall.before ? ' (' + sc.overall.after + ' after fixes)' : '') + ' -- ' +
+    sc.categories.map(function (c) { return c.label + ' ' + c.before + (c.after !== c.before ? '->' + c.after : ''); }).join(', '));
   L.push((applied ? 'Fixed' : 'Would fix automatically') + ': ' + (applied ? applied.deck.length + applied.slides.reduce(function (t, s) { return t + s.findings.length; }, 0) : rep.summary.fix) +
     ' | Designer queue: ' + rep.summary.flag + ' items on ' + rep.summary.queue + ' slides');
   L.push('');

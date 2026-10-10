@@ -29,7 +29,7 @@ const spec = JSON.parse(fs.readFileSync(R('mmw_layouts.json'), 'utf8'));
 const policy = JSON.parse(fs.readFileSync(R('rules/policy.json'), 'utf8'));
 
 const SOURCES = ['mmw_layouts.json', 'standard-deck.js', 'deck-layouts.js', 'COPY_BUDGETS.md',
-  'rules/policy.json', 'rules/template_snapshot.json', 'rules/font_metrics.json'];
+  'rules/policy.json', 'rules/template_snapshot.json', 'rules/font_metrics.json', 'rules/fingerprints.json'];
 const blob = (p) => (fs.existsSync(R(p)) ? cp.execFileSync('git', ['hash-object', R(p)]).toString().trim().slice(0, 12) : null);
 const up = (h) => (typeof h === 'string' && /^#[0-9A-Fa-f]{6}$/.test(h) ? h.toUpperCase() : null);
 
@@ -50,6 +50,13 @@ for (const f of fs.readdirSync(R('assets/logos')).filter((f) => f.endsWith('.png
   brandMarks[h] = { asset: f, mark: f.includes('lockup') ? 'lockup' : 'logo', variant: f.includes('white') ? 'white' : 'black',
     for_bg: f.includes('white') ? 'dark' : 'light', swap: f.includes('white') ? f.replace(/white(_lg)?/, 'black') : f.replace('black', 'white') };
 }
+
+// Background images, by hash: builder slides embed assets/ as-is, which lets
+// the layout matcher tell geometric twins (Dark vs Dark2 dividers) apart.
+const bgMarks = {};
+for (const [dir, prefix] of [['assets/backgrounds', ''], ['assets/social', 'social/']])
+  for (const f of fs.readdirSync(R(dir)).filter((f) => /\.(png|jpe?g)$/i.test(f)).sort())
+    bgMarks[crypto.createHash('sha256').update(fs.readFileSync(R(dir + '/' + f))).digest('hex')] = prefix + f;
 
 function build(snap) {
   // ---- palette --------------------------------------------------------
@@ -172,9 +179,13 @@ function build(snap) {
       annotation,
       annotations
     },
+    fingerprints: fs.existsSync(R('rules/fingerprints.json')) ? JSON.parse(fs.readFileSync(R('rules/fingerprints.json'), 'utf8')).prints : null,
+    slug_budgets: budgets,
+    slug_bg: Object.fromEntries(Object.keys(DL.LAYOUT_BG).map((k) => [k, lbg(k)])),
     metrics: fs.existsSync(R('rules/font_metrics.json')) ? JSON.parse(fs.readFileSync(R('rules/font_metrics.json'), 'utf8')).faces : null,
     furniture: spec.furniture,
     brand_marks: brandMarks,
+    bg_marks: bgMarks,
     template_layouts: byTemplate,
     layouts
   };
