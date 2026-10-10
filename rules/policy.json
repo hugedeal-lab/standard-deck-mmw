@@ -1,0 +1,144 @@
+{
+  "_about": "HAND-EDITED. Design Pass policy: what each check does and its tolerances. Calibrate these numbers against designer-reviewed decks (pilot step 1). Everything else in rules/ is generated -- see rules/README.md.",
+  "mode": "report",
+  "_mode": "report = flag everything, change nothing (pilot step 1). fix = apply checks whose action is 'fix'.",
+  "checks": {
+    "font_face": {
+      "action": "fix",
+      "brief": "Fonts -> Mazda Type Bold / Mazda Type / Arial by role"
+    },
+    "theme_fonts": {
+      "action": "fix",
+      "brief": "Theme major/minor fonts -> template's"
+    },
+    "type_scale": {
+      "action": "flag",
+      "brief": "Sizes on the type scale (fix once calibrated)"
+    },
+    "colour": {
+      "action": "fix",
+      "brief": "Off-palette colour -> nearest palette token, only when unambiguous"
+    },
+    "theme_colours": {
+      "action": "flag",
+      "brief": "Theme colour scheme differs from the template's"
+    },
+    "background": {
+      "action": "fix",
+      "brief": "Slide background -> the layout's template background, only when the layout allows one"
+    },
+    "logo_variant": {
+      "action": "fix",
+      "brief": "Light/dark logo or lockup on the wrong background"
+    },
+    "casing": {
+      "action": "fix",
+      "brief": "Caps where the template sets caps"
+    },
+    "placeholder_text": {
+      "action": "fix",
+      "brief": "Leftover placeholders, Lorem ipsum -> remove"
+    },
+    "annotation": {
+      "action": "fix",
+      "brief": "#CB297B template annotations -> remove"
+    },
+    "position": {
+      "action": "fix",
+      "brief": "Snap text boxes to template positions, conservative tolerance"
+    },
+    "copy_fit": {
+      "action": "flag",
+      "brief": "Text past copy-fit limits"
+    },
+    "density": {
+      "action": "flag",
+      "brief": "Content that wants splitting: propose the split"
+    },
+    "off_template": {
+      "action": "flag",
+      "brief": "Slide not on an MMW layout: rebuild candidate"
+    },
+    "chart_image": {
+      "action": "flag",
+      "brief": "Chart as a picture: rebuild natively, verify numbers"
+    },
+    "wording": {
+      "action": "never",
+      "brief": "Wording and data are never changed"
+    }
+  },
+  "fonts": {
+    "allowed": [
+      "Mazda Type Bold",
+      "Mazda Type",
+      "Mazda Type Regular",
+      "Arial"
+    ],
+    "symbol": [
+      "Symbol",
+      "Wingdings",
+      "Wingdings 2",
+      "Wingdings 3",
+      "Webdings",
+      "Courier New"
+    ],
+    "by_role": {
+      "display": "Mazda Type Bold",
+      "body": "Arial"
+    },
+    "display_min_pt": 20,
+    "_display_min_pt": "Engine pt. Off-template text at or above this size is treated as display (open question 8: refine with placeholder type and position)."
+  },
+  "type_scale": {
+    "tolerance_pt": 0.5,
+    "_tolerance_pt": "Engine pt. A run is on the scale when within this of any size the template uses for its face."
+  },
+  "colour": {
+    "metric": "CIEDE2000",
+    "exact_de": 1.0,
+    "snap_max_de": 6.0,
+    "ambiguity_margin_de": 2.0,
+    "ignore": [
+      "#FFFFFF",
+      "#000000"
+    ],
+    "_rule": "<= exact_de of a palette or template colour: on palette. Else snap only if the nearest palette token is <= snap_max_de AND the runner-up is >= ambiguity_margin_de further or at least twice as far; otherwise flag. #000000 is in 'ignore' for reporting because PowerPoint writes it for default text; it is still reported when used as a fill."
+  },
+  "position": {
+    "snap_in": 0.08,
+    "flag_in": 0.25,
+    "_units": "Engine inches (13.33 x 7.5 canvas). Within snap_in: fix. Between snap_in and flag_in: flag (the template's own demo slides sit up to 0.18 in off their layouts). Past flag_in: ignored as deliberate."
+  },
+  "placeholder_text": {
+    "phrases": [
+      "lorem ipsum",
+      "click to add",
+      "click here",
+      "place your own image",
+      "insert image",
+      "add text here",
+      "xx%",
+      "tbd"
+    ],
+    "_note": "Case-insensitive substring match. 'tbd' and 'xx%' are flagged, never removed -- they may be the author's own markers."
+  },
+  "density": {
+    "over_budget_ratio": 1.0,
+    "split_ratio": 1.6,
+    "max_words_per_slide": 120,
+    "max_bullets": 5,
+    "_rule": "Field text > copy budget max x over_budget_ratio: copy_fit flag. > split_ratio, or more than max_words / max_bullets on a slide: density flag with a split proposal."
+  },
+  "template_reference": {
+    "exclude_slides": [
+      2,
+      3,
+      4,
+      104,
+      105,
+      106
+    ],
+    "_note": "Template slides that are instructions or resource sheets (how-to, font install, brand assets, icon sheets), not layout examples. Left out of rules/template_snapshot.json."
+  }
+}

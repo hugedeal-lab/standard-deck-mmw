@@ -104,7 +104,7 @@ on "Ready for review" come later if the convention sticks.
 
 | Asset | What it gives Design Pass | Notes |
 |---|---|---|
-| `mmw_layouts.json` | Every template layout's element positions, fonts, sizes, colours, backgrounds — the rulebook | Extracted from the 7.24 template (84 layouts, 115 slides) with 7.30 revisions folded in; **template-scale**: the template canvas is 26.667 × 15 in, exactly 2× the engine's 13.33 × 7.5 |
+| `mmw_layouts.json` | Every template layout's element positions, fonts, sizes, colours, backgrounds — the rulebook | Extracted from the 7.24 template (84 layouts, 115 slides) with 7.30 revisions folded in; **engine-scale** (13.33 × 7.5 in, engine pt; corrected 2026-10-09 — native values kept as `pt_native`). The template canvas is 26.667 × 15 in, 2.0005× the engine's |
 | `deck-layouts.js` | `LAYOUT_BG` (backgrounds per layout), `LAYOUT_KEYS` (fields), `TEMPLATE_NAMES` (template name → slug), the 90 layout functions | Exported on `window.DeckLayouts`; loadable from the pinned CDN |
 | `standard-deck.js` | `PALETTE` (token → hex), type faces | |
 | `COPY_BUDGETS.md` / `tools/copy_budgets.js` | Measured copy-fit limits per field (N = template look, M = hard limit) | Generated; the builder prompt's §6.7 comes from it |
@@ -186,3 +186,18 @@ Technical:
 3. Build the report-only checker page (pilot step 1) on the probe's pattern.
 4. Prepare the calibration run: what a designer-reviewed deck plus comments
    should look like in `design-pass/pilot/`.
+
+## 12. Progress (2026-10-09)
+
+- §11.2 done: `rules/` (see `rules/README.md`), built by `tools/build_rules.js`.
+- §11.3 done: report-only checker. Core `design-pass/checker/check.js`
+  (browser + node), page `design-pass/checker/checker.html` (self-contained,
+  built by `build_page.js`; paste into Open as embedded code), CLI `cli.js`.
+  Baseline: the template itself raises only real items (7 in the queue).
+- §11.4 done: `design-pass/PILOT.md` (folder format, designer.json,
+  verdicts.json) and `design-pass/checker/score.js`.
+- For the builder session on `main`: builder decks ship PptxGenJS's Calibri
+  theme fonts (text boxes users add come out Calibri); the template theme's
+  accent1-6 are default colours (#00A2FF ...), not brand.
+- Next: run on 3–5 designer-reviewed decks; decide §3 (agent ↔ page); then
+  fix mode for fonts, colours, backgrounds.
