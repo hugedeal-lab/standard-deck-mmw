@@ -26,9 +26,12 @@ table{border-collapse:collapse;width:100%;background:var(--card);font-size:13px}
 th{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:var(--muted)}.scroll{overflow-x:auto}
 details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12px;color:var(--muted)}
 #results{display:none}
+.fixbox{background:var(--card);border-radius:8px;padding:12px 14px;margin:12px 0}.fixbox label{display:inline-block;margin:4px 16px 4px 0;font-size:14px}
+.fixbox .note{font-size:13px;color:var(--muted);margin:6px 0 10px}#fixstate{font-size:14px;margin-top:4px}
+.agent{border-left:3px solid var(--accent);padding:8px 12px;background:var(--card);border-radius:0 8px 8px 0;margin:12px 0;font-size:14px}
 </style></head><body><main>
-<h1>Design Pass checker <span class="muted" style="font-size:13px">report only</span></h1>
-<p class="lead">Checks a deck against the MMW template and lists what Design Pass would fix and what needs a designer. It changes nothing, and the file never leaves your browser.</p>
+<h1>Design Pass checker</h1>
+<p class="lead">Checks a deck against the MMW template, fixes the mechanical things (fonts, colours, backgrounds, logos, leftovers) in a corrected copy, and lists what needs a designer. Your original is never changed, and the file never leaves your browser.</p>
 <div id="drop" tabindex="0" role="button" aria-label="Choose or drop a PowerPoint file"><strong>Drop a .pptx here, or click to choose</strong><span class="muted">One deck at a time</span></div>
 <label class="pick">Or use the plain file picker: <input id="file2" type="file" accept=".pptx"></label>
 <input id="file" type="file" accept=".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation" hidden>
@@ -40,10 +43,18 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
     <button id="copy">Copy summary</button><button id="dl" class="ghost">Download report (JSON)</button><button id="dlt" class="ghost">Download report (text)</button>
   </div>
   <div id="deck"></div>
+  <h2>Fix</h2>
+  <div class="fixbox" id="fixbox">
+    <div id="fixcats"></div>
+    <div class="note">Only the items in the change log below are changed. Wording and data are never touched. You get a new file; the original stays as it was.</div>
+    <button id="apply">Apply fixes and download corrected copy</button>
+    <div id="fixstate" class="muted"></div>
+  </div>
+  <div class="agent" id="agent">For anything beyond these fixes — rewriting copy, splitting dense slides, rebuilding off-brand slides or recreating charts — use the <b>MMW Presentation Builder</b> agent in WPP Open.</div>
   <h2>Designer queue</h2>
   <p class="muted" style="margin:0 0 8px">Slides it would not fix, each with a recommendation.</p>
   <div class="list" id="queue"></div>
-  <h2>Change log <span class="muted" style="font-size:13px;font-weight:normal">what it would fix automatically</span></h2>
+  <h2>Change log <span class="muted" style="font-size:13px;font-weight:normal" id="logsub">what Apply fixes will change</span></h2>
   <div class="list" id="log"></div>
   <details><summary>All slides</summary><div class="scroll"><table id="slides"></table></div></details>
 </div>
@@ -54,7 +65,7 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
 <script>var MMW_RULES = /*RULES_JSON*/;</script>
 <script>
 (function () {
-  var current = null, fileLabel = 'deck';
+  var current = null, fileLabel = 'deck', fileBuf = null, applied = null;
   var LABEL = { font_face: 'Font', theme_fonts: 'Theme font', type_scale: 'Type size', colour: 'Colour', theme_colours: 'Theme colours',
     background: 'Background', logo_variant: 'Logo', casing: 'Caps', placeholder_text: 'Placeholder', annotation: 'Annotation',
     position: 'Position', copy_fit: 'Copy fit', density: 'Density', off_template: 'Off template', chart_image: 'Chart image' };
@@ -90,7 +101,63 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
       return '<tr><td>' + x.n + '</td><td>' + esc(x.title) + '</td><td>' + esc(x.layout) + '</td><td>' + esc(x.on) + '</td><td>' +
         esc(x.background ? (x.background.hex || x.background.kind) : '') + '</td><td>' + fx + '</td><td>' + (x.findings.length - fx) + '</td></tr>';
     }).join('');
+    renderFix(rep);
     $('results').style.display = 'block';
+  }
+  function fixCounts(rep) {
+    var c = {};
+    rep.deck.findings.concat.apply(rep.deck.findings, rep.slides.map(function (s) { return s.findings; }))
+      .forEach(function (f) { if (f.action === 'fix') c[f.check] = (c[f.check] || 0) + f.count; });
+    return c;
+  }
+  function renderFix(rep) {
+    var c = fixCounts(rep), keys = Object.keys(c);
+    $('fixstate').textContent = ''; $('fixstate').className = 'muted';
+    if (rep.deck.rebuild) {
+      $('fixcats').innerHTML = '<b>No automatic fixes for this deck.</b> It is not built on the MMW template, so fixing it slide by slide would not make it on-brand.';
+      $('apply').style.display = 'none';
+      $('agent').innerHTML = 'Rebuild it with the <b>MMW Presentation Builder</b> agent in WPP Open: give it this deck\'s content and it produces on-brand MMW slides. Use the designer queue above for slides that need splitting.';
+      return;
+    }
+    $('apply').style.display = keys.length ? '' : 'none';
+    $('fixcats').innerHTML = keys.length ? keys.map(function (k) {
+      return '<label><input type="checkbox" data-check="' + esc(k) + '" checked> ' + esc(LABEL[k] || k) + ' <span class="muted">(' + c[k] + ')</span></label>';
+    }).join('') : '<span class="ok">Nothing to fix automatically.</span>';
+  }
+  $('apply').onclick = async function () {
+    if (!current || !fileBuf) return;
+    var checks = Array.prototype.filter.call(document.querySelectorAll('#fixcats input'), function (i) { return i.checked; }).map(function (i) { return i.getAttribute('data-check'); });
+    if (!checks.length) { $('fixstate').textContent = 'Tick at least one kind of fix.'; return; }
+    var btn = $('apply'), st = $('fixstate'); btn.disabled = true; st.className = 'muted';
+    try {
+      st.textContent = 'Applying fixes...';
+      var zip = await JSZip.loadAsync(fileBuf);
+      var rep = await DesignPassCheck.fix(zip, MMW_RULES, current, { checks: checks,
+        fetchAsset: function (name) { return fetch(MMW_RULES.assets_base + name).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.arrayBuffer(); }); } });
+      var last = -1;
+      var blob = await zip.generateAsync({ type: 'blob', compression: 'DEFLATE', compressionOptions: { level: 1 },
+        mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation' }, function (m) {
+          var p = Math.floor(m.percent / 5) * 5; if (p !== last) { last = p; st.textContent = 'Packing corrected copy: ' + p + '%'; } });
+      var name = fileLabel.replace(/\.pptx$/i, '') + '_designpass.pptx';
+      var url = URL.createObjectURL(blob), a = document.createElement('a');
+      a.href = url; a.download = name; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
+      applied = rep.applied;
+      var n = rep.applied.deck.length + rep.applied.slides.reduce(function (t, s) { return t + s.findings.length; }, 0);
+      st.className = rep.failed.length ? 'bad' : 'ok';
+      st.textContent = 'Downloaded ' + name + ': ' + n + ' fixes applied' + (rep.failed.length ? '; ' + rep.failed.length + ' could not be applied: ' + rep.failed.map(function (f) { return 'slide ' + f.slide + ' ' + f.msg; }).join('; ') : '') +
+        '. Open it in PowerPoint to check.';
+      renderApplied(rep.applied, rep.failed);
+    } catch (e) { st.className = 'bad'; st.textContent = 'Could not apply fixes: ' + e.message; }
+    btn.disabled = false;
+  };
+  function renderApplied(ap, failed) {
+    $('logsub').textContent = 'what was changed in the corrected copy';
+    var rows = ap.deck.length ? ['<div class="item"><b>Whole deck:</b> ' + ap.deck.map(function (f) { return esc(f.msg); }).join('; ') + '</div>'] : [];
+    ap.slides.forEach(function (s) {
+      rows.push('<div class="item"><b>Slide ' + s.n + ':</b> ' + s.findings.map(function (f) { return esc(f.msg) + (f.count > 1 ? ' (×' + f.count + ')' : ''); }).join('; ') + '</div>');
+    });
+    $('log').innerHTML = rows.join('') || '<div class="item">Nothing was changed.</div>';
   }
   function save(name, text, type) {
     var url = URL.createObjectURL(new Blob([text], { type: type })), a = document.createElement('a');
@@ -98,11 +165,11 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
     setTimeout(function () { URL.revokeObjectURL(url); }, 3000);
   }
   var base = function () { return fileLabel.replace(/\.pptx$/i, '') + '_designpass_report'; };
-  $('dl').onclick = function () { if (current) save(base() + '.json', JSON.stringify(Object.assign({ file: fileLabel }, current), null, 1), 'application/json'); };
-  $('dlt').onclick = function () { if (current) save(base() + '.txt', DesignPassCheck.toText(current, fileLabel), 'text/plain'); };
+  $('dl').onclick = function () { if (current) save(base() + '.json', JSON.stringify(Object.assign({ file: fileLabel, applied: applied }, current), null, 1), 'application/json'); };
+  $('dlt').onclick = function () { if (current) save(base() + '.txt', DesignPassCheck.toText(current, fileLabel, applied), 'text/plain'); };
   $('copy').onclick = function () {
     if (!current) return;
-    var t = DesignPassCheck.toText(current, fileLabel), btn = $('copy');
+    var t = DesignPassCheck.toText(current, fileLabel, applied), btn = $('copy');
     function done(ok) { btn.textContent = ok ? 'Copied' : 'Copy failed: use Download'; setTimeout(function () { btn.textContent = 'Copy summary'; }, 2000); }
     if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(t).then(function () { done(true); }, function () { done(fallback(t)); });
     else done(fallback(t));
@@ -114,10 +181,11 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
   async function load(f) {
     if (!f) return;
     if (!/\.pptx$/i.test(f.name)) { say('That is not a .pptx file. Save it from PowerPoint, Keynote or Google Slides as .pptx first.', 'bad'); return; }
-    $('results').style.display = 'none'; current = null; fileLabel = f.name;
+    $('results').style.display = 'none'; current = null; applied = null; fileLabel = f.name; $('logsub').textContent = 'what Apply fixes will change';
     say('Reading ' + f.name + ' (' + Math.round(f.size / 1024 / 1024 * 10) / 10 + ' MB)...');
     try {
-      var zip = await JSZip.loadAsync(await f.arrayBuffer());
+      fileBuf = await f.arrayBuffer();
+      var zip = await JSZip.loadAsync(fileBuf);
       say('Checking ' + f.name + '...');
       var t0 = Date.now();
       current = await DesignPassCheck.check(zip, MMW_RULES);

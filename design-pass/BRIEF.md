@@ -199,5 +199,17 @@ Technical:
 - For the builder session on `main`: builder decks ship PptxGenJS's Calibri
   theme fonts (text boxes users add come out Calibri); the template theme's
   accent1-6 are default colours (#00A2FF ...), not brand.
-- Next: run on 3–5 designer-reviewed decks; decide §3 (agent ↔ page); then
-  fix mode for fonts, colours, backgrounds.
+- Decided with the user (2026-10-09): decks not on the MMW template are
+  pointed to the MMW Presentation Builder agent, no fixes; Mazda Type Medium
+  is flagged for a designer, never auto-mapped; template detection is per
+  slide master; §3: no connection -- the page points users to the agent for
+  anything out of scope.
+- Fix mode built: `DesignPassCheck.fix()` reruns the check with the report's
+  approved fixes and edits at the exact spot of each finding. Page: per-
+  category checkboxes, Apply fixes downloads `<deck>_designpass.pptx`. Logo
+  variants are fetched from the builder's pinned CDN commit. Verified on the
+  template and on damaged copies (fonts, colours, background, logo swap,
+  annotations, leftovers): re-check of the output is clean, LibreOffice
+  renders all slides. Not yet opened in PowerPoint itself.
+- Next: designer-reviewed decks from the user; open a corrected copy in
+  PowerPoint.

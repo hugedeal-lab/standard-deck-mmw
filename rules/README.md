@@ -44,11 +44,12 @@ deck) before comparing.
 | `palette.tokens` | `standard-deck.js` PALETTE + ACCENT_FAMILIES, `mmw_layouts.json` palette | Brand token → hex. Snap targets. Engine aliases (`black`, `white`) and UI status colours left out. |
 | `palette.by_hex` | | hex → token names |
 | `palette.template_observed` | layouts, chart series, snapshot | Every colour the template uses. On-brand even if no token names it; never a snap target. |
-| `palette.annotation` | | `#CB297B`: template notes to the author, never content |
+| `palette.annotation`, `palette.annotations` | `mmw_layouts.json`, policy | Template notes to the author, never content: `#CB297B` text and the `#EC0076` "click here" arrows |
 | `brand_marks` | `assets/logos/*.png` | sha256 → logo/lockup, black/white, which background it is for, and its swap. Byte-identical to the template's media. |
 | `template_layouts` | layouts + snapshot | Per **PowerPoint layout name** (what a template deck's slide carries): the specs that sit on it, every background allowed on it, `template_words` / `template_paras` (density baseline), `ph_positions` (placeholder boxes on its demo slides) |
 | `layouts` | `mmw_layouts.json`, `deck-layouts.js`, `COPY_BUDGETS.md` | Per **spec** (84): engine `slug`, `template_layout`, family, background (+ `dark`), fields, `copy_budgets` (`fits` = template look, `max` = hard limit, `null` = no practical limit), elements |
 | `furniture` | `mmw_layouts.json` | Logo, lockup and draft-date positions |
+| `assets_base` | builder prompt's CDN pin | Where the logo fix fetches the other logo variant (the builder's immutable jsDelivr commit) |
 
 **Why two layout tables.** Several specs share one PowerPoint layout (seven
 report compositions sit on "Content Gray"), so a template deck's layout name

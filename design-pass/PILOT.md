@@ -1,4 +1,4 @@
-# Pilot calibration runs (pilot step 1: report only)
+# Pilot calibration runs
 
 Goal: tune `rules/policy.json` until Design Pass flags what designers flag and
 little else. The metric is **designer minutes saved per deck**, so every run
@@ -64,6 +64,18 @@ Slide numbers refer to `deck.pptx` (before any splits).
 | `harmful` | Auto-fixing this would have made the deck worse |
 
 `harmful` on any `fix`-action check blocks turning that check's auto-fix on.
+
+## Fixes
+
+The checker page reports first; **Apply fixes** then writes a corrected copy
+(`<deck>_designpass.pptx`) containing only the change-log items, with a
+checkbox per category. For calibration, keep `deck.pptx` as received and run
+Apply fixes on it too: open the corrected copy next to the original and mark
+any fix that made a slide worse as `harmful` in `verdicts.json`.
+
+Decks that are not on the MMW template get no fixes: the page points the user
+to the MMW Presentation Builder agent and keeps only split proposals, pasted
+charts and author markers.
 
 ## Running it
 
