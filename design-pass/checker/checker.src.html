@@ -65,13 +65,14 @@ details summary{cursor:pointer;margin:8px 0}footer{margin-top:32px;font-size:12p
   function findingHtml(f) {
     return '<li><span class="tag ' + (f.action === 'fix' ? 'fix' : 'flag') + '">' + esc(LABEL[f.check] || f.check) + '</span>' + esc(f.msg) + times(f) +
       (f.rec ? '<br><span class="rec">→ ' + esc(f.rec) + '</span>' : '') +
+      (f.items ? '<br><span class="rec">' + f.items.map(esc).join('<br>') + '</span>' : '') +
       (f.samples && f.samples.length && f.check !== 'density' ? '<br><span class="sample">“' + f.samples.map(esc).join('”, “') + '”</span>' : '') + '</li>';
   }
   function render(rep) {
     var s = rep.summary;
     $('cards').innerHTML = [
       [rep.deck.slides, 'slides'], [s.fix, 'would fix'], [s.flag, 'for a designer'], [s.queue, 'slides in queue'],
-      [rep.slides.filter(function (x) { return x.on !== 'other'; }).length, 'on MMW layouts or builder']
+      [rep.deck.on_template ? 'Yes' : rep.slides.some(function (x) { return x.on === 'builder'; }) ? 'Builder' : 'No', 'on MMW template']
     ].map(function (c) { return '<div class="card"><b>' + c[0] + '</b><span>' + c[1] + '</span></div>'; }).join('');
     $('deck').innerHTML = rep.deck.findings.length ? '<h2>Whole deck</h2><div class="list"><div class="item"><ul>' + rep.deck.findings.map(findingHtml).join('') + '</ul></div></div>' : '';
     var q = rep.slides.filter(function (x) { return x.findings.some(function (f) { return f.action !== 'fix'; }); });

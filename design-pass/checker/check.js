@@ -155,7 +155,7 @@ function check(zip, rules, opts) {
   var deckFindings = []; report.deck.findings = deckFindings;
   var addDeck = bucket(deckFindings);
 
-  var scale = 1, theme = null, clrMap = {};
+  var scale = 1, theme = null, clrMap = {}, deckOnTemplate = false;
   function themeHex(name) {
     var n = clrMap[name] || name;
     return theme && theme.colors[n] || null;
@@ -273,10 +273,23 @@ function check(zip, rules, opts) {
     });
   }).then(function (slidePaths) {
     report.deck.slides = slidePaths.length;
-    var seq = Promise.resolve();
+    // Is the deck built on the MMW template? Judged from the layouts its masters
+    // carry, not from one slide's layout name: a template-derived deck carries
+    // dozens of MMW layouts, and some MMW names ("Title & Bullets") are also
+    // Keynote defaults.
+    var layoutParts = Object.keys(zip.files).filter(function (p) { return /^ppt\/slideLayouts\/slideLayout\d+\.xml$/.test(p); });
+    var seq = Promise.all(layoutParts.map(read)).then(function (docs) {
+      var names = {};
+      docs.forEach(function (d) { var c = d && path(d.documentElement, 'p:cSld'); if (c && rules.template_layouts[c.getAttribute('name')]) names[c.getAttribute('name')] = 1; });
+      var n = Object.keys(names).length;
+      deckOnTemplate = n >= POL.template_detect.min_layouts || (n > 0 && rules.fonts.allowed.indexOf(theme.fonts.major) >= 0);
+      report.deck.mmw_layouts_in_masters = n;
+      report.deck.on_template = deckOnTemplate;
+    });
     slidePaths.forEach(function (sp, i) { seq = seq.then(function () { return checkSlide(sp, i + 1); }); });
     return seq;
   }).then(function () {
+    rollUp();
     var sum = { fix: 0, flag: 0, by_check: {}, slides_with_findings: 0, queue: 0 };
     report.deck.findings.concat.apply(report.deck.findings, report.slides.map(function (s) { return s.findings; })).forEach(function (f) {
       sum[f.action === 'fix' ? 'fix' : 'flag']++;
@@ -290,6 +303,43 @@ function check(zip, rules, opts) {
     report.summary = sum;
     return report;
   });
+
+  // Deck-wide patterns are one decision, not one flag per slide.
+  function rollUp() {
+    var R = POL.rollup, total = report.slides.length;
+    var off = report.slides.filter(function (s) { return s.on === 'other'; });
+    var rebuild = total && off.length / total >= R.off_template_share;
+    if (rebuild) {
+      var lc = {};
+      off.forEach(function (s) { lc[s.layout] = (lc[s.layout] || 0) + 1; });
+      addDeck('off_template', 'deck', { msg: 'Deck is not on the MMW template: ' + off.length + ' of ' + total + ' slides (layouts: ' +
+          Object.keys(lc).sort(function (a, b) { return lc[b] - lc[a]; }).slice(0, 4).map(function (k) { return '"' + k + '" x' + lc[k]; }).join(', ') + ')',
+        force_flag: true, rec: 'Rebuild through the builder rather than fixing slide by slide; per-slide rebuild notes are left out.' });
+      off.forEach(function (s) { s.findings = s.findings.filter(function (f) { return f.check !== 'off_template'; }); });
+    }
+    var pal = {};
+    report.slides.forEach(function (s) {
+      s.findings.forEach(function (f) {
+        // On a deck headed for a rebuild, colour snaps go into the palette
+        // decision too: snapping one colour of a deck's own palette mixes two.
+        if (f.check !== 'colour' || (f.action === 'fix' && !rebuild)) return;
+        var p = (pal[f.from] = pal[f.from] || { hex: f.from, slides: 0, uses: 0,
+          nearest: f.action === 'fix' ? f.to + ', close match' : f.msg.replace(/^.*nearest /, '') });
+        p.slides++; p.uses += f.count;
+      });
+    });
+    // A deck headed for a rebuild gets its colours reset anyway: list them all once.
+    var wide = Object.keys(pal).filter(function (h) { return rebuild || pal[h].slides >= Math.max(R.palette_min_slides, total * R.palette_min_share); });
+    if (wide.length) {
+      var items = wide.map(function (h) { return pal[h]; }).sort(function (a, b) { return b.slides - a.slides || b.uses - a.uses; });
+      addDeck('colour', 'palette', { msg: 'Deck uses its own palette: ' + items.length + ' off-brand colour' + (items.length > 1 ? 's' : '') + (rebuild ? '' : ' recurring across slides'), force_flag: true,
+        rec: 'Decide once with a designer: map each to an MMW colour (nearest shown) or keep it as a deliberate client/partner palette.' });
+      var shown = items.slice(0, 12).map(function (p) { return p.hex + ' on ' + p.slides + ' slide' + (p.slides > 1 ? 's' : '') + ' (nearest ' + p.nearest + ')'; });
+      if (items.length > 12) shown.push('... and ' + (items.length - 12) + ' more, each on fewer slides');
+      deckFindings[deckFindings.length - 1].items = shown;
+      report.slides.forEach(function (s) { s.findings = s.findings.filter(function (f) { return !(f.check === 'colour' && (f.action !== 'fix' || rebuild) && wide.indexOf(f.from) >= 0); }); });
+    }
+  }
 
   // ---- slide level ----
   function checkSlide(slidePath, n) {
@@ -307,13 +357,15 @@ function check(zip, rules, opts) {
       var csld = path(doc.documentElement, 'p:cSld');
       var lname = ldoc ? (path(ldoc.documentElement, 'p:cSld').getAttribute('name') || '') : '';
       S.layout = lname;
-      var TL = rules.template_layouts[lname];
+      var TL = deckOnTemplate ? rules.template_layouts[lname] : null;
       S.on = TL ? 'template' : /^SD_(LIGHT|DARK)/.test(lname) ? 'builder' : 'other';
       if (TL) S.specs = TL.specs;
       var shapes = all(csld, 'p', 'sp'), pics = all(csld, 'p', 'pic');
       var titleSp = shapes.filter(function (s) { var q = phOf(s); return q && (q.type === 'title' || q.type === 'ctrTitle'); })[0];
       var joined = function (sp) { var tb = kid(sp, 'p', 'txBody'); return tb ? paraTexts(tb).join(' ') : ''; };
-      S.title = short(titleSp ? joined(titleSp) : (shapes.map(joined).filter(function (t) { return t.trim(); })[0] || ''));
+      var field = function (sp) { var q = phOf(sp); return q && ['sldNum', 'dt', 'ftr', 'hdr'].indexOf(q.type) >= 0; };
+      S.title = short(titleSp ? joined(titleSp) : (shapes.filter(function (sp) { return !field(sp); }).map(joined)
+        .filter(function (t) { return t.trim() && !/^\d+$/.test(t.trim()); })[0] || ''));
       S.charts = all(csld, 'a', 'graphicData').filter(function (g) { return /chart/.test(g.getAttribute('uri') || ''); }).length;
       S.pictures = pics.length;
 
@@ -481,7 +533,10 @@ function toText(rep, fileName) {
   L.push('');
   if (rep.deck.findings.length) {
     L.push('DECK');
-    rep.deck.findings.forEach(function (f) { L.push('  [' + f.action + '] ' + f.msg + (f.rec ? ' -- ' + f.rec : '')); });
+    rep.deck.findings.forEach(function (f) {
+      L.push('  [' + f.action + '] ' + f.msg + (f.rec ? ' -- ' + f.rec : ''));
+      (f.items || []).forEach(function (i) { L.push('      ' + i); });
+    });
     L.push('');
   }
   L.push('CHANGE LOG (would fix)');

@@ -140,5 +140,15 @@
       106
     ],
     "_note": "Template slides that are instructions or resource sheets (how-to, font install, brand assets, icon sheets), not layout examples. Left out of rules/template_snapshot.json."
+  },
+  "template_detect": {
+    "min_layouts": 10,
+    "_note": "A deck is on the MMW template when its slide masters carry at least this many MMW layout names (a template-derived deck carries all 66), or any MMW layout name plus Mazda Type Bold as the theme heading font. One slide's layout name is not enough: 'Title & Bullets' is also a Keynote default."
+  },
+  "rollup": {
+    "off_template_share": 0.5,
+    "palette_min_slides": 3,
+    "palette_min_share": 0.1,
+    "_note": "Deck-wide patterns become one deck-level decision. Off-template on at least this share of slides: one deck finding, per-slide rebuild notes dropped. An off-palette colour on at least max(palette_min_slides, palette_min_share x slides) slides (any number when the deck is off template): listed once as the deck's own palette, per-slide flags dropped."
   }
 }
