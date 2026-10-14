@@ -238,5 +238,11 @@ Technical:
   current MMW builder output only with single-name fonts and >= 20% of slides
   matching current layouts; otherwise it is a rebuild. Across ~90 local decks
   every CSS-font-stack deck matched 0%, current builder decks 33-83%.
-- Next: designer-reviewed decks from the user; open a corrected copy in
-  PowerPoint.
+- **Design Pass agent** (2026-10-14, user request: a design-team agent with
+  the Builder's knowledge that evaluates, asks targeted vs full, applies, and
+  reports before/after per slide). See `design-pass/agent/README.md`. Prompt
+  generated from the Builder prompt (sections 2, 6-15 verbatim) + DP sections;
+  workspace artifact runs check/extract/merge/engine in the browser. Targeted
+  rebuilds replace the original slide in place (user decision).
+- Next: user to paste the prompt into an Open agent and try it; open a
+  corrected copy in PowerPoint; designer-reviewed decks for calibration.
