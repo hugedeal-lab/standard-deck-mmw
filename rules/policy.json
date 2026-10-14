@@ -287,5 +287,10 @@
       }
     },
     "overall_cap_above_worst": 15
+  },
+  "builder_origin": {
+    "min_identified": 0.2,
+    "min_slides": 5,
+    "_note": "A deck on SD_* masters is current MMW builder output only if its fonts are single names (no CSS stacks) and at least min_identified of its slides match current MMW layouts (decks under min_slides are exempt). Otherwise its slides count as off-template. Calibrated on ~90 decks: every font-stack deck matched 0%; current MMW builder decks 33-83%."
   }
 }

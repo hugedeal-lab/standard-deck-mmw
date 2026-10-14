@@ -7,7 +7,7 @@
   "standard-deck.js": "08c4d42ecddf",
   "deck-layouts.js": "911a1c48d034",
   "COPY_BUDGETS.md": "ebbb14e9a26c",
-  "rules/policy.json": "325de80e9fde",
+  "rules/policy.json": "6c9f2e7c4526",
   "rules/template_snapshot.json": "3c99e1ba6da8",
   "rules/font_metrics.json": "2ae6e5784885",
   "rules/fingerprints.json": "722e02cb631f"
@@ -314,6 +314,11 @@
     }
    },
    "overall_cap_above_worst": 15
+  },
+  "builder_origin": {
+   "min_identified": 0.2,
+   "min_slides": 5,
+   "_note": "A deck on SD_* masters is current MMW builder output only if its fonts are single names (no CSS stacks) and at least min_identified of its slides match current MMW layouts (decks under min_slides are exempt). Otherwise its slides count as off-template. Calibrated on ~90 decks: every font-stack deck matched 0%; current MMW builder decks 33-83%."
   }
  },
  "theme": {

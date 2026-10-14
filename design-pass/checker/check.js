@@ -164,7 +164,7 @@ function check(zip, rules, opts) {
   var deckFindings = []; report.deck.findings = deckFindings;
   var addDeck = bucket(deckFindings, 0);
 
-  var scale = 1, theme = null, clrMap = {}, deckOnTemplate = false, masters = {}, slideWin = 13.33, slideHin = 7.5;
+  var scale = 1, theme = null, clrMap = {}, deckOnTemplate = false, masters = {}, slideWin = 13.33, slideHin = 7.5, fontStacks = null;
   function themeHex(name) {
     var n = clrMap[name] || name;
     return theme && theme.colors[n] || null;
@@ -331,6 +331,7 @@ function check(zip, rules, opts) {
     slidePaths.forEach(function (sp, i) { seq = seq.then(function () { return checkSlide(sp, i + 1); }); });
     return seq;
   }).then(function () {
+    builderOrigin();
     rollUp();
     // fix = changed automatically; flag = designer queue; info = shown, not counted.
     var sum = { fix: 0, flag: 0, info: 0, by_check: {}, slides_with_findings: 0, queue: 0 };
@@ -357,6 +358,23 @@ function check(zip, rules, opts) {
     return report;
   });
 
+  // SD_* masters say "made by a standard-deck builder", not "made by the
+  // current MMW builder": older and non-MMW engines use the same names. Count
+  // it as current MMW output only if its fonts are single names (old engines
+  // wrote CSS stacks, "Mazda Type, Arial, sans-serif") and enough slides match
+  // the current MMW layouts. Otherwise its slides are off-template.
+  function builderOrigin() {
+    var B = POL.builder_origin, b = report.slides.filter(function (s) { return s.on === 'builder'; });
+    if (!b.length) return;
+    var ided = b.filter(function (s) { return s.layout_match; }).length, share = ided / b.length;
+    var why = fontStacks ? 'its fonts are written as CSS stacks (e.g. "' + fontStacks + '"), as older builder versions did'
+      : b.length >= B.min_slides && share < B.min_identified ? 'only ' + ided + ' of ' + b.length + ' slides match a current MMW layout' : null;
+    report.deck.builder = { slides: b.length, identified: ided, current: !why };
+    if (!why) return;
+    report.deck.builder.why = 'Made with an older or different deck builder: ' + why + '.';
+    b.forEach(function (s) { s.on = 'other'; });
+  }
+
   // Deck-wide patterns are one decision, not one flag per slide.
   function rollUp() {
     var R = POL.rollup, total = report.slides.length;
@@ -366,7 +384,8 @@ function check(zip, rules, opts) {
     if (rebuild) {
       var lc = {};
       off.forEach(function (s) { lc[s.layout] = (lc[s.layout] || 0) + 1; });
-      addDeck('off_template', 'deck', { msg: 'Deck is not on the MMW template: ' + off.length + ' of ' + total + ' slides (layouts: ' +
+      addDeck('off_template', 'deck', { msg: (report.deck.builder && report.deck.builder.why ? report.deck.builder.why + ' ' : '') +
+          'Deck is not on the MMW template: ' + off.length + ' of ' + total + ' slides (layouts: ' +
           Object.keys(lc).sort(function (a, b) { return lc[b] - lc[a]; }).slice(0, 4).map(function (k) { return '"' + k + '" x' + lc[k]; }).join(', ') + ')',
         force_flag: true, rec: 'Too different to fix in place: rebuild it with the MMW Presentation Builder agent in WPP Open, which produces on-brand slides from this content. No automatic fixes are offered for this deck.' });
       // Only what helps the rebuild stays: split proposals, pasted charts,
@@ -543,6 +562,7 @@ function check(zip, rules, opts) {
           }
           // font
           var lat = rpr && kid(rpr, 'a', 'latin'), face = lat && lat.getAttribute('typeface');
+          if (face && face.indexOf(',') > 0 && !fontStacks) fontStacks = face;
           if (face && face.charAt(0) === '+') face = face.indexOf('mj') > 0 ? theme.fonts.major : theme.fonts.minor;
           var szAttr = rpr && rpr.getAttribute('sz'), pt = szAttr ? +szAttr / 100 / scale : null;
           if (face && rules.fonts.allowed.indexOf(face) < 0 && rules.fonts.symbol.indexOf(face) < 0) {

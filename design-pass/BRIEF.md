@@ -233,5 +233,10 @@ Technical:
 - Report reworked Lighthouse-style (user request): Brand readiness gauge +
   five category gauges (now -> after fixes), audits grouped by issue, details
   collapsed. Weights in policy.scores.
+- Builder origin (2026-10-14, from a user test with Be_Moved_Dealer_Workshop):
+  SD_* master names are shared with older/non-MMW engines. A deck counts as
+  current MMW builder output only with single-name fonts and >= 20% of slides
+  matching current layouts; otherwise it is a rebuild. Across ~90 local decks
+  every CSS-font-stack deck matched 0%, current builder decks 33-83%.
 - Next: designer-reviewed decks from the user; open a corrected copy in
   PowerPoint.

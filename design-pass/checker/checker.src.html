@@ -141,11 +141,13 @@ footer{margin-top:32px;font-size:12px;color:var(--muted)}
 
   function renderHero(rep) {
     var sc = rep.scores, builder = rep.slides.filter(function (x) { return x.on === 'builder'; }), ided = builder.filter(function (x) { return x.layout_match; }).length;
-    var src = rep.deck.on_template ? 'built on the MMW template' : builder.length ? 'made with the Presentation Builder · ' + ided + ' of ' + builder.length + ' layouts identified' : 'not on the MMW template';
+    var bo = rep.deck.builder;
+    var src = rep.deck.on_template ? 'built on the MMW template' : builder.length ? 'made with the Presentation Builder · ' + ided + ' of ' + builder.length + ' layouts identified'
+      : bo && !bo.current ? 'made with an older or different deck builder · ' + bo.identified + ' of ' + bo.slides + ' slides match current MMW layouts' : 'not on the MMW template';
     var meta = '<div class="meta">' + esc(fileLabel) + ' · ' + rep.deck.slides + ' slides · ' + src + ' · checked in ' + checkedIn + ' s</div>';
     if (sc.rebuild) {
       $('hero').className = 'hero rebuild';
-      $('hero').innerHTML = '<b>Rebuild recommended</b><p style="margin:6px 0 0">This deck is not built on the MMW template, so fixing it slide by slide would not make it on-brand. ' +
+      $('hero').innerHTML = '<b>Rebuild recommended</b><p style="margin:6px 0 0">' + (bo && bo.why ? esc(bo.why) + ' ' : '') + 'This deck is not built on the current MMW template, so fixing it slide by slide would not make it on-brand. ' +
         'Rebuild it with the <b>MMW Presentation Builder</b> agent in WPP Open: give it this deck\'s content and it produces on-brand MMW slides. ' +
         'The list below shows slides to split or charts to recreate while you do.</p>' + meta;
       return;
