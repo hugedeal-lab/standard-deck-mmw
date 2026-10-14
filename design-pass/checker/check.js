@@ -1011,7 +1011,12 @@ function fix(zip, rules, report, opts) {
   if (report.deck.rebuild) return Promise.reject(new Error('This deck needs a rebuild, not fixes.'));
   var want = opts.checks || Object.keys(rules.policy.checks).filter(function (c) { return rules.policy.checks[c].action === 'fix'; });
   var apply = new Set();
-  var take = function (n) { return function (f) { if (f.action === 'fix' && want.indexOf(f.check) >= 0) apply.add(n + '|' + f.check + '|' + f.key); }; };
+  // opts.slides limits slide fixes to those slide numbers; opts.deck === false skips deck-level fixes
+  var take = function (n) { return function (f) {
+    if (n === 0 && opts.deck === false) return;
+    if (n > 0 && opts.slides && opts.slides.indexOf(n) < 0) return;
+    if (f.action === 'fix' && want.indexOf(f.check) >= 0) apply.add(n + '|' + f.check + '|' + f.key);
+  }; };
   report.deck.findings.forEach(take(0));
   report.slides.forEach(function (s) { s.findings.forEach(take(s.n)); });
   var o = {}; for (var k in opts) o[k] = opts[k];
