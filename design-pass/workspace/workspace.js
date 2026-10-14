@@ -57,11 +57,21 @@ function start(cfg) {
   if (plan) head.appendChild(planTable(plan));
   var host = el('main'); document.body.appendChild(host);
   host.innerHTML = '<p style="max-width:980px;margin:16px auto;padding:0 16px">Loading the MMW rules...</p>';
-  return fetch(cfg.rulesUrl || BASE + 'rules/mmw_rules.json').then(function (r) { if (!r.ok) throw new Error('rules: HTTP ' + r.status); return r.json(); })
+  return loadRules(cfg.rulesUrl || BASE + 'rules/mmw_rules.json')
     .then(function (rules) {
       var ui = DesignPassUI.mount(host, { rules: rules, fix: false, agentBox: false, onChecked: function (ctx) { return plan ? phase2(ctx, rules, plan, ui) : phase1(ctx, rules, ui); } });
     })
     .catch(function (e) { host.innerHTML = '<p style="max-width:980px;margin:16px auto;padding:0 16px;color:#D60F00">Could not load the MMW rules (' + esc(e.message) + '). Check the connection and reload.</p>'; });
+}
+
+// jsDelivr can answer 404 for a minute while it first fetches a new commit:
+// retry once, then GitHub's raw mirror of the same commit.
+function loadRules(url) {
+  var get = function (u) { return fetch(u).then(function (r) { if (!r.ok) throw new Error('HTTP ' + r.status); return r.json(); }); };
+  var mirror = url.replace(/^https:\/\/cdn\.jsdelivr\.net\/gh\/([^/]+)\/([^@/]+)@([^/]+)\//, 'https://raw.githubusercontent.com/$1/$2/$3/');
+  return get(url).catch(function () {
+    return new Promise(function (r) { setTimeout(r, 1500); }).then(function () { return get(url); });
+  }).catch(function (e) { if (mirror === url) throw e; return get(mirror); });
 }
 
 // The engine reads the four brand marks from the page by id.
