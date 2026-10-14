@@ -11,22 +11,31 @@ applies the approved plan, and reports exactly what changed.
 | `../workspace/workspace.js` | The workspace page the agent emits (report, extract, apply plan, post-update report) |
 | `../workspace/dist/design-pass.js` | What the artifact loads: checker + report UI + extract + merge + workspace, bundled |
 
-## How it works
+## How it works (V1.1, chat-first)
 
-1. The agent emits the **workspace** artifact. The designer drops the deck in:
-   Lighthouse-style report + a **deck extract** (each slide's text by box,
-   pictures, native chart data, notes, findings) to paste back to the agent.
-2. The agent proposes a **plan** (keep / fix / rebuild / split / drop per
-   slide) and asks: targeted, full conversion, change the plan, or report only.
-3. On approval it emits the workspace with the **PLAN**. The designer drops the
-   same file (checked by fingerprint). The workspace pre-flights every rebuilt
-   slide, rebuilds with the Builder engine (reusing the deck's own pictures),
-   applies fixes, merges in the original order (`../checker/merge.js`),
-   downloads `<deck>_designpass.pptx`, re-checks it, and shows **What changed**:
-   per slide before → after, the change, and a wording check.
-4. The designer pastes the report back; the agent explains it.
+1. The designer **uploads the deck to the chat**. The agent reads it and replies
+   with a review: verdict, findings by group (layout fit, density/splits, copy
+   fit, charts & data, structure, tone), a plan table, and the question:
+   targeted updates, full conversion, change the plan, or stop.
+2. **Full conversion:** the agent builds the whole deck as a Builder artifact
+   (the Builder's own template and pins). The designer previews and downloads
+   it; the agent writes the post-update report in chat. Photos are not
+   reused (the agent cannot pass the deck's images to the artifact) -- it
+   lists which slides had photos.
+3. **Targeted updates:** the agent emits the workspace with its **PLAN**; the
+   designer drops the same file in **once** (the only way to edit their own
+   file). The workspace measures fonts/colours/backgrounds/logos/overflow
+   (what the agent cannot see in an attachment), checks the file matches the
+   plan (slide count + a quote per planned slide), pre-flights every rebuilt
+   slide, rebuilds with the Builder engine reusing the deck's photos
+   (`orig:slide4`), applies mechanical fixes to every other slide, merges in
+   the original order (`../checker/merge.js`), downloads
+   `<deck>_designpass.pptx` and shows **What changed** (before -> after per
+   slide, wording check).
 
 Nothing leaves the designer's browser. The original file is never changed.
+(The workspace's evaluate-and-extract mode from V1.0 still works but the
+agent no longer uses it.)
 
 ## Knowledge
 
