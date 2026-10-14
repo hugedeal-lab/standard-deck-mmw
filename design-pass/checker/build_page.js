@@ -17,3 +17,11 @@ html = html.replace('/*CHECK_JS*/', () => js.replace(/<\/script/gi, '<\\/script'
   .replace('/*RULES_JSON*/', () => JSON.stringify(rules).replace(/<\//g, '<\\/'));
 fs.writeFileSync(path.join(D, 'checker.html'), html);
 console.log('wrote design-pass/checker/checker.html (' + Math.round(html.length / 1024) + ' KB)');
+
+// Code-upload bundle for WPP Open (zip with index.html at the root): the
+// same page with JSZip as a local file, so it needs no CDN to read decks.
+const B = path.join(D, 'bundle');
+fs.mkdirSync(B, { recursive: true });
+fs.copyFileSync(path.join(ROOT, 'design-pass/probes/bundle/jszip.min.js'), path.join(B, 'jszip.min.js'));
+fs.writeFileSync(path.join(B, 'index.html'), html.replace('<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>', '<script src="jszip.min.js"></script>'));
+console.log('wrote design-pass/checker/bundle/ (index.html + jszip.min.js; zip it for Open code upload)');
