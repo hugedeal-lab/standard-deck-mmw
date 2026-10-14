@@ -15,7 +15,7 @@ const pi = process.argv.indexOf('--pin');
 const DP_PIN = pi > 0 ? process.argv[pi + 1] : cp.execSync('git rev-parse HEAD', { cwd: ROOT }).toString().trim();
 const ENGINE_PIN = (builder.match(/standard-deck-mmw@([0-9a-f]{40})/) || [])[1];
 if (!ENGINE_PIN) throw new Error('no engine pin in the builder prompt');
-for (const f of ['design-pass/checker/check.js', 'design-pass/checker/ui.js', 'design-pass/checker/extract.js', 'design-pass/checker/merge.js', 'design-pass/workspace/workspace.js', 'rules/mmw_rules.json'])
+for (const f of ['design-pass/workspace/dist/design-pass.js', 'rules/mmw_rules.json'])
   cp.execSync('git cat-file -e ' + DP_PIN + ':' + f, { cwd: ROOT });   // the pin must contain the workspace
 const CDN = (pin, f) => 'https://cdn.jsdelivr.net/gh/hugedeal-lab/standard-deck-mmw@' + pin + '/' + f;
 
@@ -176,7 +176,7 @@ this section's wording into your output -- build actual tags from it.
 Opening: <html data-type="html" data-identifier="[uuid]" data-title="MMW Design
       Pass" data-version="1" width="1920" height="1200"><head></head><body>
 
-Then fourteen script elements, in this exact order. EXTERNAL = a src
+Then ten script elements, in this exact order. EXTERNAL = a src
 attribute, empty body. INLINE = no src, the stated body.
 
 1. EXTERNAL  src = ${CDN(ENGINE_PIN, 'deck-icons.js')}
@@ -187,12 +187,8 @@ attribute, empty body. INLINE = no src, the stated body.
 6. EXTERNAL  src = ${CDN(ENGINE_PIN, 'map-data.js')}
 7. EXTERNAL  src = ${CDN(ENGINE_PIN, 'deck-maps.js')}
 8. EXTERNAL  src = ${CDN(ENGINE_PIN, 'deck-shell.js')}
-9. EXTERNAL  src = ${CDN(DP_PIN, 'design-pass/checker/check.js')}
-10. EXTERNAL src = ${CDN(DP_PIN, 'design-pass/checker/ui.js')}
-11. EXTERNAL src = ${CDN(DP_PIN, 'design-pass/checker/extract.js')}
-12. EXTERNAL src = ${CDN(DP_PIN, 'design-pass/checker/merge.js')}
-13. EXTERNAL src = ${CDN(DP_PIN, 'design-pass/workspace/workspace.js')}
-14. INLINE   body:
+9. EXTERNAL  src = ${CDN(DP_PIN, 'design-pass/workspace/dist/design-pass.js')}
+10. INLINE   body:
     var PLAN = __PLAN__;
     DesignPassWorkspace.start({ plan: PLAN });
 

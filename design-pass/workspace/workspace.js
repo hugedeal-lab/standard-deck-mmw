@@ -12,7 +12,7 @@
 (function (root) {
 'use strict';
 var SCRIPT = document.currentScript && document.currentScript.src;
-var BASE = SCRIPT ? SCRIPT.replace(/design-pass\/workspace\/workspace\.js.*$/, '') : '';
+var BASE = SCRIPT ? SCRIPT.replace(/design-pass\/workspace\/.*$/, '') : '';
 var PPTX_MIME = 'application/vnd.openxmlformats-officedocument.presentationml.presentation';
 var ACTIONS = { keep: 'Keep as is', fix: 'Fix in place', rebuild: 'Rebuild', drop: 'Remove' };
 
@@ -56,6 +56,15 @@ function start(cfg) {
   document.body.appendChild(head);
   if (plan) head.appendChild(planTable(plan));
   var host = el('main'); document.body.appendChild(host);
+  // a script that failed to load (the CDN can briefly refuse a new commit)
+  var need = { DeckLayouts: 'MMW engine (layouts)', StandardShell: 'MMW engine (export)', PptxGenJS: 'PowerPoint export library',
+    DesignPassCheck: 'Design Pass checker', DesignPassUI: 'Design Pass report', DesignPassExtract: 'Design Pass extract', DesignPassMerge: 'Design Pass merge' };
+  var missing = Object.keys(need).filter(function (k) { return typeof root[k] === 'undefined'; });
+  if (missing.length) {
+    host.innerHTML = '<div class="dpw-head"><div class="dpw-panel"><b>Part of the workspace did not load:</b> ' + esc(missing.map(function (k) { return need[k]; }).join(', ')) +
+      '. The CDN sometimes needs a minute after an update. <button onclick="location.reload()">Reload</button></div></div>';
+    return Promise.resolve();
+  }
   host.innerHTML = '<p style="max-width:980px;margin:16px auto;padding:0 16px">Loading the MMW rules...</p>';
   return loadRules(cfg.rulesUrl || BASE + 'rules/mmw_rules.json')
     .then(function (rules) {
