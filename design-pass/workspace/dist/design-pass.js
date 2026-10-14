@@ -2030,13 +2030,30 @@ function ranges(ns) {
   return out.join(', ');
 }
 
+// All text on each slide, in deck order -- leaving out page numbers, dates and
+// footers (slide-number fields, and a bare number in the bottom band), which
+// MMW slides do not carry and the wording check should not count.
 function slideTexts(zip) {
+  var A = 'http://schemas.openxmlformats.org/drawingml/2006/main', P = 'http://schemas.openxmlformats.org/presentationml/2006/main';
   return zip.file('ppt/presentation.xml').async('string').then(function (px) {
+    var cy = +(/<p:sldSz[^>]*\bcy="(\d+)"/.exec(px) || [0, 6858000])[1];
     return zip.file('ppt/_rels/presentation.xml.rels').async('string').then(function (rx) {
       var rid = {}; rx.replace(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/g, function (m, id, t) { rid[id] = 'ppt/' + t.replace(/^\/?ppt\//, ''); });
       var ids = []; px.replace(/<p:sldId [^>]*r:id="([^"]+)"/g, function (m, id) { ids.push(rid[id]); });
       return Promise.all(ids.map(function (p) {
-        return zip.file(p).async('string').then(function (x) { return (x.match(/<a:t>([^<]*)<\/a:t>/g) || []).map(function (t) { return t.slice(5, -6); }).join(' '); });
+        return zip.file(p).async('string').then(function (x) {
+          var doc = new DOMParser().parseFromString(x, 'application/xml'), out = [];
+          Array.prototype.forEach.call(doc.getElementsByTagNameNS(P, 'sp'), function (sp) {
+            var ph = sp.getElementsByTagNameNS(P, 'ph')[0];
+            if (ph && /^(sldNum|dt|ftr|hdr)$/.test(ph.getAttribute('type') || '')) return;
+            var t = Array.prototype.map.call(sp.getElementsByTagNameNS(A, 't'), function (n) { return n.textContent; }).join(' ').trim();
+            var off = sp.getElementsByTagNameNS(A, 'off')[0];
+            if (/^\d{1,3}$/.test(t) && off && +off.getAttribute('y') > cy * 0.9) return;   // page number in the footer band
+            if (t) out.push(t);
+          });
+          Array.prototype.forEach.call(doc.getElementsByTagNameNS(A, 'tbl'), function (tb) { out.push(Array.prototype.map.call(tb.getElementsByTagNameNS(A, 't'), function (n) { return n.textContent; }).join(' ')); });
+          return out.join(' ');
+        });
       }));
     });
   });
@@ -2092,7 +2109,7 @@ function postText(p) {
   L.push('');
   var unchanged = [];
   p.rows.forEach(function (r) {
-    if (r.action === 'keep' && p.mode !== 'full') { unchanged.push(r.n + (r.now[0] !== r.n ? '->' + r.now[0] : '')); return; }
+    if (r.action === 'keep' && (p.mode !== 'full' || keptClean(r))) { unchanged.push(r.n + (r.now[0] !== r.n ? '->' + r.now[0] : '')); return; }
     L.push('Slide ' + r.n + (r.now.length ? ' -> now ' + (r.now.length > 1 ? 'slides ' + r.now[0] + '-' + r.now[r.now.length - 1] : 'slide ' + r.now[0]) : '') + ' | ' + (ACTIONS[r.action] || r.action).toUpperCase());
     if (r.why) L.push('  Why: ' + r.why);
     L.push('  Before: ' + r.before);
@@ -2101,9 +2118,10 @@ function postText(p) {
     if (r.wording) L.push('  Wording: ' + wordingText(r.wording));
     L.push('');
   });
-  if (unchanged.length) L.push('Unchanged: slide' + (unchanged.length > 1 ? 's ' : ' ') + unchanged.join(', '));
+  if (unchanged.length) L.push((p.mode === 'full' ? 'Carried over unchanged: slide' : 'Unchanged: slide') + (unchanged.length > 1 ? 's ' : ' ') + unchanged.join(', '));
   return L.join('\n');
 }
+function keptClean(r) { return !r.wording || (!r.wording.removed.length && !r.wording.added.length); }
 function wordingText(w) {
   if (!w.removed.length && !w.added.length) return 'unchanged (' + w.total + ' words)';
   var tally = function (ws) {
@@ -2124,7 +2142,7 @@ function showPost(panel, p) {
     (p.deckFixes.length ? '<p class="muted" style="margin:0 0 6px">Whole deck: ' + esc(p.deckFixes.map(function (f) { return f.msg; }).join('; ')) + '</p>' : '');
   var unchanged = [];
   var rows = p.rows.map(function (r) {
-    if (r.action === 'keep' && p.mode !== 'full') { unchanged.push(r.n); return ''; }
+    if (r.action === 'keep' && (p.mode !== 'full' || keptClean(r))) { unchanged.push(r.n + (r.now[0] !== r.n ? ' → ' + r.now[0] : '')); return ''; }
     var w = r.wording ? (!r.wording.removed.length && !r.wording.added.length ? '<span class="dpw-ok">Wording unchanged (' + r.wording.total + ' words)</span>' : '<span class="dpw-warn">' + esc(wordingText(r.wording)) + '</span>') : '';
     return '<div class="dpw-chg"><h3>Slide ' + r.n + (r.now.length ? ' → ' + (r.now.length > 1 ? 'slides ' + r.now.join(', ') : 'slide ' + r.now[0]) : '') +
       ' <span class="dpw-act ' + esc(r.action) + '">' + esc(ACTIONS[r.action] || r.action) + '</span></h3>' +
@@ -2133,7 +2151,7 @@ function showPost(panel, p) {
       (r.changes && r.changes.length ? '<span class="lbl">Changed</span><span>' + esc(r.changes.join('; ')) + '</span>' : '') +
       (w ? '<span class="lbl">Wording</span><span>' + w + '</span>' : '') + '</div></div>';
   }).join('');
-  box.innerHTML = head + rows + (unchanged.length ? '<div class="dpw-chg muted">Unchanged: slide' + (unchanged.length > 1 ? 's ' : ' ') + unchanged.join(', ') + '</div>' : '') +
+  box.innerHTML = head + rows + (unchanged.length ? '<div class="dpw-chg muted">' + (p.mode === 'full' ? 'Carried over unchanged (still on their original design): slide' : 'Unchanged: slide') + (unchanged.length > 1 ? 's ' : ' ') + unchanged.join(', ') + '</div>' : '') +
     '<div class="dpw-row"><button id="dpw-pcopy">Copy report for the agent</button><button class="ghost" id="dpw-pdl">Download report (text)</button></div>';
   panel.parentNode.insertBefore(box, panel.nextSibling);
   box.querySelector('#dpw-pcopy').onclick = function () { copyText(text, this, 'Copy report for the agent'); };
