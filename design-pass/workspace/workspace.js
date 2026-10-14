@@ -130,9 +130,10 @@ function phase2(ctx, rules, plan, ui) {
   var step = function (msg, cls) { var li = el('li', cls ? { 'class': cls } : {}, esc(msg)); steps.appendChild(li); return li; };
   var report = ctx.report, n = report.deck.slides;
 
-  return hex(ctx.buf).then(function (sha) {
+  return Promise.all([hex(ctx.buf), slideTexts(ctx.zip)]).then(function (pre) {
+    var sha = pre[0], texts = pre[1];
     // 1. the plan must be for this deck and cover every slide once
-    var problems = validate(plan, report, sha);
+    var problems = validate(plan, report, sha, texts);
     if (problems.hard.length) { problems.hard.forEach(function (m) { step(m, 'bad'); }); throw new Error('stopped'); }
     problems.soft.forEach(function (m) { step(m); });
     step('Plan checked: ' + n + ' slides, mode ' + (plan.mode === 'full' ? 'full conversion' : 'targeted'), 'ok');
@@ -210,10 +211,18 @@ function phase2(ctx, rules, plan, ui) {
   }).catch(function (e) { if (e.message !== 'stopped') step('Could not apply the plan: ' + e.message, 'bad'); });
 }
 
-function validate(plan, report, sha) {
+function norm(t) { return String(t || '').toLowerCase().replace(/&amp;/g, '&').replace(/[^\p{L}\p{N}]+/gu, ' ').trim(); }
+function validate(plan, report, sha, texts) {
   var hard = [], soft = [], n = report.deck.slides, seen = {};
   if (!plan.slides || !plan.slides.length) hard.push('The plan has no slides.');
   if (plan.deck && plan.deck.sha256 && plan.deck.sha256 !== sha) hard.push('This is not the deck the plan was made for (its fingerprint differs). Drop the same file you sent to the agent.');
+  if (plan.deck && plan.deck.slides && plan.deck.slides !== n) hard.push('The plan is for a ' + plan.deck.slides + '-slide deck; this file has ' + n + ' slides. Drop the same file you gave the agent.');
+  // each planned slide may carry a short quote from its own text: proves the
+  // file and the slide numbering match what the agent read
+  (plan.slides || []).forEach(function (s) {
+    if (s.quote && s.n >= 1 && s.n <= n && norm(texts[s.n - 1]).indexOf(norm(s.quote)) < 0)
+      hard.push('Slide ' + s.n + ' does not contain "' + s.quote + '" -- this may be a different version of the deck, or the slide numbers are off.');
+  });
   (plan.slides || []).forEach(function (s) {
     if (!(s.n >= 1 && s.n <= n)) hard.push('The plan mentions slide ' + s.n + ', but the deck has ' + n + '.');
     if (seen[s.n]) hard.push('The plan lists slide ' + s.n + ' twice.');
@@ -225,12 +234,14 @@ function validate(plan, report, sha) {
     }
     if (plan.mode === 'full' && s.action === 'fix') soft.push('Slide ' + s.n + ': "fix" in a full conversion keeps the original slide as is.');
   });
+  // slides the plan does not mention: safe mechanical fixes (targeted), or carried over (full)
+  var dflt = plan.default_action || (plan.mode === 'full' ? 'keep' : 'fix');
   var missing = []; for (var i = 1; i <= n; i++) if (!seen[i]) missing.push(i);
-  if (missing.length) soft.push('Not in the plan, kept as is: slide' + (missing.length > 1 ? 's ' : ' ') + ranges(missing) + '.');
+  if (missing.length) soft.push('Not in the plan, ' + (dflt === 'fix' ? 'mechanical fixes only' : 'kept as is') + ': slide' + (missing.length > 1 ? 's ' : ' ') + ranges(missing) + '.');
   if (plan.mode === 'full' && !(plan.slides || []).some(function (s) { return s.action === 'rebuild'; })) hard.push('A full conversion needs at least one rebuilt slide.');
   if (report.deck.rebuild && plan.mode !== 'full') soft.push('This deck is not on the MMW template; a full conversion is recommended.');
   // fill gaps so every slide has an action
-  for (var j = 1; j <= n; j++) if (!seen[j]) plan.slides.push({ n: j, action: 'keep', why: 'Not in the plan' });
+  for (var j = 1; j <= n; j++) if (!seen[j]) plan.slides.push({ n: j, action: dflt, why: dflt === 'fix' ? 'Mechanical fixes only' : 'Not in the plan' });
   plan.slides.sort(function (a, b) { return a.n - b.n; });
   return { hard: hard, soft: soft };
 }
@@ -238,7 +249,15 @@ function validate(plan, report, sha) {
 // "orig:ppt/media/image3.png" in images[] / bgImage -> data URI from the original deck
 function resolveOrigImages(D, zip) {
   var jobs = [], mime = { png: 'image/png', jpg: 'image/jpeg', jpeg: 'image/jpeg', gif: 'image/gif', svg: 'image/svg+xml' };
+  // "orig:slide5" / "orig:slide5#2" = the largest / 2nd-largest picture on original slide 5
+  var bySlide = null;
+  function pictures() {
+    if (bySlide) return bySlide;
+    return (bySlide = slidePictures(zip));
+  }
   function load(ref) {
+    var m = /^orig:slide(\d+)(?:#(\d+))?$/i.exec(ref);
+    if (m) return pictures().then(function (ps) { var list = ps[+m[1] - 1] || [], pic = list[(+m[2] || 1) - 1]; return pic ? load('orig:' + pic) : null; });
     var p = ref.slice(5), f = zip.file(p), ext = p.split('.').pop().toLowerCase();
     if (!f || !mime[ext]) return Promise.resolve(null);
     return f.async('base64').then(function (b64) {
@@ -253,6 +272,31 @@ function resolveOrigImages(D, zip) {
     if (typeof d.bgImage === 'string' && d.bgImage.indexOf('orig:') === 0) jobs.push(load(d.bgImage).then(function (u) { if (u) d.bgImage = u; else delete d.bgImage; }));
   });
   return Promise.all(jobs);
+}
+
+// Pictures on each slide (media paths), largest first. Logos/icons under a
+// square inch are left out: they are furniture, not photography.
+function slidePictures(zip) {
+  var A = 'http://schemas.openxmlformats.org/drawingml/2006/main', P = 'http://schemas.openxmlformats.org/presentationml/2006/main', R = 'http://schemas.openxmlformats.org/officeDocument/2006/relationships';
+  return zip.file('ppt/presentation.xml').async('string').then(function (px) {
+    return zip.file('ppt/_rels/presentation.xml.rels').async('string').then(function (rx) {
+      var rid = {}; rx.replace(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/g, function (m, id, t) { rid[id] = 'ppt/' + t.replace(/^\/?ppt\//, ''); });
+      var ids = []; px.replace(/<p:sldId [^>]*r:id="([^"]+)"/g, function (m, id) { ids.push(rid[id]); });
+      return Promise.all(ids.map(function (sp) {
+        var relsP = sp.replace(/slides\/(slide\d+\.xml)$/, 'slides/_rels/$1.rels');
+        return Promise.all([zip.file(sp).async('string'), zip.file(relsP) ? zip.file(relsP).async('string') : '']).then(function (r) {
+          var rel = {}; r[1].replace(/<Relationship\b[^>]*Id="([^"]+)"[^>]*Target="([^"]+)"/g, function (m, id, t) { rel[id] = 'ppt/' + t.replace(/^\.\.\//, ''); });
+          var doc = new DOMParser().parseFromString(r[0], 'application/xml'), out = [];
+          Array.prototype.forEach.call(doc.getElementsByTagNameNS(P, 'pic'), function (pic) {
+            var b = pic.getElementsByTagNameNS(A, 'blip')[0], e = pic.getElementsByTagNameNS(A, 'ext')[0];
+            var t = b && rel[b.getAttributeNS(R, 'embed')], area = e ? (+e.getAttribute('cx') / 914400) * (+e.getAttribute('cy') / 914400) : 0;
+            if (t && /\.(png|jpe?g|gif)$/i.test(t) && area >= 1) out.push({ t: t, a: area });
+          });
+          return out.sort(function (x, y) { return y.a - x.a; }).map(function (x) { return x.t; });
+        });
+      }));
+    });
+  });
 }
 
 // Render D with the builder engine and capture its PPTX export in memory.
