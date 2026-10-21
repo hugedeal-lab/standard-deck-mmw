@@ -278,8 +278,8 @@ columns:[...], sections:[...]}. A nested {layout:'...', cfg:{...}} wrapper also
 works (the engine hoists it), but top-level is the norm -- match the other
 families. Do not put both a top-level and a cfg-nested copy of the same key.
 Name	Template layout	Background	Use
-reportGray	Content Gray	#EEEEEE	Report chassis on #EEEEEE + open canvas y1.80-7.10. Use only when nothing below already fits.
-reportDark	Content Dark	#262626	Report chassis on #262626 + open canvas. Use only when nothing below already fits.
+reportGray	Content Gray	#EEEEEE	Report chassis on #EEEEEE + open canvas y1.80-7.10. Use only when nothing below already fits AND the slide still wants the report eyebrow+title+intro header. For header-free freeform content, use canvasLight instead (BLANK CANVASES, below).
+reportDark	Content Dark	#262626	Report chassis on #262626 + open canvas. Use only when nothing below already fits AND the slide still wants the report eyebrow+title+intro header. For header-free freeform content, use canvasDark instead (BLANK CANVASES, below).
 reportGrayChart	Content Gray	#EEEEEE	Chart in a fixed well. cfg.chart = {type, data, opts, title?, subtitle?, note?}. type: 'bar' (horizontal) | 'column' | 'line' | 'area' | 'pie' | 'doughnut'. data: [{name, labels, values}] per series. title/subtitle = small centred heading above the plot (doughnut: title goes in the ring's centre); note = centred summary under it, '\n' for 2 lines. Bars/columns show no gridlines or values by default -- opts.showLegend / showValue / gridlines opt in. opts.highlight / opts.colors recolour any chart type (§10).
 reportDarkChart	Content Dark	#262626	Same as reportGrayChart, dark.
 reportGrayTable	Content Gray	#EEEEEE	Simple 2-column table: one heading + optional bullets per side. cfg.headers[2], cfg.rows (≤4, each {left:{heading,bullets}, right:{heading,bullets}}).
@@ -412,8 +412,12 @@ locationOverview/locationDetail | Props -> moodboardProps | Wardrobe ->
 moodboardWardrobe | Aesthetic -> moodboardToneManner | Paid social -> the
 platform+ratio layout that matches the asset being delivered | US
 states/markets/locations -> mapUS | Global/worldwide framing (no specific
-countries) -> mapWorld | Fully blank slide for hand-placed content ->
-canvasDark/Grey/Light
+countries) -> mapWorld | Dense, custom, one-off content that doesn't fit any
+layout above, or a fully blank slide for hand-placed content ->
+canvasDark/Grey/Light (zero fixed furniture -- real decks reach for a blank
+or near-blank master far more often than for any single structured
+composition, so prefer canvas over reportGray/Dark whenever the slide
+doesn't need that report header)
 
 6.2a Photography in copy-only decks
 When the user supplies copy but no photos, the deck still needs visual rhythm.
