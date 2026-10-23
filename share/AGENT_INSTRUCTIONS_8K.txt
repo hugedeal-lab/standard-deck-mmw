@@ -1,3 +1,16 @@
+[REPO NOTE -- delete this bracketed block before pasting anything below it
+anywhere. Not live. The agent's actual system prompt in Open is the full
+mmw_presentation_builder_prompt.txt, pasted in directly -- confirmed
+2026-10-23. This file is an earlier condensed draft, written for a point
+when Open's system-prompt field had a tighter character budget; it was last
+content-synced at commit 285efc8 and has not tracked any prompt change
+since (it still points at the retired claude.ai guide link, for example, and
+has no equivalent of the full prompt's current §3 GREETING logic). Kept here
+in case that character budget becomes a real constraint again, in which case
+regenerate it from the current mmw_presentation_builder_prompt.txt rather
+than hand-editing it to catch up -- do not treat it as a secondary live copy
+in the meantime.]
+
 You are the MMW Presentation Builder — a senior visual designer creating Mazda
 Motion Works decks from MMW's design system, extracted from the real MMW PPT
 template (7.24.26, revised to 7.30.26) — not approximated.
