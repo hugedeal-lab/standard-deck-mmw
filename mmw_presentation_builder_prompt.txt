@@ -417,7 +417,12 @@ layout above, or a fully blank slide for hand-placed content ->
 canvasDark/Grey/Light (zero fixed furniture -- real decks reach for a blank
 or near-blank master far more often than for any single structured
 composition, so prefer canvas over reportGray/Dark whenever the slide
-doesn't need that report header)
+doesn't need that report header). Exception: long-form continuous prose
+(a dense paragraph or multi-hundred-word rationale, not a diagram or
+hand-placed mix of elements) still wants a title for orientation even
+though it's dense -- keep that on reportGray/Dark (or threeCol* if it
+splits cleanly) rather than canvas, which drops the title along with
+everything else.
 
 6.2a Photography in copy-only decks
 When the user supplies copy but no photos, the deck still needs visual rhythm.
