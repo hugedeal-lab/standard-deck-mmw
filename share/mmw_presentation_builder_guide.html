@@ -1,0 +1,325 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>MMW Presentation Builder Guide</title>
+<style>
+  :root {
+    --asphalt: #262626;
+    --paper: #EEEEEE;
+    --spark: #C4A584;
+    --spark-dark: #9C7C5C;
+    --tide: #074169;
+    --ink: #221F20;
+    --body-gray: #4A4A4A;
+    --caption-gray: #5E5E5E;
+    --border: #DADADA;
+    --max-w: 760px;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0;
+    padding: 0;
+    background: #FFFFFF;
+    color: var(--ink);
+    font-family: -apple-system, "Segoe UI", Arial, Helvetica, sans-serif;
+    line-height: 1.55;
+    font-size: 16px;
+  }
+  header.hero {
+    background: var(--asphalt);
+    color: var(--paper);
+    padding: 48px 20px 36px;
+  }
+  header.hero .inner { max-width: var(--max-w); margin: 0 auto; }
+  header.hero h1 {
+    margin: 0 0 10px;
+    font-size: 30px;
+    font-weight: 700;
+    letter-spacing: -0.01em;
+    color: #FFFFFF;
+  }
+  header.hero .byline {
+    color: #BFA588;
+    font-size: 14px;
+    margin: 0 0 18px;
+  }
+  header.hero p.lede {
+    margin: 0 0 22px;
+    font-size: 17px;
+    color: #EFEFEF;
+    max-width: 640px;
+  }
+  .cta-row { display: flex; gap: 12px; flex-wrap: wrap; }
+  .btn {
+    display: inline-block;
+    padding: 11px 20px;
+    border-radius: 4px;
+    font-size: 14px;
+    font-weight: 600;
+    text-decoration: none;
+    border: 1px solid transparent;
+  }
+  .btn-primary { background: var(--spark); color: var(--asphalt); }
+  .btn-primary:hover { background: #d4b595; }
+  .btn-secondary { background: transparent; color: var(--paper); border-color: #555; }
+  .btn-secondary:hover { border-color: #888; }
+
+  main { max-width: var(--max-w); margin: 0 auto; padding: 8px 20px 80px; }
+  nav.toc {
+    margin: 28px 0 8px;
+    padding: 16px 18px;
+    background: #F7F6F4;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    font-size: 14px;
+  }
+  nav.toc strong { display: block; margin-bottom: 8px; color: var(--asphalt); }
+  nav.toc ul { margin: 0; padding: 0; list-style: none; columns: 2; column-gap: 24px; }
+  nav.toc li { margin-bottom: 6px; }
+  nav.toc a { color: var(--tide); text-decoration: none; }
+  nav.toc a:hover { text-decoration: underline; }
+
+  section { margin-top: 44px; }
+  h2 {
+    font-size: 21px;
+    color: var(--asphalt);
+    border-bottom: 2px solid var(--spark);
+    padding-bottom: 8px;
+    margin: 0 0 16px;
+  }
+  p { color: var(--body-gray); margin: 0 0 14px; }
+  strong { color: var(--ink); }
+  ul, ol { padding-left: 22px; margin: 0 0 14px; color: var(--body-gray); }
+  li { margin-bottom: 8px; }
+  li strong { color: var(--ink); }
+  code {
+    background: #F0EEEA;
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 0.92em;
+    color: var(--spark-dark);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 0 0 14px;
+    font-size: 14.5px;
+  }
+  th, td {
+    text-align: left;
+    padding: 10px 12px;
+    border-bottom: 1px solid var(--border);
+    vertical-align: top;
+  }
+  th {
+    background: #F7F6F4;
+    color: var(--asphalt);
+    font-weight: 600;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 0.02em;
+  }
+  td { color: var(--body-gray); }
+  .tip {
+    background: #F7F6F4;
+    border-left: 3px solid var(--tide);
+    padding: 12px 16px;
+    border-radius: 0 4px 4px 0;
+    font-size: 14.5px;
+    color: var(--caption-gray);
+    margin: 0 0 14px;
+  }
+  .support {
+    margin-top: 48px;
+    padding: 24px 22px;
+    background: var(--asphalt);
+    color: var(--paper);
+    border-radius: 8px;
+  }
+  .support h2 {
+    color: #FFFFFF;
+    border-bottom: none;
+    padding-bottom: 0;
+    margin-bottom: 10px;
+  }
+  .support p { color: #D8D8D8; }
+  .support a { color: var(--spark); font-weight: 600; text-decoration: none; }
+  .support a:hover { text-decoration: underline; }
+  footer {
+    max-width: var(--max-w);
+    margin: 0 auto;
+    padding: 0 20px 60px;
+    color: var(--caption-gray);
+    font-size: 13px;
+  }
+  @media (max-width: 480px) {
+    nav.toc ul { columns: 1; }
+    header.hero h1 { font-size: 25px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="hero">
+  <div class="inner">
+    <h1>MMW Presentation Builder Guide</h1>
+    <p class="byline">Updated Oct 23, 2026 · Maintained by Zack Jemas</p>
+    <p class="lede">The MMW Presentation Builder turns your copy, outlines or existing slides into an on-brand Mazda Motion Works deck. You preview it in chat and download it as an editable PowerPoint file.</p>
+    <div class="cta-row">
+      <a class="btn btn-primary" href="https://mazda.os.wpp.com/application/1330d8cf-fc44-4473-84d5-4a34df5fadb0/377e44a8-fbf7-418b-990a-111e5fdd3361-defaultVersion" target="_blank" rel="noopener">Open the Presentation Builder</a>
+      <a class="btn btn-secondary" href="#support">Get support</a>
+    </div>
+  </div>
+</header>
+
+<main>
+
+<nav class="toc" aria-label="On this page">
+  <strong>On this page</strong>
+  <ul>
+    <li><a href="#what-it-makes">What it makes</a></li>
+    <li><a href="#getting-started">Getting started</a></li>
+    <li><a href="#how-a-build-works">How a build works</a></li>
+    <li><a href="#photos">Photos</a></li>
+    <li><a href="#copy-length">Copy length</a></li>
+    <li><a href="#editing-and-finishing">Editing and finishing</a></li>
+    <li><a href="#troubleshooting">Troubleshooting</a></li>
+    <li><a href="#tips">Tips</a></li>
+    <li><a href="#support">Support &amp; feedback</a></li>
+  </ul>
+</nav>
+
+<section id="what-it-makes">
+  <h2>What it makes</h2>
+  <p>It builds four kinds of deck from 90 layouts taken from the MMW template. Name the kind in your first message and it picks layouts to match.</p>
+  <table>
+    <tr><th>Deck type</th><th>Good for</th><th>Slides it reaches for</th></tr>
+    <tr><td>Brand and pitch</td><td>Strategy, concepts, creative presentations</td><td>Photo and pattern covers, section dividers, big statements, three-column and two-row content</td></tr>
+    <tr><td>Production planning</td><td>Shoots and edits</td><td>Storyboards and shot grids, VO scripts, casting, locations, prop, wardrobe and tone moodboards</td></tr>
+    <tr><td>Paid social</td><td>Delivering media specs</td><td>Platform dividers and spec sheets for Meta, Reddit, TikTok, Pinterest and YouTube, matched to each asset's ratio</td></tr>
+    <tr><td>Reporting</td><td>Results and plans</td><td>Charts, tables, stat grids, spend bars, timelines, journey maps, US and world maps</td></tr>
+  </table>
+  <p>Every deck opens with a cover and closes with a thank-you slide unless you ask otherwise.</p>
+</section>
+
+<section id="getting-started">
+  <h2>Getting started</h2>
+  <p>Paste your content and say what the deck is for. The more it knows about the audience and length, the less you'll adjust later.</p>
+  <p>Give it:</p>
+  <ul>
+    <li><strong>Your content:</strong> pasted copy, a rough outline, notes, or existing slides to convert.</li>
+    <li><strong>The purpose and audience:</strong> for example "client pitch", "internal production review" or "Q3 results for leadership".</li>
+    <li><strong>A rough length</strong> if you have one. Otherwise it sizes the deck from your content.</li>
+    <li><strong>Any photos</strong> you want used. Without them it suggests shots for you to add later.</li>
+    <li><strong>Real numbers only.</strong> It never invents statistics, quotes or sources, so give it the data you want charted.</li>
+  </ul>
+  <p>Example requests:</p>
+  <ul>
+    <li>"Build a 10-slide pitch deck for the CX-90 fall campaign from the brief below. Audience is the Mazda brand team."</li>
+    <li>"Turn this shot list into storyboard slides, then add casting and location pages."</li>
+    <li>"Make Meta 4:5 carousel and TikTok video spec sheets for these three assets."</li>
+    <li>"Chart this spend data by channel and add a US map of the launch markets."</li>
+  </ul>
+  <p>Not sure where to start? Type <strong>help</strong> in the chat. It explains what it can do, what to give it and how to edit, and can list its slide layouts.</p>
+</section>
+
+<section id="how-a-build-works">
+  <h2>How a build works</h2>
+  <p>Decks of 8 slides or fewer build straight away. For 9 or more, you approve an outline first.</p>
+  <ol>
+    <li><strong>Outline.</strong> It shows a table with each slide's layout and content, plus notes on long copy and any photo wells to fill. Reply "proceed" or ask for changes, such as "merge slides 4 and 5" or "use a photo divider for section 2".</li>
+    <li><strong>Build.</strong> It creates the deck as a preview in chat.</li>
+    <li><strong>Tour.</strong> Right after the preview, it summarises the deck (slide by slide for short decks, section by section for long ones). It then lists anything to check: changes from the outline, copy it trimmed or moved, and photos to add. It ends with next steps.</li>
+    <li><strong>Preview.</strong> Use the arrows or your keyboard's arrow keys to page through. <strong>Notes</strong> shows the speaker notes it wrote for each slide.</li>
+    <li><strong>Download.</strong> The <strong>Download</strong> button saves an editable PowerPoint file named after the deck.</li>
+  </ol>
+</section>
+
+<section id="photos">
+  <h2>Photos</h2>
+  <p>Some slides fill themselves with MMW template photography; the rest show grey photo boxes until you add pictures.</p>
+  <table>
+    <tr><th>Kind</th><th>Slides</th><th>What you see</th></tr>
+    <tr><td>Fill themselves</td><td>Photo covers, photo dividers, photo headline statements, platform dividers</td><td>Finished slides with template photography</td></tr>
+    <tr><td>Photo boxes</td><td>Editorial photo + copy, storyboards, casting, locations, moodboards, social spec sheets</td><td>Grey boxes reading "Right-click → change picture"</td></tr>
+  </table>
+  <p>When you haven't supplied photos, it keeps photo boxes to slides whose copy describes something visual, such as a vehicle, place, person, event or piece of creative. It suggests a shot for each box in the outline and the tour.</p>
+  <p>To add your own photos:</p>
+  <ul>
+    <li><strong>Before the build:</strong> attach them in chat and say which slide each belongs on.</li>
+    <li><strong>After download:</strong> in PowerPoint, right-click a photo box and choose <strong>Change Picture</strong>. It crops to fit the box like the template's own photos.</li>
+  </ul>
+  <p>Template photography on the self-filling slides can be replaced the same way.</p>
+</section>
+
+<section id="copy-length">
+  <h2>Copy length</h2>
+  <p>Every text box has a character limit measured from the template, so long copy gets a roomier layout, a split or a trim, and it tells you which.</p>
+  <ul>
+    <li><strong>Layout choice:</strong> long copy goes to a layout with more body room. The outline marks these, for example "long copy, ~450 chars".</li>
+    <li><strong>Copy notes:</strong> after the build, it adds one line for each slide where it changed the layout for length, trimmed or paraphrased your copy, split it across slides, or let it render slightly smaller.</li>
+    <li><strong>Want your exact words?</strong> Say so. It will split copy across slides rather than trim it.</li>
+    <li><strong>Big statements and headlines</strong> are short by design: a few words at display size.</li>
+  </ul>
+  <p>Social spec sheets take full 500-character post copy and 100-character headlines; the type shrinks to fit.</p>
+</section>
+
+<section id="editing-and-finishing">
+  <h2>Editing and finishing</h2>
+  <p>Ask for changes in chat by slide number, then download again; finish small touches in PowerPoint.</p>
+  <ul>
+    <li><strong>In chat:</strong> "Shorten slide 3's headline", "Swap slide 6 to a dark background", "Add a slide after 8 comparing the two scripts", "Skip speaker notes". It rebuilds the deck each time, so download the latest version.</li>
+    <li><strong>In PowerPoint:</strong> every text box, chart and table is editable, and photo boxes take your own pictures.</li>
+    <li><strong>The PowerPoint file is the final version.</strong> The chat preview is a close approximation; line breaks and spacing can differ slightly.</li>
+    <li><strong>Fonts:</strong> install Mazda Type and Mazda Type Bold before opening the file, or PowerPoint substitutes another font and spacing will look off.</li>
+    <li><strong>Footers:</strong> there is no "Company Confidential" footer or page-number option; slides carry only the template's own marks.</li>
+  </ul>
+</section>
+
+<section id="troubleshooting">
+  <h2>Troubleshooting</h2>
+  <p>Most problems are fixed by asking for a rebuild in a fresh chat.</p>
+  <table>
+    <tr><th>Problem</th><th>Fix</th></tr>
+    <tr><td>The preview is blank</td><td>Ask it to rebuild the deck. A small error in a build can stop every slide drawing.</td></tr>
+    <tr><td>One slide is empty or looks sparse</td><td>Tell it which slide; it may be missing content for that layout.</td></tr>
+    <tr><td>A message says some images were left out</td><td>They failed to download. Download again, or add them in PowerPoint.</td></tr>
+    <tr><td>Text looks wrong in PowerPoint</td><td>Install Mazda Type and Mazda Type Bold, then reopen the file.</td></tr>
+    <tr><td>Copy was shortened</td><td>Check the copy notes in the tour, or ask for your exact words split across slides.</td></tr>
+    <tr><td>A fix you were promised isn't showing</td><td>Start a new chat; older chats can keep using an earlier version of the builder.</td></tr>
+  </table>
+</section>
+
+<section id="tips">
+  <h2>Tips</h2>
+  <ul>
+    <li><strong>Make one number stand out:</strong> ask for the chart with a highlight, e.g. "column chart of CX-90 vs four competitors, highlight CX-90". The highlighted bar is Spark tan and the rest are grey.</li>
+    <li><strong>Brand colors in charts:</strong> ask for Canopy (green), Tide (blue) or Aurora (purple) to match a section's mood. Otherwise charts use the template palette.</li>
+    <li><strong>Contacts on the closing slide:</strong> include names and emails in your request and they go on the thank-you slide.</li>
+    <li><strong>Exact copy:</strong> say "keep my exact words" and the builder splits copy across slides instead of trimming.</li>
+  </ul>
+</section>
+
+<section id="support" class="support">
+  <h2>Support &amp; feedback</h2>
+  <p>Questions, feature requests, or something that didn't come out right — send it to <strong style="color:#fff;">Zack Jemas</strong> at <a href="mailto:zack.jemas@vml.com">zack.jemas@vml.com</a>.</p>
+  <p>Feedback helps most when it includes four things:</p>
+  <ol>
+    <li><strong>The deck file the builder made</strong> — the HTML from the chat, not just the PowerPoint. It shows which version of the builder made it.</li>
+    <li><strong>The PowerPoint</strong>, if the problem shows up there.</li>
+    <li><strong>A screenshot</strong> of the slide, with its slide number.</li>
+    <li><strong>What you asked for</strong>, copied from the chat, and what you expected instead.</li>
+  </ol>
+  <p>Also useful: slides that work well, layouts you expected but didn't get, and anything you had to fix by hand in PowerPoint.</p>
+</section>
+
+</main>
+
+<footer>
+  MMW Presentation Builder &mdash; an internal tool for Mazda Motion Works presentations. Questions: <a href="mailto:zack.jemas@vml.com" style="color:var(--tide);">zack.jemas@vml.com</a>
+</footer>
+
+</body>
+</html>
