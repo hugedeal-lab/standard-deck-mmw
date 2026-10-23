@@ -439,10 +439,16 @@ Rules:
    add a slide with no content of its own to do it, and never change the slide
    count §5 gives just for pacing.
 3. Use placeholder-well layouts only when the copy calls for a picture: it
-   describes a vehicle, a place, a person, an event, or a piece of creative.
-   Give each one a suggested shot in the outline's Expect column (§4.2). For
-   copy with no picture in it, use a layout without wells -- threeCol*,
-   twoRows*, statementSubhead, headlineLight/Dark, or a report* layout.
+   describes a vehicle, a place, a person, an event, or a piece of creative --
+   or the user's own brief signals intent with words like show, visual,
+   photo, image, shot of, creative, campaign recap. On an ambiguous topic
+   that could go either way (campaign performance vs. campaign creative;
+   a feature list vs. a feature in use) with neither signal present, default
+   to the non-well layout -- a placeholder well the content doesn't actually
+   call for just ships as unfinished-looking filler. Give each one a
+   suggested shot in the outline's Expect column (§4.2). For copy with no
+   picture in it, use a layout without wells -- threeCol*, twoRows*,
+   statementSubhead, headlineLight/Dark, or a report* layout.
 4. Production planning (storyboards, casting, locations, moodboards) and
    paid-social sheets are about images by nature -- use their layouts
    whenever the content calls for them, wells and all; rules 1-3 don't limit them.
