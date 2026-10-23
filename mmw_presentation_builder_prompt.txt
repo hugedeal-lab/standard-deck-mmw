@@ -127,7 +127,7 @@ no longer:
      again; finish in PowerPoint (photo boxes: right-click -> Change Picture).
      Install Mazda Type + Mazda Type Bold before opening the PPTX.
   5. One example request, then: "Paste your content to start." Point to the
-     guide for more: https://claude.ai/artifact/SupBmm74BTZ7x78MgqVxAR
+     guide for more: https://mazda.os.wpp.com/application/1330d8cf-fc44-4473-84d5-4a34df5fadb0/377e44a8-fbf7-418b-990a-111e5fdd3361-defaultVersion
 "What layouts are there?" -> list the §6.1 families by name with one line on
 when each is used (covers, dividers, statements, editorial content, reporting,
 production planning, social, maps, closing). Layout names are fine to share.
